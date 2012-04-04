@@ -88,37 +88,34 @@ class BBP_Admin {
 
 		/** General Actions ***************************************************/
 
-		// Attach the bbPress admin_init action to the WordPress admin_init action.
-		add_action( 'admin_init',         array( $this, 'admin_init'                 ) );
+		// Add menu item to settings menu
+		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             ) );
 
 		// Add some general styling to the admin area
-		add_action( 'admin_head',         array( $this, 'admin_head'                 ) );
-
-		// Add menu item to settings menu
-		add_action( 'admin_menu',         array( $this, 'admin_menus'                ) );
+		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) );
 
 		// Add notice if not using a bbPress theme
-		add_action( 'admin_notices',      array( $this, 'activation_notice'          ) );
+		add_action( 'bbp_admin_notices',           array( $this, 'activation_notice'       ) );
 
 		// Add importers
-		add_action( 'bbp_admin_init',     array( $this, 'register_importers'         ) );
+		add_action( 'bbp_register_importers',      array( $this, 'register_importers'      ) );
 
 		// Add green admin style
-		add_action( 'bbp_admin_init',     array( $this, 'register_admin_style'       ) );
+		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'    ) );
 
 		// Add settings
-		add_action( 'bbp_admin_init',     array( $this, 'register_admin_settings'    ) );
+		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' ) );
+
+		// Add menu item to settings menu
+		add_action( 'bbp_activation',              array( $this, 'new_install'             ) );
 
 		// Forums 'Right now' Dashboard widget
-		add_action( 'wp_dashboard_setup', array( $this, 'dashboard_widget_right_now' ) );
+		add_action( 'wp_dashboard_setup',  array( $this, 'dashboard_widget_right_now' ) );
 
 		/** Filters ***********************************************************/
 
 		// Add link to settings page
 		add_filter( 'plugin_action_links', array( $this, 'add_settings_link' ), 10, 2 );
-
-		// Add sample permalink filter
-		add_filter( 'post_type_link',     'bbp_filter_sample_permalink',        10, 4 );
 
 		/** Network Admin *****************************************************/
 
@@ -154,7 +151,7 @@ class BBP_Admin {
 	 * @access private
 	 */
 	private function setup_globals() {
-		global $bbp;
+		$bbp = bbpress();
 
 		// Admin url
 		$this->admin_dir  = trailingslashit( $bbp->plugin_dir . 'bbp-admin' );
@@ -192,15 +189,6 @@ class BBP_Admin {
 			'bbpress',
 			'bbp_admin_settings'
 		);
-
-		// Update single forum
-		add_dashboard_page(
-			__( 'Update Forum', 'bbpress' ),
-			__( 'Update Forum', 'bbpress' ),
-			( is_multisite() ? 'manage_network' : 'manage_options' ),
-			'bbpress',
-			array( $this, 'update_screen' )
-		);
 	}
 
 	/**
@@ -215,9 +203,22 @@ class BBP_Admin {
 			__( 'Update Forums', 'bbpress' ),
 			__( 'Update Forums', 'bbpress' ),
 			'manage_network',
-			'bbpress',
+			'bbpress-update',
 			array( $this, 'network_update_screen' )
 		);
+	}
+
+	/**
+	 * If this is a new installation, create some initial forum content.
+	 *
+	 * @since bbPress (r3767)
+	 * @return type 
+	 */
+	public function new_install() {
+		if ( !bbp_is_install() )
+			return;
+
+		bbp_create_initial_content();
 	}
 
 	/**
@@ -228,7 +229,6 @@ class BBP_Admin {
 	 * @uses add_settings_section() To add our own settings section
 	 * @uses add_settings_field() To add various settings fields
 	 * @uses register_setting() To register various settings
-	 * @uses do_action() Calls 'bbp_register_admin_settings'
 	 */
 	public function register_admin_settings() {
 
@@ -267,11 +267,11 @@ class BBP_Admin {
 		 	register_setting  ( 'bbpress',                  '_bbp_allow_global_access',              'intval'                                                          );
 		}
 
-		// Allow Fancy editor setting
+		// Allow fancy editor setting
 		add_settings_field( '_bbp_use_wp_editor', __( 'Fancy Editor',     'bbpress' ), 'bbp_admin_setting_callback_use_wp_editor', 'bbpress', 'bbp_main' );
 		register_setting  ( 'bbpress',            '_bbp_use_wp_editor',                'intval'                                                          );
 		
-		// Allow oEmbeds setting
+		// Allow auto embedding setting
 		add_settings_field( '_bbp_use_autoembed', __( 'Auto-embed Links', 'bbpress' ), 'bbp_admin_setting_callback_use_autoembed', 'bbpress', 'bbp_main' );
 		register_setting  ( 'bbpress',           '_bbp_use_autoembed',                 'intval'                                                          );
 
@@ -376,8 +376,6 @@ class BBP_Admin {
 			add_settings_field( '_bbp_enable_akismet', __( 'Use Akismet',  'bbpress' ), 'bbp_admin_setting_callback_akismet',         'bbpress', 'bbp_akismet' );
 			register_setting  ( 'bbpress',            '_bbp_enable_akismet',            'intval'                                                               );
 		}
-
-		do_action( 'bbp_register_admin_settings' );
 	}
 
 	/**
@@ -385,7 +383,6 @@ class BBP_Admin {
 	 *
 	 * @since bbPress (r2737)
 	 *
-	 * @uses do_action() Calls 'bbp_register_importers'
 	 * @uses apply_filters() Calls 'bbp_importer_path' filter to allow plugins
 	 *                        to customize the importer script locations.
 	 */
@@ -415,9 +412,6 @@ class BBP_Admin {
 				require( $import_file );
 			}
 		}
-
-		// Don't do anything we wouldn't do
-		do_action( 'bbp_register_importers' );
 	}
 
 	/**
@@ -426,8 +420,6 @@ class BBP_Admin {
 	 * Shows a nag message in admin area about the theme not supporting bbPress
 	 *
 	 * @since bbPress (r2743)
-	 *
-	 * @global bbPress $bbp
 	 *
 	 * @uses current_user_can() To check notice should be displayed.
 	 */
@@ -445,25 +437,13 @@ class BBP_Admin {
 	 * @return array Processed links
 	 */
 	public function add_settings_link( $links, $file ) {
-		global $bbp;
 
-		if ( plugin_basename( $bbp->file ) == $file ) {
+		if ( plugin_basename( bbpress()->file ) == $file ) {
 			$settings_link = '<a href="' . add_query_arg( array( 'page' => 'bbpress' ), admin_url( 'options-general.php' ) ) . '">' . __( 'Settings', 'bbpress' ) . '</a>';
 			array_unshift( $links, $settings_link );
 		}
 
 		return $links;
-	}
-
-	/**
-	 * bbPress's dedicated admin init action
-	 *
-	 * @since bbPress (r2464)
-	 *
-	 * @uses do_action() Calls 'bbp_admin_init'
-	 */
-	public function admin_init() {
-		do_action( 'bbp_admin_init' );
 	}
 
 	/**
@@ -486,7 +466,6 @@ class BBP_Admin {
 	 * @uses bbp_get_topic_post_type() To get the topic post type
 	 * @uses bbp_get_reply_post_type() To get the reply post type
 	 * @uses sanitize_html_class() To sanitize the classes
-	 * @uses do_action() Calls 'bbp_admin_head'
 	 */
 	public function admin_head() {
 
@@ -520,18 +499,12 @@ class BBP_Admin {
 				font-size: 14px;
 				position: absolute;
 				top: -17px;
-
-				<?php if ( is_rtl() ) : ?>
-
-					right: 15px;
-
-				<?php else : ?>
-
-					left: 15px;
-
-				<?php endif; ?>
-
+				left: 15px;
 			}
+				body.rtl #bbp-dashboard-right-now p.sub {
+					right: 15px;
+					left: 0;
+				}
 
 			#bbp-dashboard-right-now .table {
 				margin: 0;
@@ -540,36 +513,22 @@ class BBP_Admin {
 			}
 
 			#bbp-dashboard-right-now .table_content {
-
-				<?php if ( is_rtl() ) : ?>
-
-					float: right;
-
-				<?php else : ?>
-
-					float: left;
-
-				<?php endif; ?>
-
+				float: left;
 				border-top: #ececec 1px solid;
 				width: 45%;
 			}
+				body.rtl #bbp-dashboard-right-now .table_content {
+					float: right;
+				}
 
 			#bbp-dashboard-right-now .table_discussion {
-
-				<?php if ( is_rtl() ) : ?>
-
-					float: left;
-
-				<?php else : ?>
-
-					float: right;
-
-				<?php endif; ?>
-
+				float: right;
 				border-top: #ececec 1px solid;
 				width: 45%;
 			}
+				body.rtl #bbp-dashboard-right-now .table_discussion {
+					float: left;
+				}
 
 			#bbp-dashboard-right-now table td {
 				padding: 3px 0;
@@ -581,22 +540,16 @@ class BBP_Admin {
 			}
 
 			#bbp-dashboard-right-now td.b {
-
-				<?php if ( is_rtl() ) : ?>
-
-					padding-left: 6px;
-
-				<?php else : ?>
-
-					padding-right: 6px;
-
-				<?php endif; ?>
-
+				padding-right: 6px;
 				text-align: right;
 				font-family: Georgia, "Times New Roman", "Bitstream Charter", Times, serif;
 				font-size: 14px;
 				width: 1%;
 			}
+				body.rtl #bbp-dashboard-right-now td.b {
+					padding-left: 6px;
+					padding-right: 0;
+				}
 
 			#bbp-dashboard-right-now td.b a {
 				font-size: 18px;
@@ -608,20 +561,14 @@ class BBP_Admin {
 
 			#bbp-dashboard-right-now .t {
 				font-size: 12px;
-
-				<?php if ( is_rtl() ) : ?>
-
-					padding-left: 12px;
-
-				<?php else : ?>
-
-					padding-right: 12px;
-
-				<?php endif; ?>
-
+				padding-right: 12px;
 				padding-top: 6px;
 				color: #777;
 			}
+				body.rtl #bbp-dashboard-right-now .t {
+					padding-left: 12px;
+					padding-right: 0;
+				}
 
 			#bbp-dashboard-right-now .t a {
 				white-space: nowrap;
@@ -649,22 +596,15 @@ class BBP_Admin {
 			}
 
 			#bbp-dashboard-right-now a.button {
-
-				<?php if ( is_rtl() ) : ?>
-
-					float: left;
-					clear: left;
-
-				<?php else : ?>
-
-					float: right;
-					clear: right;
-
-				<?php endif; ?>
-
+				float: right;
+				clear: right;
 				position: relative;
 				top: -5px;
 			}
+				body.rtl #bbp-dashboard-right-now a.button {
+					float: left;
+					clear: left;
+				}
 
 			#menu-posts-<?php echo $forum_class; ?> .wp-menu-image {
 				background: url(<?php echo $menu_icon_url; ?>) no-repeat 0px -32px;
@@ -703,9 +643,6 @@ class BBP_Admin {
 		</style>
 
 		<?php
-
-		// Add extra actions to bbPress admin header area
-		do_action( 'bbp_admin_head' );
 	}
 
 	/**
@@ -781,7 +718,7 @@ class BBP_Admin {
 				?>
 			
 				<p><?php _e( 'All done!', 'bbpress' ); ?></p>
-				<a class="button" href="index.php?page=bbpress"><?php _e( 'Go Back', 'bbpress' ); ?></a>
+				<a class="button" href="index.php?page=bbpress-update"><?php _e( 'Go Back', 'bbpress' ); ?></a>
 
 				<?php
 
@@ -791,7 +728,7 @@ class BBP_Admin {
 			default : ?>
 
 				<p><?php _e( 'You can update your forum through this page. Hit the link below to update.', 'bbpress' ); ?></p>
-				<p><a class="button" href="index.php?page=bbpress&amp;action=bbpress-update"><?php _e( 'Update Forum', 'bbpress' ); ?></a></p>
+				<p><a class="button" href="index.php?page=bbpress-update&amp;action=bbpress-update"><?php _e( 'Update Forum', 'bbpress' ); ?></a></p>
 
 			<?php break;
 
@@ -835,7 +772,7 @@ class BBP_Admin {
 				if ( empty( $blogs ) ) : ?>
 
 					<p><?php _e( 'All done!', 'bbpress' ); ?></p>
-					<a class="button" href="update-core.php?page=bbpress"><?php _e( 'Go Back', 'bbpress' ); ?></a>
+					<a class="button" href="update-core.php?page=bbpress-update"><?php _e( 'Go Back', 'bbpress' ); ?></a>
 
 					<?php break; ?>
 
@@ -856,7 +793,7 @@ class BBP_Admin {
 
 							// Get the response of the bbPress update on this site
 							$response = wp_remote_get(
-								trailingslashit( $siteurl ) . 'wp-admin/index.php?page=bbpress&step=bbpress-update',
+								trailingslashit( $siteurl ) . 'wp-admin/index.php?page=bbpress-update&step=bbpress-update',
 								array( 'timeout' => 120, 'httpversion' => '1.1' )
 							);
 
@@ -874,12 +811,12 @@ class BBP_Admin {
 
 					<p>
 						<?php _e( 'If your browser doesn&#8217;t start loading the next page automatically, click this link:', 'bbpress' ); ?>
-						<a class="button" href="update-core.php?page=bbpress&amp;action=bbpress-update&amp;n=<?php echo ( $n + 5 ); ?>"><?php _e( 'Next Forums', 'bbpress' ); ?></a>
+						<a class="button" href="update-core.php?page=bbpress-update&amp;action=bbpress-update&amp;n=<?php echo ( $n + 5 ); ?>"><?php _e( 'Next Forums', 'bbpress' ); ?></a>
 					</p>
 					<script type='text/javascript'>
 						<!--
 						function nextpage() {
-							location.href = 'update-core.php?page=bbpress&action=bbpress-update&n=<?php echo ( $n + 5 ) ?>';
+							location.href = 'update-core.php?page=bbpress-update&action=bbpress-update&n=<?php echo ( $n + 5 ) ?>';
 						}
 						setTimeout( 'nextpage()', 250 );
 						//-->
@@ -893,7 +830,7 @@ class BBP_Admin {
 			default : ?>
 
 				<p><?php _e( 'You can update all the forums on your network through this page. It works by calling the update script of each site automatically. Hit the link below to update.', 'bbpress' ); ?></p>
-				<p><a class="button" href="update-core.php?page=bbpress&amp;action=bbpress-update"><?php _e( 'Update Forums', 'bbpress' ); ?></a></p>
+				<p><a class="button" href="update-core.php-update&amp;action=bbpress-update"><?php _e( 'Update Forums', 'bbpress' ); ?></a></p>
 
 			<?php break;
 
@@ -912,12 +849,7 @@ endif; // class_exists check
  * @uses BBP_Admin
  */
 function bbp_admin() {
-	global $bbp;
-
-	$bbp->admin = new BBP_Admin();
-
-	if ( defined( 'BBP_CONTENT_DEPTH' ) )
-		$bbp->admin->content_depth = (int) BBP_CONTENT_DEPTH;
+	bbpress()->admin = new BBP_Admin();
 }
 
 ?>

@@ -32,9 +32,7 @@ function bbp_topic_post_type() {
 	 * @return string The unique topic post type id
 	 */
 	function bbp_get_topic_post_type() {
-		global $bbp;
-
-		return apply_filters( 'bbp_get_topic_post_type', $bbp->topic_post_type );
+		return apply_filters( 'bbp_get_topic_post_type', bbpress()->topic_post_type );
 	}
 
 /** Topic Loop ****************************************************************/
@@ -66,7 +64,7 @@ function bbp_topic_post_type() {
  * @return object Multidimensional array of topic information
  */
 function bbp_has_topics( $args = '' ) {
-	global $wp_rewrite, $bbp;
+	global $wp_rewrite;
 
 	// What are the default allowed statuses (based on user caps)
 	if ( !bbp_is_query_name( 'bbp_widget' ) && bbp_get_view_all() )
@@ -128,6 +126,9 @@ function bbp_has_topics( $args = '' ) {
 
 	// Extract the query variables
 	extract( $bbp_t );
+
+	// Get bbPress
+	$bbp = bbpress();
 
 	// Call the query
 	$bbp->topic_query = new WP_Query( $bbp_t );
@@ -257,7 +258,7 @@ function bbp_has_topics( $args = '' ) {
 
 			// Topic archive
 			elseif ( bbp_is_topic_archive() )
-				$base = home_url( $bbp->topic_archive_slug );
+				$base = home_url( bbp_get_topic_archive_slug() );
 
 			// Default
 			else
@@ -302,10 +303,9 @@ function bbp_has_topics( $args = '' ) {
  * @return object Topic information
  */
 function bbp_topics() {
-	global $bbp;
 
 	// Put into variable to check against next
-	$have_posts = $bbp->topic_query->have_posts();
+	$have_posts = bbpress()->topic_query->have_posts();
 
 	// Reset the post data when finished
 	if ( empty( $have_posts ) )
@@ -323,8 +323,7 @@ function bbp_topics() {
  * @return object Topic information
  */
 function bbp_the_topic() {
-	global $bbp;
-	return $bbp->topic_query->the_post();
+	return bbpress()->topic_query->the_post();
 }
 
 /**
@@ -357,7 +356,9 @@ function bbp_topic_id( $topic_id = 0) {
 	 * @return int The topic id
 	 */
 	function bbp_get_topic_id( $topic_id = 0 ) {
-		global $bbp, $wp_query;
+		global $wp_query;
+
+		$bbp = bbpress();
 
 		// Easy empty checking
 		if ( !empty( $topic_id ) && is_numeric( $topic_id ) )
@@ -519,7 +520,6 @@ function bbp_topic_archive_title( $title = '' ) {
 	 *
 	 * @since bbPress (r3249)
 	 *
-	 * @global bbPress $bbp The main bbPress class
 	 * @param string $title Default text to use as title
 	 *
 	 * @uses bbp_get_page_by_path() Check if page exists at root path
@@ -532,13 +532,12 @@ function bbp_topic_archive_title( $title = '' ) {
 	 * @return string The topic archive title
 	 */
 	function bbp_get_topic_archive_title( $title = '' ) {
-		global $bbp;
 
 		// If no title was passed
 		if ( empty( $title ) ) {
 
 			// Set root text to page title
-			$page = bbp_get_page_by_path( $bbp->topic_archive_slug );
+			$page = bbp_get_page_by_path( bbp_get_topic_archive_slug() );
 			if ( !empty( $page ) ) {
 				$title = get_the_title( $page->ID );
 
@@ -1989,8 +1988,7 @@ function bbp_topic_class( $topic_id = 0 ) {
 	 * @return string Row class of a topic
 	 */
 	function bbp_get_topic_class( $topic_id = 0 ) {
-		global $bbp;
-
+		$bbp       = bbpress();
 		$topic_id  = bbp_get_topic_id( $topic_id );
 		$count     = isset( $bbp->topic_query->current_post ) ? $bbp->topic_query->current_post : 1;
 		$classes   = array();
@@ -1998,6 +1996,7 @@ function bbp_topic_class( $topic_id = 0 ) {
 		$classes[] = bbp_is_topic_sticky( $topic_id, false ) ? 'sticky'       : '';
 		$classes[] = bbp_is_topic_super_sticky( $topic_id  ) ? 'super-sticky' : '';
 		$classes[] = 'bbp-parent-forum-' . bbp_get_topic_forum_id( $topic_id );
+		$classes[] = 'user-id-' . bbp_get_topic_author_id( $topic_id );
 		$classes   = array_filter( $classes );
 		$classes   = get_post_class( $classes, $topic_id );
 		$classes   = apply_filters( 'bbp_get_topic_class', $classes, $topic_id );
@@ -2186,7 +2185,9 @@ function bbp_topic_edit_url( $topic_id = 0 ) {
 	 * @return string Topic edit url
 	 */
 	function bbp_get_topic_edit_url( $topic_id = 0 ) {
-		global $wp_rewrite, $bbp;
+		global $wp_rewrite;
+
+		$bbp = bbpress();
 
 		$topic = bbp_get_topic( bbp_get_topic_id( $topic_id ) );
 		if ( empty( $topic ) )
@@ -2196,7 +2197,7 @@ function bbp_topic_edit_url( $topic_id = 0 ) {
 
 		// Pretty permalinks
 		if ( $wp_rewrite->using_permalinks() ) {
-			$url = $topic_link . $bbp->edit_id;
+			$url = trailingslashit( $topic_link ) . $bbp->edit_id;
 			$url = trailingslashit( $url );
 
 		// Unpretty permalinks
@@ -2554,7 +2555,7 @@ function bbp_forum_pagination_count() {
 	 * @return string Forum Pagintion count
 	 */
 	function bbp_get_forum_pagination_count() {
-		global $bbp;
+		$bbp = bbpress();
 
 		if ( empty( $bbp->topic_query ) )
 			return false;
@@ -2598,7 +2599,7 @@ function bbp_forum_pagination_links() {
 	 * @return string Pagination links
 	 */
 	function bbp_get_forum_pagination_links() {
-		global $bbp;
+		$bbp = bbpress();
 
 		if ( empty( $bbp->topic_query ) )
 			return false;
@@ -2843,9 +2844,7 @@ function bbp_topic_tag_tax_id() {
 	 * @return string The unique topic tag taxonomy
 	 */
 	function bbp_get_topic_tag_tax_id() {
-		global $bbp;
-
-		return apply_filters( 'bbp_get_topic_tag_tax_id', $bbp->topic_tag_tax_id );
+		return apply_filters( 'bbp_get_topic_tag_tax_id', bbpress()->topic_tag_tax_id );
 	}
 
 /**
@@ -3026,7 +3025,9 @@ function bbp_topic_tag_edit_link( $tag = '' ) {
 	 * @return string Term Name
 	 */
 	function bbp_get_topic_tag_edit_link( $tag = '' ) {
-		global $wp_rewrite, $bbp;
+		global $wp_rewrite;
+
+		$bbp = bbpress();
 
 		// Get the term
 		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );

@@ -58,7 +58,7 @@ class BBP_Forums_Admin {
 	function setup_actions() {
 
 		// Add some general styling to the admin area
-		add_action( 'admin_head',            array( $this, 'admin_head'       ) );
+		add_action( 'bbp_admin_head',        array( $this, 'admin_head'       ) );
 
 		// Messages
 		add_filter( 'post_updated_messages', array( $this, 'updated_messages' ) );
@@ -583,12 +583,7 @@ endif; // class_exists check
  * @uses BBP_Forums_Admin
  */
 function bbp_admin_forums() {
-	global $bbp;
-
-	// Bail if bbPress is not loaded
-	if ( !is_a( $bbp, 'bbPress' ) ) return;
-
-	$bbp->admin->forums = new BBP_Forums_Admin();
+	bbpress()->admin->forums = new BBP_Forums_Admin();
 }
 
 ?>

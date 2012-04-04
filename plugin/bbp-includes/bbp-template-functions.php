@@ -126,17 +126,18 @@ function bbp_get_query_template( $type, $templates = array() ) {
 
 /**
  * Get the possible subdirectories to check for templates in
- * 
- * @since bbPress (r3738)
  *
- * @return array
+ * @since bbPress (r3738)
+ * @param array $templates Templates we are looking for
+ * @return array Possible subfolders to look in
  */
-function bbp_get_template_locations() {
+function bbp_get_template_locations( $templates = array() ) {
 	$locations = array(
 		'bbpress',
-		'forums'
+		'forums',
+		''
 	);
-	return apply_filters( 'bbp_get_template_locations', $locations );
+	return apply_filters( 'bbp_get_template_locations', $locations, $templates );
 }
 
 /**
@@ -148,12 +149,10 @@ function bbp_get_template_locations() {
  * @return array() 
  */
 function bbp_add_template_locations( $templates = array() ) {
-
-	// Always return at least the templates being requested
-	$retval    = $templates;
+	$retval = array();
 
 	// Get alternate locations
-	$locations = bbp_get_template_locations();
+	$locations = bbp_get_template_locations( $templates );
 
 	// Loop through locations and templates and combine
 	foreach ( $locations as $location )
@@ -181,7 +180,6 @@ function bbp_add_template_locations( $templates = array() ) {
  *
  * @since bbPress (r2688)
  *
- * @global bbPress $bbp
  * @param WP_Query $posts_query
  *
  * @uses get_query_var() To get {@link WP_Query} query var
@@ -199,7 +197,6 @@ function bbp_add_template_locations( $templates = array() ) {
  * @uses remove_action() To remove the auto save post revision action
  */
 function bbp_parse_query( $posts_query ) {
-	global $bbp;
 
 	// Bail if $posts_query is not the main loop
 	if ( ! $posts_query->is_main_query() )
@@ -214,9 +211,9 @@ function bbp_parse_query( $posts_query ) {
 		return;
 
 	// Get query variables
-	$bbp_user = $posts_query->get( $bbp->user_id );
-	$bbp_view = $posts_query->get( $bbp->view_id );
-	$is_edit  = $posts_query->get( $bbp->edit_id );
+	$bbp_user = $posts_query->get( bbp_get_user_rewrite_id() );
+	$bbp_view = $posts_query->get( bbp_get_view_rewrite_id() );
+	$is_edit  = $posts_query->get( bbp_get_edit_rewrite_id() );
 
 	// It is a user page - We'll also check if it is user edit
 	if ( !empty( $bbp_user ) ) {
@@ -289,7 +286,7 @@ function bbp_parse_query( $posts_query ) {
 		}
 
 		// Set the displayed user global to this user
-		$bbp->displayed_user = $user;
+		bbpress()->displayed_user = $user;
 
 	// View Page
 	} elseif ( !empty( $bbp_view ) ) {

@@ -33,7 +33,7 @@ function bbp_insert_topic( $topic_data = array(), $topic_meta = array() ) {
 		'post_parent'    => 0, // forum ID
 		'post_status'    => bbp_get_public_status_id(),
 		'post_type'      => bbp_get_topic_post_type(),
-		'post_author'    => 0,
+		'post_author'    => bbp_get_current_user_id(),
 		'post_password'  => '',
 		'post_content'   => '',
 		'post_title'     => '',
@@ -364,7 +364,7 @@ function bbp_new_topic_handler() {
 			}
 
 			// Allow to be filtered
-			$redirect_url = apply_filters( 'bbp_new_topic_redirect_to', $redirect_url, $redirect_to );
+			$redirect_url = apply_filters( 'bbp_new_topic_redirect_to', $redirect_url, $redirect_to, $topic_id );
 
 			/** Successful Save ***********************************************/
 
@@ -2784,8 +2784,7 @@ function bbp_delete_topic( $topic_id = 0 ) {
  * @uses update_post_meta() To save a list of just trashed replies for future use
  */
 function bbp_trash_topic( $topic_id = 0 ) {
-	global $bbp;
-
+	$bbp      = bbpress();
 	$topic_id = bbp_get_topic_id( $topic_id );
 
 	if ( empty( $topic_id ) || !bbp_is_topic( $topic_id ) )

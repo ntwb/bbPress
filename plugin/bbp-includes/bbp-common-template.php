@@ -135,13 +135,17 @@ function bbp_is_single_forum() {
  * @return bool True if it's the forum edit page, false if not
  */
 function bbp_is_forum_edit() {
-	global $wp_query;
+	global $wp_query, $pagenow;
 
 	// Assume false
 	$retval = false;
 
 	// Check query
 	if ( !empty( $wp_query->bbp_is_forum_edit ) && ( $wp_query->bbp_is_forum_edit == true ) )
+		$retval = true;
+
+	// Editing in admin
+	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_forum_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_forum_edit', $retval );
@@ -224,13 +228,17 @@ function bbp_is_topic_archive() {
  * @return bool True if it's the topic edit page, false if not
  */
 function bbp_is_topic_edit() {
-	global $wp_query;
+	global $wp_query, $pagenow;
 
 	// Assume false
 	$retval = false;
 
 	// Check query
 	if ( !empty( $wp_query->bbp_is_topic_edit ) && ( $wp_query->bbp_is_topic_edit == true ) )
+		$retval = true;
+
+	// Editing in admin
+	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_topic_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topic_edit', $retval );
@@ -281,11 +289,10 @@ function bbp_is_topic_split() {
  *
  * @since bbPress (r3311)
  *
- * @global bbPress $bbp
  * @return bool True if it's a topic tag, false if not
  */
 function bbp_is_topic_tag() {
-	global $bbp;
+	$bbp = bbpress();
 
 	// Return false if editing a topic tag
 	if ( bbp_is_topic_tag_edit() )
@@ -310,7 +317,7 @@ function bbp_is_topic_tag() {
  * @return bool True if editing a topic tag, false if not
  */
 function bbp_is_topic_tag_edit() {
-	global $wp_query;
+	global $wp_query, $pagenow, $taxnow;
 
 	// Assume false
 	$retval = false;
@@ -318,6 +325,10 @@ function bbp_is_topic_tag_edit() {
 	// Check query
 	if ( !empty( $wp_query->bbp_is_topic_tag_edit ) && ( true == $wp_query->bbp_is_topic_tag_edit ) )
 		return true;
+
+	// Editing in admin
+	elseif ( is_admin() && ( 'edit-tags.php' == $pagenow ) && ( bbp_get_topic_tag_tax_id() == $taxnow ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
+		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topic_tag_edit', $retval );
 }
@@ -384,7 +395,7 @@ function bbp_is_reply( $post_id = 0 ) {
  * @return bool True if it's the reply edit page, false if not
  */
 function bbp_is_reply_edit() {
-	global $wp_query;
+	global $wp_query, $pagenow;
 
 	// Assume false
 	$retval = false;
@@ -392,6 +403,10 @@ function bbp_is_reply_edit() {
 	// Check query
 	if ( !empty( $wp_query->bbp_is_reply_edit ) && ( true == $wp_query->bbp_is_reply_edit ) )
 		return true;
+
+	// Editing in admin
+	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_reply_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
+		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_reply_edit', $retval );
 }
@@ -959,7 +974,7 @@ function bbp_tab_index( $auto_increment = true ) {
 	 * @return int $bbp->tab_index The global tab index
 	 */
 	function bbp_get_tab_index( $auto_increment = true ) {
-		global $bbp;
+		$bbp = bbpress();
 
 		if ( true === $auto_increment )
 			++$bbp->tab_index;
@@ -1403,7 +1418,7 @@ function bbp_the_content( $args = array() ) {
 				'tinymce'       => $tinymce,
 				'quicktags'     => $quicktags
 			);
-			wp_editor( $post_content, 'bbp_' . $context . '_content', $settings );
+			wp_editor( htmlspecialchars_decode( $post_content, ENT_QUOTES ), 'bbp_' . $context . '_content', $settings );
 
 		// Fallback to normal textarea
 		else : ?>
@@ -1453,7 +1468,7 @@ function bbp_view_id( $view = '' ) {
 	 * @return bool|string ID on success, false on failure
 	 */
 	function bbp_get_view_id( $view = '' ) {
-		global $bbp;
+		$bbp = bbpress();
 
 		$view = !empty( $view ) ? sanitize_title( $view ) : get_query_var( 'bbp_view' );
 
@@ -1488,7 +1503,7 @@ function bbp_view_title( $view = '' ) {
 	 * @return bool|string Title on success, false on failure
 	 */
 	function bbp_get_view_title( $view = '' ) {
-		global $bbp;
+		$bbp = bbpress();
 
 		$view = bbp_get_view_id( $view );
 		if ( empty( $view ) )
@@ -1522,7 +1537,7 @@ function bbp_view_url( $view = false ) {
 	 * @return string View url (or home url if the view was not found)
 	 */
 	function bbp_get_view_url( $view = false ) {
-		global $bbp, $wp_rewrite;
+		global $wp_rewrite;
 
 		$view = bbp_get_view_id( $view );
 		if ( empty( $view ) )
@@ -1530,7 +1545,7 @@ function bbp_view_url( $view = false ) {
 
 		// Pretty permalinks
 		if ( $wp_rewrite->using_permalinks() ) {
-			$url = $wp_rewrite->root . $bbp->view_slug . '/' . $view;
+			$url = $wp_rewrite->root . bbp_get_view_slug() . '/' . $view;
 			$url = home_url( user_trailingslashit( $url ) );
 
 		// Unpretty permalinks
@@ -1654,7 +1669,6 @@ function bbp_breadcrumb( $args = array() ) {
 	 * @return string Breadcrumbs
 	 */
 	function bbp_get_breadcrumb( $args = array() ) {
-		global $bbp;
 
 		// Turn off breadcrumbs
 		if ( apply_filters( 'bbp_no_breadcrumb', is_front_page() ) )
@@ -1686,7 +1700,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// No custom root text
 		if ( empty( $args['root_text'] ) ) {
-			$page = bbp_get_page_by_path( $bbp->root_slug );
+			$page = bbp_get_page_by_path( bbp_get_root_slug() );
 			if ( !empty( $page ) ) {
 				$root_id = $page->ID;
 			}
@@ -1796,7 +1810,7 @@ function bbp_breadcrumb( $args = array() ) {
 		if ( !empty( $include_root ) || empty( $root_text ) ) {
 
 			// Page exists at root slug path, so use its permalink
-			$page = bbp_get_page_by_path( $bbp->root_slug );
+			$page = bbp_get_page_by_path( bbp_get_root_slug() );
 			if ( !empty( $page ) ) {
 				$root_url = get_permalink( $page->ID );
 
@@ -1916,7 +1930,6 @@ function bbp_allowed_tags() {
  * @uses is_wp_error() To check if it's a {@link WP_Error}
  */
 function bbp_template_notices() {
-	global $bbp;
 
 	// Bail if no notices or errors
 	if ( !bbp_has_errors() )
@@ -1924,6 +1937,9 @@ function bbp_template_notices() {
 
 	// Define local variable(s)
 	$errors = $messages = array();
+
+	// Get bbPress
+	$bbp = bbpress();
 
 	// Loop through notices
 	foreach ( $bbp->errors->get_error_codes() as $code ) {

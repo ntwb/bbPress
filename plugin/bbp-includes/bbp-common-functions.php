@@ -25,12 +25,10 @@ function bbp_version() {
 	 * Return the bbPress version
 	 *
 	 * @since bbPress (r3468)
-	 * @global bbPress $bbp
 	 * @retrun string The bbPress version
 	 */
 	function bbp_get_version() {
-		global $bbp;
-		return $bbp->version;
+		return bbpress()->version;
 	}
 
 /**
@@ -46,12 +44,29 @@ function bbp_db_version() {
 	 * Return the bbPress database version
 	 *
 	 * @since bbPress (r3468)
-	 * @global bbPress $bbp
 	 * @retrun string The bbPress version
 	 */
 	function bbp_get_db_version() {
-		global $bbp;
-		return $bbp->db_version;
+		return bbpress()->db_version;
+	}
+
+/**
+ * Output the bbPress database version directly from the database
+ *
+ * @since bbPress (r3468)
+ * @uses bbp_get_version() To get the current bbPress version
+ */
+function bbp_db_version_raw() {
+	echo bbp_get_db_version_raw();
+}
+	/**
+	 * Return the bbPress database version directly from the database
+	 *
+	 * @since bbPress (r3468)
+	 * @retrun string The current bbPress version
+	 */
+	function bbp_get_db_version_raw() {
+		return get_option( '_bbp_db_version', '' );
 	}
 
 /** Post Meta *****************************************************************/
@@ -577,9 +592,7 @@ function bbp_get_statistics( $args = '' ) {
  * @return array Views
  */
 function bbp_get_views() {
-	global $bbp;
-
-	return $bbp->views;
+	return bbpress()->views;
 }
 
 /**
@@ -598,8 +611,7 @@ function bbp_get_views() {
  * @return array The just registered (but processed) view
  */
 function bbp_register_view( $view, $title, $query_args = '', $feed = true ) {
-	global $bbp;
-
+	$bbp   = bbpress();
 	$view  = sanitize_title( $view );
 	$title = esc_html( $title );
 
@@ -629,8 +641,7 @@ function bbp_register_view( $view, $title, $query_args = '', $feed = true ) {
  * @return bool False if the view doesn't exist, true on success
  */
 function bbp_deregister_view( $view ) {
-	global $bbp;
-
+	$bbp  = bbpress();
 	$view = sanitize_title( $view );
 
 	if ( !isset( $bbp->views[$view] ) )
@@ -680,10 +691,8 @@ function bbp_view_query( $view = '', $new_args = '' ) {
  * @return array Query arguments
  */
 function bbp_get_view_query_args( $view ) {
-	global $bbp;
-
 	$view   = bbp_get_view_id( $view );
-	$retval = !empty( $view ) ? $bbp->views[$view]['query'] : false;
+	$retval = !empty( $view ) ? bbpress()->views[$view]['query'] : false;
 
 	return apply_filters( 'bbp_get_view_query_args', $retval, $view );
 }
@@ -1137,6 +1146,17 @@ function bbp_notify_subscribers( $reply_id = 0, $topic_id = 0, $forum_id = 0, $a
 
 	do_action( 'bbp_pre_notify_subscribers', $reply_id, $topic_id, $user_ids );
 
+	// Remove filters from reply content and topic title to prevent content
+	// from being encoded with HTML entities, wrapped in paragraph tags, etc...
+	remove_all_filters( 'bbp_get_reply_content' );
+	remove_all_filters( 'bbp_get_topic_title'   );
+
+	// Strip tags from text
+	$topic_title   = strip_tags( bbp_get_topic_title( $topic_id ) );
+	$reply_content = strip_tags( bbp_get_reply_content( $reply_id ) );
+	$reply_url     = bbp_get_reply_url( $reply_id );
+	$blog_name     = get_option( 'blogname' );
+
 	// Loop through users
 	foreach ( (array) $user_ids as $user_id ) {
 
@@ -1145,13 +1165,29 @@ function bbp_notify_subscribers( $reply_id = 0, $topic_id = 0, $forum_id = 0, $a
 			continue;
 
 		// For plugins to filter messages per reply/topic/user
-		$message = __( "%1\$s wrote:\n\n%2\$s\n\nPost Link: %3\$s\n\nYou are recieving this email because you subscribed to it. Login and visit the topic to unsubscribe from these emails.", 'bbpress' );
-		$message = apply_filters( 'bbp_subscription_mail_message', sprintf( $message, $reply_author_name, strip_tags( bbp_get_reply_content( $reply_id ) ), bbp_get_reply_url( $reply_id ) ), $reply_id, $topic_id, $user_id );
+		$message = sprintf( __( '%1$s wrote:
+
+%2$s
+			
+Post Link: %3$s
+
+-----------
+
+You are recieving this email because you subscribed to a forum topic.
+
+Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
+				
+			$reply_author_name,
+			$reply_content,
+			$reply_url
+		);
+
+		$message = apply_filters( 'bbp_subscription_mail_message', $message, $reply_id, $topic_id, $user_id );
 		if ( empty( $message ) )
 			continue;
 
 		// For plugins to filter titles per reply/topic/user
-		$subject = apply_filters( 'bbp_subscription_mail_title', '[' . get_option( 'blogname' ) . '] ' . bbp_get_topic_title( $topic_id ), $reply_id, $topic_id, $user_id );
+		$subject = apply_filters( 'bbp_subscription_mail_title', '[' . $blog_name . '] ' . $topic_title, $reply_id, $topic_id, $user_id );
 		if ( empty( $subject ) )
 			continue;
 
@@ -1468,7 +1504,7 @@ function bbp_get_global_post_field( $field = 'ID', $context = 'edit' ) {
  * @param array $query_vars
  * @return array
  */
-function bbp_request_feed_trap( $query_vars ) {
+function bbp_request_feed_trap( $query_vars = array() ) {
 	global $wp_query;
 
 	// Looking at a feed
@@ -1543,6 +1579,9 @@ function bbp_request_feed_trap( $query_vars ) {
 
 					// All forum topics and replies
 					} else {
+
+						// Maybe exclude private and hidden forums
+						$meta_query = array( bbp_exclude_forum_ids( 'meta_query' ) );
 
 						// The query
 						$the_query = array(
@@ -1641,8 +1680,6 @@ function bbp_request_feed_trap( $query_vars ) {
  *
  * @since bbPress (r3381)
  *
- * @global bbPress $bbp
- *
  * @see WP_Error()
  * @uses WP_Error::add();
  *
@@ -1651,9 +1688,7 @@ function bbp_request_feed_trap( $query_vars ) {
  * @param string $data Any additional data passed with the error message
  */
 function bbp_add_error( $code = '', $message = '', $data = '' ) {
-	global $bbp;
-
-	$bbp->errors->add( $code, $message, $data );
+	bbpress()->errors->add( $code, $message, $data );
 }
 
 /**
@@ -1661,25 +1696,22 @@ function bbp_add_error( $code = '', $message = '', $data = '' ) {
  *
  * @since bbPress (r3381)
  *
- * @global bbPress $bbp
- *
  * @see WP_Error()
  *
  * @uses is_wp_error()
  * @usese WP_Error::get_error_codes()
  */
 function bbp_has_errors() {
-	global $bbp;
 
 	// Assume no errors
 	$has_errors = false;
 
 	// Check for errors
-	if ( $bbp->errors->get_error_codes() )
+	if ( bbpress()->errors->get_error_codes() )
 		$has_errors = true;
 
 	// Filter return value
-	$has_errors = apply_filters( 'bbp_has_errors', $has_errors, $bbp->errors );
+	$has_errors = apply_filters( 'bbp_has_errors', $has_errors, bbpress()->errors );
 
 	return $has_errors;
 }
@@ -1742,12 +1774,10 @@ function bbp_set_404() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_public_status_id() {
-	global $bbp;
-	return $bbp->public_status_id;
+	return bbpress()->public_status_id;
 }
 
 /**
@@ -1755,12 +1785,10 @@ function bbp_get_public_status_id() {
  *
  * @since bbPress (r3581)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_pending_status_id() {
-	global $bbp;
-	return $bbp->pending_status_id;
+	return bbpress()->pending_status_id;
 }
 
 /**
@@ -1768,12 +1796,10 @@ function bbp_get_pending_status_id() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_private_status_id() {
-	global $bbp;
-	return $bbp->private_status_id;
+	return bbpress()->private_status_id;
 }
 
 /**
@@ -1781,12 +1807,10 @@ function bbp_get_private_status_id() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_hidden_status_id() {
-	global $bbp;
-	return $bbp->hidden_status_id;
+	return bbpress()->hidden_status_id;
 }
 
 /**
@@ -1794,12 +1818,10 @@ function bbp_get_hidden_status_id() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_closed_status_id() {
-	global $bbp;
-	return $bbp->closed_status_id;
+	return bbpress()->closed_status_id;
 }
 
 /**
@@ -1807,12 +1829,10 @@ function bbp_get_closed_status_id() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_spam_status_id() {
-	global $bbp;
-	return $bbp->spam_status_id;
+	return bbpress()->spam_status_id;
 }
 
 /**
@@ -1820,12 +1840,10 @@ function bbp_get_spam_status_id() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_trash_status_id() {
-	global $bbp;
-	return $bbp->trash_status_id;
+	return bbpress()->trash_status_id;
 }
 
 /**
@@ -1833,12 +1851,42 @@ function bbp_get_trash_status_id() {
  *
  * @since bbPress (r3504)
  *
- * @global bbPress $bbp
  * @return string
  */
 function bbp_get_orphan_status_id() {
-	global $bbp;
-	return $bbp->orphan_status_id;
+	return bbpress()->orphan_status_id;
+}
+
+/** Rewrite IDs ***************************************************************/
+
+/**
+ * Return the unique ID for user profile rewrite rules
+ *
+ * @since bbPress (r3762)
+ * @return string
+ */
+function bbp_get_user_rewrite_id() {
+	return bbpress()->user_id;
+}
+
+/**
+ * Return the enique ID for all edit rewrite rules (forum|topic|reply|tag|user)
+ *
+ * @since bbPress (r3762)
+ * @return string
+ */
+function bbp_get_edit_rewrite_id() {
+	return bbpress()->edit_id;
+}
+
+/**
+ * Return the unique ID for topic view rewrite rules
+ *
+ * @since bbPress (r3762)
+ * @return string
+ */
+function bbp_get_view_rewrite_id() {
+	return bbpress()->view_id;
 }
 
 ?>

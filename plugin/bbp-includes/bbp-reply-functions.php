@@ -33,7 +33,7 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
 		'post_parent'    => 0, // topic ID
 		'post_status'    => bbp_get_public_status_id(),
 		'post_type'      => bbp_get_reply_post_type(),
-		'post_author'    => 0,
+		'post_author'    => bbp_get_current_user_id(),
 		'post_password'  => '',
 		'post_content'   => '',
 		'post_title'     => '',
@@ -313,7 +313,7 @@ function bbp_new_reply_handler() {
 			$reply_url = bbp_get_reply_url( $reply_id, $redirect_to );
 
 			// Allow to be filtered
-			$reply_url = apply_filters( 'bbp_new_reply_redirect_to', $reply_url, $redirect_to );
+			$reply_url = apply_filters( 'bbp_new_reply_redirect_to', $reply_url, $redirect_to, $reply_id );
 
 			/** Successful Save ***********************************************/
 

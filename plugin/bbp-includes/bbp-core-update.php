@@ -11,6 +11,19 @@
 if ( !defined( 'ABSPATH' ) ) exit;
 
 /**
+ * If there is no raw DB version, this is the first installation
+ *
+ * @since bbPress (r3764)
+ *
+ * @uses get_option()
+ * @uses bbp_get_db_version() To get bbPress's database version
+ * @return bool True if update, False if not
+ */
+function bbp_is_install() {
+	return ! bbp_get_db_version_raw();
+}
+
+/**
  * Compare the bbPress version to the DB version to determine if updating
  *
  * @since bbPress (r3421)
@@ -20,16 +33,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
  * @return bool True if update, False if not
  */
 function bbp_is_update() {
-
-	// Current DB version of this site (per site in a multisite network)
-	$current_db   = get_option( '_bbp_db_version' );
-	$current_live = bbp_get_db_version();
-
-	// Compare versions (cast as int and bool to be safe)
-	$is_update = (bool) ( (int) $current_db < (int) $current_live );
-
-	// Return the product of version comparison
-	return $is_update;
+	return (bool) ( (int) bbp_get_db_version_raw() < (int) bbp_get_db_version() );
 }
 
 /**
@@ -40,11 +44,10 @@ function bbp_is_update() {
  *
  * @since bbPress (r3421)
  *
- * @global bbPress $bbp
  * @return bool True if activating bbPress, false if not
  */
 function bbp_is_activation( $basename = '' ) {
-	global $bbp;
+	$bbp = bbpress();
 
 	$action = false;
 	if ( ! empty( $_REQUEST['action'] ) && ( '-1' != $_REQUEST['action'] ) )
@@ -78,11 +81,10 @@ function bbp_is_activation( $basename = '' ) {
  * Determine if bbPress is being deactivated
  *
  * @since bbPress (r3421)
- * @global bbPress $bbp
  * @return bool True if deactivating bbPress, false if not
  */
 function bbp_is_deactivation( $basename = '' ) {
-	global $bbp;
+	$bbp = bbpress();
 
 	$action = false;
 	if ( ! empty( $_REQUEST['action'] ) && ( '-1' != $_REQUEST['action'] ) )
@@ -147,6 +149,65 @@ function bbp_setup_updater() {
 		// Run the activation function to reset roles, caps, and rewrite rules
 		bbp_activation();
 	}
+}
+
+/**
+ * Create a default forum, topic, and reply
+ *
+ * @since bbPress (r3767)
+ * @param array $args Array of arguments to override default values
+ */
+function bbp_create_initial_content( $args = array() ) {
+
+	$defaults = array(
+		'forum_parent'  => 0,
+		'forum_status'  => 'publish',
+		'forum_title'   => __( 'General',                                  'bbpress' ),
+		'forum_content' => __( 'General chit-chat',                        'bbpress' ),
+		'topic_title'   => __( 'Hello World!',                             'bbpress' ),
+		'topic_content' => __( 'I am the first topic in your new forums.', 'bbpress' ),
+		'reply_title'   => __( 'Re: Hello World!',                         'bbpress' ),
+		'reply_content' => __( 'Oh, and this is what a reply looks like.', 'bbpress' ),
+	);
+	$r = wp_parse_args( apply_filters( 'bbp_pre_create_initial_content', $args ), $defaults );
+	extract( $r );
+
+	// Create the initial forum
+	$forum_id = bbp_insert_forum( array(
+		'post_parent'  => $forum_parent,
+		'post_status'  => $forum_status,
+		'post_title'   => $forum_title,
+		'post_content' => $forum_content
+	) );
+
+	// Create the initial topic
+	$topic_id = bbp_insert_topic(
+		array(
+			'post_parent'  => $forum_id,
+			'post_title'   => $topic_title,
+			'post_content' => $topic_content
+		),
+		array( 'forum_id'  => $forum_id )
+	);
+
+	// Create the initial reply
+	$reply_id = bbp_insert_reply(
+		array(
+			'post_parent'  => $topic_id,
+			'post_title'   => $reply_title,
+			'post_content' => $reply_content
+		),
+		array(
+			'forum_id'     => $forum_id,
+			'topic_id'     => $topic_id
+		)
+	);
+
+	return array(
+		'forum_id' => $forum_id,
+		'topic_id' => $topic_id,
+		'reply_id' => $reply_id
+	);
 }
 
 ?>

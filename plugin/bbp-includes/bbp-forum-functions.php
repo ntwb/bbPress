@@ -33,7 +33,7 @@ function bbp_insert_forum( $forum_data = array(), $forum_meta = array() ) {
 		'post_parent'    => 0, // forum ID
 		'post_status'    => bbp_get_public_status_id(),
 		'post_type'      => bbp_get_forum_post_type(),
-		'post_author'    => 0,
+		'post_author'    => bbp_get_current_user_id(),
 		'post_password'  => '',
 		'post_content'   => '',
 		'post_title'     => '',
@@ -1627,8 +1627,23 @@ function bbp_forum_query_topic_ids( $forum_id ) {
  */
 function bbp_forum_query_subforum_ids( $forum_id ) {
 	$subforum_ids = bbp_get_public_child_ids( $forum_id, bbp_get_forum_post_type() );
+	//usort( $subforum_ids, '_bbp_forum_query_usort_subforum_ids' );
 
 	return apply_filters( 'bbp_get_forum_subforum_ids', $subforum_ids, $forum_id );
+}
+
+/**
+ * Callback to sort forum ID's based on last active time
+ *
+ * @since bbPress (r3789)
+ * @param int $a First forum ID to compare
+ * @param int $b Second forum ID to compare
+ * @return Position change based on sort
+ */
+function _bbp_forum_query_usort_subforum_ids( $a = 0, $b = 0 ) {
+	$ta = get_post_meta( $a, '_bbp_last_active_time', true );
+	$tb = get_post_meta( $b, '_bbp_last_active_time', true );
+	return ( $ta < $tb ) ? -1 : 1;
 }
 
 /**
@@ -1803,7 +1818,7 @@ function bbp_check_forum_edit() {
 }
 
 /**
- * Trash all topics inside a forum
+ * Delete all topics (and their replies) for a specific forum ID
  *
  * @since bbPress (r3668)
  *
@@ -1825,8 +1840,6 @@ function bbp_delete_forum_topics( $forum_id = 0 ) {
 	if ( empty( $forum_id ) )
 		return;
 
-	global $bbp;
-
 	// Forum is being permanently deleted, so its topics gotta go too
 	if ( bbp_has_topics( array(
 		'post_type'      => bbp_get_topic_post_type(),
@@ -1840,7 +1853,7 @@ function bbp_delete_forum_topics( $forum_id = 0 ) {
 	) ) ) {
 		while ( bbp_topics() ) {
 			bbp_the_topic();
-			wp_delete_post( $bbp->topic_query->post->ID, true );
+			wp_delete_post( bbpress()->topic_query->post->ID, true );
 		}
 	}
 }
@@ -1850,7 +1863,6 @@ function bbp_delete_forum_topics( $forum_id = 0 ) {
  * 
  * @since bbPress (r3668)
  *
- * @global bbPress $bbp
  * @param int $forum_id
  * @uses bbp_get_forum_id() To validate the forum ID
  * @uses bbp_is_forum() To make sure it's a forum
@@ -1871,8 +1883,6 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
 
 	if ( empty( $forum_id ) )
 		return;
-
-	global $bbp;
 
 	// Allowed post statuses to pre-trash
 	$post_stati = join( ',', array(
@@ -1895,6 +1905,7 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
 
 		// Prevent debug notices
 		$pre_trashed_topics = array();
+		$bbp                = bbpress();
 
 		// Loop through topics, trash them, and add them to array
 		while ( bbp_topics() ) {
@@ -1915,7 +1926,6 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
  *
  * @since bbPress (r3668)
  *
- * @global bbPress $bbp
  * @param int $forum_id
  * @uses bbp_get_forum_id() To validate the forum ID
  * @uses bbp_is_forum() To make sure it's a forum
