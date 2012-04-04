@@ -48,6 +48,7 @@ add_action( 'wp_enqueue_scripts',     'bbp_enqueue_scripts',        10 );
 add_action( 'template_redirect',      'bbp_template_redirect',      10 );
 add_filter( 'template_include',       'bbp_template_include',       10 );
 add_action( 'set_current_user',       'bbp_setup_current_user',     10 );
+add_action( 'after_setup_theme',      'bbp_after_setup_theme',      10 );
 
 /**
  * bbp_loaded - Attached to 'plugins_loaded' above
@@ -69,16 +70,19 @@ add_action( 'bbp_loaded', 'bbp_register_theme_directory', 10 );
  * The load order helps to execute code at the correct time.
  *                                                    v---Load order
  */
-add_action( 'bbp_init', 'bbp_load_textdomain',        2   );
-add_action( 'bbp_init', 'bbp_setup_option_filters',   4   );
-add_action( 'bbp_init', 'bbp_setup_theme_compat',     8   );
-add_action( 'bbp_init', 'bbp_register_post_types',    10  );
-add_action( 'bbp_init', 'bbp_register_post_statuses', 12  );
-add_action( 'bbp_init', 'bbp_register_taxonomies',    14  );
-add_action( 'bbp_init', 'bbp_register_views',         16  );
-add_action( 'bbp_init', 'bbp_register_shortcodes',    18  );
-add_action( 'bbp_init', 'bbp_add_rewrite_tags',       20  );
-add_action( 'bbp_init', 'bbp_ready',                  999 );
+add_action( 'bbp_init', 'bbp_load_textdomain',         2   );
+add_action( 'bbp_init', 'bbp_setup_option_filters',    4   );
+add_action( 'bbp_init', 'bbp_register_post_types',     10  );
+add_action( 'bbp_init', 'bbp_register_post_statuses',  12  );
+add_action( 'bbp_init', 'bbp_register_taxonomies',     14  );
+add_action( 'bbp_init', 'bbp_register_views',          16  );
+add_action( 'bbp_init', 'bbp_register_shortcodes',     18  );
+add_action( 'bbp_init', 'bbp_add_rewrite_tags',        20  );
+add_action( 'bbp_init', 'bbp_ready',                   999 );
+
+// Autoembeds
+add_filter( 'bbp_init', 'bbp_reply_content_autoembed', 8   );
+add_filter( 'bbp_init', 'bbp_topic_content_autoembed', 8   );
 
 /**
  * bbp_ready - attached to end 'bbp_init' above
@@ -90,11 +94,18 @@ add_action( 'bbp_init', 'bbp_ready',                  999 );
 add_action( 'bbp_ready',  'bbp_setup_akismet',    2  ); // Spam prevention for topics and replies
 add_action( 'bp_include', 'bbp_setup_buddypress', 10 ); // Social network integration
 
-// Multisite Global Forum Access
-add_action( 'bbp_setup_current_user', 'bbp_global_access_role_mask',  10 );
+/**
+ * bbp_after_setup_theme  - attached to 'after_setup_theme' above
+ *
+ * Attach theme related actions to take place after the theme's functions.php
+ * file has been included.
+ *                                                               v---Load order
+ */
+add_action( 'bbp_after_setup_theme', 'bbp_setup_theme_compat',   8  );
+add_action( 'bbp_after_setup_theme', 'bbp_load_theme_functions', 10 );
 
-// Theme Compat
-add_action( 'bbp_enqueue_scripts',    'bbp_theme_compat_enqueue_css', 10 );
+// Multisite Global Forum Access
+add_action( 'bbp_setup_current_user', 'bbp_global_access_role_mask', 10 );
 
 // Widgets
 add_action( 'bbp_widgets_init', array( 'BBP_Login_Widget',   'register_widget' ), 10 );
@@ -431,6 +442,18 @@ add_filter( 'comments_open', 'bbp_force_comment_status' );
 
 // Add post_parent__in to posts_where
 add_filter( 'posts_where', 'bbp_query_post_parent__in', 10, 2 );
+
+// Filter bbPress template locations
+add_filter( 'bbp_get_template_part',         'bbp_add_template_locations' );
+add_filter( 'bbp_get_profile_template',      'bbp_add_template_locations' );
+add_filter( 'bbp_get_profileedit_template',  'bbp_add_template_locations' );
+add_filter( 'bbp_get_singleview_template',   'bbp_add_template_locations' );
+add_filter( 'bbp_get_forumedit_template',    'bbp_add_template_locations' );
+add_filter( 'bbp_get_topicedit_template',    'bbp_add_template_locations' );
+add_filter( 'bbp_get_topicsplit_template',   'bbp_add_template_locations' );
+add_filter( 'bbp_get_topicmerge_template',   'bbp_add_template_locations' );
+add_filter( 'bbp_get_topictag_template',     'bbp_add_template_locations' );
+add_filter( 'bbp_get_topictagedit_template', 'bbp_add_template_locations' );
 
 /**
  * Add filters to anonymous post author data
@@ -795,6 +818,19 @@ function bbp_template_include( $template = '' ) {
  */
 function bbp_template_redirect() {
 	do_action( 'bbp_template_redirect' );
+}
+
+/** Theme Permissions *********************************************************/
+
+/**
+ * The main action used for executing code after the theme has been setup
+ *
+ * @since bbPress (r3732)
+ *
+ * @uses do_action()
+ */
+function bbp_after_setup_theme() {
+	do_action( 'bbp_after_setup_theme' );
 }
 
 ?>

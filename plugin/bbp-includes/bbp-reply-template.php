@@ -611,7 +611,11 @@ function bbp_reply_revision_log( $reply_id = 0 ) {
 			$since  = bbp_get_time_since( bbp_convert_date( $revision->post_modified ) );
 
 			$r .= "\t" . '<li id="bbp-reply-revision-log-' . $reply_id . '-item-' . $revision->ID . '" class="bbp-reply-revision-log-item">' . "\n";
-				$r .= "\t\t" . sprintf( __( empty( $reason ) ? 'This reply was modified %1$s ago by %2$s.' : 'This reply was modified %1$s ago by %2$s. Reason: %3$s', 'bbpress' ), $since, $author, $reason ) . "\n";
+			if ( !empty( $reason ) ) {
+				$r .= "\t\t" . sprintf( __( 'This reply was modified %1$s ago by %2$s. Reason: %3$s', 'bbpress' ), $since, $author, $reason ) . "\n";
+			} else {
+				$r .= "\t\t" . sprintf( __( 'This reply was modified %1$s ago by %2$s.', 'bbpress' ), $since, $author ) . "\n";
+			}
 			$r .= "\t" . '</li>' . "\n";
 
 		}
@@ -1174,10 +1178,6 @@ function bbp_reply_topic_id( $reply_id = 0 ) {
 	 * @param int $reply_id Optional. Reply id
 	 * @uses bbp_get_reply_id() To get the reply id
 	 * @uses get_post_meta() To get the reply topic id from meta
-	 * @uses get_post_ancestors() To get the reply's ancestors
-	 * @uses get_post_field() To get the ancestor's post type
-	 * @uses bbp_get_topic_post_type() To get the topic post type
-	 * @uses bbp_update_reply_topic_id() To update the reply topic id
 	 * @uses bbp_get_topic_id() To get the topic id
 	 * @uses apply_filters() Calls 'bbp_get_reply_topic_id' with the topic
 	 *                        id and reply id
@@ -1804,59 +1804,31 @@ function bbp_topic_pagination_count() {
 		$start_num = intval( ( $bbp->reply_query->paged - 1 ) * $bbp->reply_query->posts_per_page ) + 1;
 		$from_num  = bbp_number_format( $start_num );
 		$to_num    = bbp_number_format( ( $start_num + ( $bbp->reply_query->posts_per_page - 1 ) > $bbp->reply_query->found_posts ) ? $bbp->reply_query->found_posts : $start_num + ( $bbp->reply_query->posts_per_page - 1 ) );
-		$total     = bbp_number_format( $bbp->reply_query->found_posts );
-
-		/**
-		 * Translators - _n() should not be needed, as singular/plural strings
-		 * are already separated into unique strings for you
-		 */
+		$total_int = (int) $bbp->reply_query->found_posts;
+		$total     = bbp_number_format( $total_int );
 
 		// We are not including the lead topic
 		if ( bbp_show_lead_topic() ) {
 
-			// More than 1 reply
-			if ( $total > 1 ) {
+			// Several replies in a topic with a single page
+			if ( empty( $to_num ) ) {
+				$retstr = sprintf( _n( 'Viewing %1$s reply', 'Viewing %1$s replies', $total_int, 'bbpress' ), $total );
 
-				// Single reply in a topic with several pages
-				if ( (int) $from_num == (int) $to_num ) {
-					$retstr = sprintf( __( 'Viewing reply %1$s (of %2$s total)', 'bbpress' ), $from_num, $total );
-
-				// Several replies in a topic with a single page
-				} elseif ( empty( $to_num ) ) {
-					$retstr = sprintf( __( 'Viewing %1$s replies', 'bbpress' ), $total );
-
-				// Several replies in a topic with several pages
-				} elseif ( (int) $from_num != (int) $to_num ) {
-					$retstr = sprintf( __( 'Viewing %1$s replies - %2$s through %3$s (of %4$s total)', 'bbpress' ), $bbp->reply_query->post_count, $from_num, $to_num, $total );
-				}
-
-			// Only one reply
+			// Several replies in a topic with several pages
 			} else {
-				$retstr = sprintf( __( 'Viewing %1$s reply', 'bbpress' ), $total );
+				$retstr = sprintf( _n( 'Viewing %2$s replies (of %4$s total)', 'Viewing %1$s replies - %2$s through %3$s (of %4$s total)', $bbp->reply_query->post_count, 'bbpress' ), $bbp->reply_query->post_count, $from_num, $to_num, $total );
 			}
 
 		// We are including the lead topic
 		} else {
 
-			// More than 1 post
-			if ( $total > 1 ) {
+			// Several posts in a topic with a single page
+			if ( empty( $to_num ) ) {
+				$retstr = sprintf( _n( 'Viewing %1$s post', 'Viewing %1$s posts', $total_int, 'bbpress' ), $total );
 
-				// Single post in a topic with several pages
-				if( (int) $from_num == (int) $to_num ) {
-					$retstr = sprintf( __( 'Viewing post %1$s (of %2$s total)', 'bbpress' ), $from_num, $total );
-
-				// Several posts in a topic with a single page
-				} elseif ( empty( $to_num ) ) {
-					$retstr = sprintf( __( 'Viewing %1$s posts', 'bbpress' ), $total );
-
-				// Several posts in a topic with several pages
-				} elseif ( (int) $from_num != (int) $to_num ) {
-					$retstr = sprintf( __( 'Viewing %1$s posts - %2$s through %3$s (of %4$s total)', 'bbpress' ), $bbp->reply_query->post_count, $from_num, $to_num, $total );
-				}
-
-			// Only one post
-			} elseif ( $total == 1 ) {
-				$retstr = sprintf( __( 'Viewing %1$s post', 'bbpress' ), $total );
+			// Several posts in a topic with several pages
+			} else {
+				$retstr = sprintf( _n( 'Viewing %2$s post (of %4$s total)', 'Viewing %1$s posts - %2$s through %3$s (of %4$s total)', $bbp->reply_query->post_count, 'bbpress' ), $bbp->reply_query->post_count, $from_num, $to_num, $total );
 			}
 		}
 

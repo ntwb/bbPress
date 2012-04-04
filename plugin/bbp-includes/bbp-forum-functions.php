@@ -171,19 +171,18 @@ function bbp_new_forum_handler() {
 	/** Forum Parent **********************************************************/
 
 	// Forum parent was passed (the norm)
-	if ( !empty( $_POST['bbp_forum_parent_id'] ) ) {
+	if ( !empty( $_POST['bbp_forum_parent_id'] ) )
 		$forum_parent_id = (int) $_POST['bbp_forum_parent_id'];
-
-	// No forum parent was passed (should never happen)
-	} elseif ( !isset( $_POST['bbp_forum_parent_id'] ) ) {
-		bbp_add_error( 'bbp_new_forum_missing_parent', __( '<strong>ERROR</strong>: Your forum must have a parent.', 'bbpress' ) );
-	}
-
+		
 	// Filter and sanitize
 	$forum_parent_id = apply_filters( 'bbp_new_forum_pre_parent_id', $forum_parent_id );
 
+	// No forum parent was passed (should never happen)
+	if ( empty( $forum_parent_id ) ) {
+		bbp_add_error( 'bbp_new_forum_missing_parent', __( '<strong>ERROR</strong>: Your forum must have a parent.', 'bbpress' ) );
+
 	// Forum exists
-	if ( !empty( $forum_parent_id ) ) {
+	} elseif ( !empty( $forum_parent_id ) ) {
 
 		// Forum is a category
 		if ( bbp_is_forum_category( $forum_parent_id ) ) {
@@ -648,28 +647,24 @@ function bbp_save_forum_extras( $forum_id = 0 ) {
 		// Get forums current visibility
 		$visibility = bbp_get_forum_visibility( $forum_id );
 
-		// If new visibility is different, change it
-		if ( $visibility != $_POST['bbp_forum_visibility'] ) {
+		// What is the new forum visibility setting?
+		switch ( $_POST['bbp_forum_visibility'] ) {
 
-			// What is the new forum visibility setting?
-			switch ( $_POST['bbp_forum_visibility'] ) {
+			// Hidden
+			case bbp_get_hidden_status_id()  :
+				bbp_hide_forum( $forum_id, $visibility );
+				break;
 
-				// Hidden
-				case bbp_get_hidden_status_id()  :
-					bbp_hide_forum( $forum_id, $visibility );
-					break;
+			// Private
+			case bbp_get_private_status_id() :
+				bbp_privatize_forum( $forum_id, $visibility );
+				break;
 
-				// Private
-				case bbp_get_private_status_id() :
-					bbp_privatize_forum( $forum_id, $visibility );
-					break;
-
-				// Publish (default)
-				case bbp_get_public_status_id()  :
-				default        :
-					bbp_publicize_forum( $forum_id, $visibility );
-					break;
-			}
+			// Publish (default)
+			case bbp_get_public_status_id()  :
+			default        :
+				bbp_publicize_forum( $forum_id, $visibility );
+				break;
 		}
 	}
 }
@@ -805,46 +800,38 @@ function bbp_publicize_forum( $forum_id = 0, $current_visibility = '' ) {
 
 	do_action( 'bbp_publicize_forum',  $forum_id );
 
+	// Get private forums
+	$private = bbp_get_private_forum_ids();
+
+	// Find this forum in the array
+	if ( in_array( $forum_id, $private ) ) {
+
+		$offset = array_search( $forum_id, (array) $private );
+
+		// Splice around it
+		array_splice( $private, $offset, 1 );
+
+		// Update private forums minus this one
+		update_option( '_bbp_private_forums', array_unique( array_values( $private ) ) );
+	}
+
+	// Get hidden forums
+	$hidden = bbp_get_hidden_forum_ids();
+
+	// Find this forum in the array
+	if ( in_array( $forum_id, $hidden ) ) {
+
+		$offset = array_search( $forum_id, (array) $hidden );
+
+		// Splice around it
+		array_splice( $hidden, $offset, 1 );
+
+		// Update hidden forums minus this one
+		update_option( '_bbp_hidden_forums', array_unique( array_values( $hidden ) ) );
+	}
+
 	// Only run queries if visibility is changing
 	if ( bbp_get_public_status_id() != $current_visibility ) {
-
-		// Remove from _bbp_private_forums site option
-		if ( bbp_get_private_status_id() == $current_visibility ) {
-
-			// Get private forums
-			$private = bbp_get_private_forum_ids();
-
-			// Find this forum in the array
-			if ( in_array( $forum_id, $private ) ) {
-
-				$offset = array_search( $forum_id, (array) $private );
-
-				// Splice around it
-				array_splice( $private, $offset, 1 );
-
-				// Update private forums minus this one
-				update_option( '_bbp_private_forums', array_unique( array_values( $private ) ) );
-			}
-		}
-
-		// Remove from _bbp_hidden_forums site option
-		if ( bbp_get_hidden_status_id() == $current_visibility ) {
-
-			// Get hidden forums
-			$hidden = bbp_get_hidden_forum_ids();
-
-			// Find this forum in the array
-			if ( in_array( $forum_id, $hidden ) ) {
-
-				$offset = array_search( $forum_id, (array) $hidden );
-
-				// Splice around it
-				array_splice( $hidden, $offset, 1 );
-
-				// Update hidden forums minus this one
-				update_option( '_bbp_hidden_forums', array_unique( array_values( $hidden ) ) );
-			}
-		}
 
 		// Update forum post_status
 		global $wpdb;

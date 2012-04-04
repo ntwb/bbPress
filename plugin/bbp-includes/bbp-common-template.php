@@ -863,7 +863,7 @@ function bbp_redirect_to_field( $redirect_to = '' ) {
 
 	// Remove loggedout query arg if it's there
 	$redirect_to    = (string) esc_attr( remove_query_arg( 'loggedout', $redirect_to ) );
-	$redirect_field = '<input type="hidden" name="redirect_to" value="' . $redirect_to . '" />';
+	$redirect_field = '<input type="hidden" id="bbp_redirect_to" name="redirect_to" value="' . $redirect_to . '" />';
 
 	echo apply_filters( 'bbp_redirect_to_field', $redirect_field, $redirect_to );
 }
@@ -1169,7 +1169,7 @@ function bbp_forum_form_fields() {
 
 		if ( bbp_is_single_forum() ) : ?>
 
-			<input type="hidden" name="bbp_forum_id" id="bbp_forum_id" value="<?php bbp_forum_id(); ?>" />
+			<input type="hidden" name="bbp_forum_parent_id" id="bbp_forum_parent_id" value="<?php bbp_forum_parent_id(); ?>" />
 
 		<?php endif; ?>
 
@@ -1220,16 +1220,14 @@ function bbp_topic_form_fields() {
 
 			<input type="hidden" name="bbp_forum_id" id="bbp_forum_id" value="<?php bbp_forum_id(); ?>" />
 
+			<?php bbp_redirect_to_field( get_permalink() ); ?>
+
 		<?php endif; ?>
 
 		<input type="hidden" name="action" id="bbp_post_action" value="bbp-new-topic" />
 
-		<?php
-
-		if ( current_user_can( 'unfiltered_html' ) )
-			wp_nonce_field( 'bbp-unfiltered-html-topic_new', '_bbp_unfiltered_html_topic', false );
-
-		?>
+		<?php if ( current_user_can( 'unfiltered_html' ) )
+			wp_nonce_field( 'bbp-unfiltered-html-topic_new', '_bbp_unfiltered_html_topic', false ); ?>
 
 		<?php wp_nonce_field( 'bbp-new-topic' );
 
@@ -1249,49 +1247,35 @@ function bbp_topic_form_fields() {
  */
 function bbp_reply_form_fields() {
 
-	if ( bbp_is_reply_edit() ) { ?>
+	if ( bbp_is_reply_edit() ) : ?>
 
 		<input type="hidden" name="bbp_reply_title" id="bbp_reply_title" value="<?php printf( __( 'Reply To: %s', 'bbpress' ), bbp_get_topic_title() ); ?>" maxlength="<?php bbp_get_title_max_length(); ?>" />
 		<input type="hidden" name="bbp_reply_id"    id="bbp_reply_id"    value="<?php bbp_reply_id(); ?>" />
 		<input type="hidden" name="action"          id="bbp_post_action" value="bbp-edit-reply" />
 
-		<?php
-
-		if ( current_user_can( 'unfiltered_html' ) )
-			wp_nonce_field( 'bbp-unfiltered-html-reply_' . bbp_get_reply_id(), '_bbp_unfiltered_html_reply', false );
-
-		?>
+		<?php if ( current_user_can( 'unfiltered_html' ) )
+			wp_nonce_field( 'bbp-unfiltered-html-reply_' . bbp_get_reply_id(), '_bbp_unfiltered_html_reply', false ); ?>
 
 		<?php wp_nonce_field( 'bbp-edit-reply_' . bbp_get_reply_id() );
 
-	} else {
-
-	?>
+	else : ?>
 
 		<input type="hidden" name="bbp_reply_title" id="bbp_reply_title" value="<?php printf( __( 'Reply To: %s', 'bbpress' ), bbp_get_topic_title() ); ?>" maxlength="<?php bbp_get_title_max_length(); ?>" />
 		<input type="hidden" name="bbp_forum_id"    id="bbp_forum_id"    value="<?php bbp_forum_id(); ?>" />
 		<input type="hidden" name="bbp_topic_id"    id="bbp_topic_id"    value="<?php bbp_topic_id(); ?>" />
 		<input type="hidden" name="action"          id="bbp_post_action" value="bbp-new-reply" />
 
-		<?php
+		<?php if ( current_user_can( 'unfiltered_html' ) )
+			wp_nonce_field( 'bbp-unfiltered-html-reply_' . bbp_get_topic_id(), '_bbp_unfiltered_html_reply', false ); ?>
 
-		if ( current_user_can( 'unfiltered_html' ) )
-			wp_nonce_field( 'bbp-unfiltered-html-reply_' . bbp_get_topic_id(), '_bbp_unfiltered_html_reply', false );
-
-		?>
-
-		<?php
-
-		wp_nonce_field( 'bbp-new-reply' );
+		<?php wp_nonce_field( 'bbp-new-reply' );
 
 		// Show redirect field if not viewing a specific topic
-		if ( bbp_is_query_name( 'bbp_single_topic' ) ) : ?>
+		if ( bbp_is_query_name( 'bbp_single_topic' ) ) :
+			bbp_redirect_to_field( get_permalink() );
 
-			<input type="hidden" name="redirect_to" id="bbp_redirect_to" value="<?php the_permalink(); ?>" />
-
-		<?php endif;
-
-	}
+		endif;
+	endif;
 }
 
 /**
@@ -1403,13 +1387,12 @@ function bbp_the_content( $args = array() ) {
 		if ( !empty( $before ) )
 			echo $before;
 
-		// Use TinyMCE if available
-		if ( function_exists( 'wp_editor' ) && bbp_use_wp_editor() ) {
+		// Get sanitized content
+		if ( bbp_is_edit() )
+			$post_content = call_user_func( 'bbp_get_form_' . $context . '_content' );
 
-			// If it's an edit, use the global post's post_content
-			if ( bbp_is_edit() ) {
-				$post_content = bbp_get_global_post_field( 'post_content', 'raw' );
-			}
+		// Use TinyMCE if available
+		if ( bbp_use_wp_editor() ) :
 
 			$settings = array(
 				'wpautop'       => $wpautop,
@@ -1423,19 +1406,11 @@ function bbp_the_content( $args = array() ) {
 			wp_editor( $post_content, 'bbp_' . $context . '_content', $settings );
 
 		// Fallback to normal textarea
-		} else {
-
-			// Get sanitized content
-			if ( bbp_is_edit() ) {
-				$post_content = call_user_func( 'bbp_get_form_' . $context . '_content' );
-			}
-
-			?>
+		else : ?>
 
 			<textarea id="bbp_<?php echo $context; ?>_content" class="<?php echo $editor_class; ?>" name="bbp_<?php echo $context; ?>_content" cols="60" rows="<?php echo $textarea_rows; ?>" tabindex="<?php echo $tabindex; ?>"><?php echo $post_content; ?></textarea>
 
-			<?php
-		}
+		<?php endif;
 
 		// Output something after the editor
 		if ( !empty( $after ) )
