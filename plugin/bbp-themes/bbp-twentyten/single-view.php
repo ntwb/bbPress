@@ -7,9 +7,7 @@
  * @subpackage Theme
  */
 
-?>
-
-<?php get_header(); ?>
+get_header(); ?>
 
 		<div id="container">
 			<div id="content" role="main">
@@ -20,7 +18,7 @@
 					<h1 class="entry-title"><?php bbp_view_title(); ?></h1>
 					<div class="entry-content">
 
-						<?php bbp_get_template_part( 'bbpress/content', 'single-view' ); ?>
+						<?php bbp_get_template_part( 'content', 'single-view' ); ?>
 
 					</div>
 				</div><!-- #bbp-view-<?php bbp_view_id(); ?> -->

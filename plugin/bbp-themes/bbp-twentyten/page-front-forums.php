@@ -7,9 +7,7 @@
  * @subpackage Theme
  */
 
-?>
-
-<?php get_header(); ?>
+get_header(); ?>
 
 		<div id="container">
 			<div id="content" role="main">
@@ -24,7 +22,7 @@
 
 							<?php the_content(); ?>
 
-							<?php bbp_get_template_part( 'bbpress/content', 'archive-forum' ); ?>
+							<?php bbp_get_template_part( 'content', 'archive-forum' ); ?>
 
 						</div>
 					</div><!-- #forum-front -->

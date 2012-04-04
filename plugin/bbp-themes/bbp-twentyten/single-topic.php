@@ -7,9 +7,7 @@
  * @subpackage Theme
  */
 
-?>
-
-<?php get_header(); ?>
+get_header(); ?>
 
 		<div id="container">
 			<div id="content" role="main">
@@ -24,7 +22,7 @@
 							<h1 class="entry-title"><?php bbp_topic_title(); ?></h1>
 							<div class="entry-content">
 
-								<?php bbp_get_template_part( 'bbpress/content', 'single-topic' ); ?>
+								<?php bbp_get_template_part( 'content', 'single-topic' ); ?>
 
 							</div>
 						</div><!-- #bbp-topic-wrapper-<?php bbp_topic_id(); ?> -->
@@ -33,7 +31,7 @@
 
 				<?php elseif ( bbp_is_forum_private( bbp_get_topic_forum_id(), false ) ) : ?>
 
-					<?php bbp_get_template_part( 'bbpress/feedback', 'no-access' ); ?>
+					<?php bbp_get_template_part( 'feedback', 'no-access' ); ?>
 
 				<?php endif; ?>
 
