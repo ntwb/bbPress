@@ -478,7 +478,6 @@ function bbp_is_topics_created() {
  * @return bool True if it's the user's home, false if not
  */
 function bbp_is_user_home() {
-	global $bbp;
 
 	// Assume false
 	$retval = false;
@@ -855,7 +854,7 @@ function bbp_wp_login_action( $args = '' ) {
 function bbp_redirect_to_field( $redirect_to = '' ) {
 
 	// Rejig the $redirect_to
-	if ( !isset( $_SERVER['REDIRECT_URL'] ) || ( !$redirect_to = home_url( $_SERVER['REDIRECT_URL'] ) ) )
+	if ( !isset( $_SERVER['REDIRECT_URL'] ) || ( !$redirect_to == home_url( $_SERVER['REDIRECT_URL'] ) ) )
 		$redirect_to = wp_get_referer();
 
 	// Make sure we are directing somewhere
@@ -1074,15 +1073,17 @@ function bbp_dropdown( $args = '' ) {
 		$post_stati[] = bbp_get_public_status_id();
 
 		// Forums
-		if ( $post_type == bbp_get_forum_post_type() ) {
+		if ( bbp_get_forum_post_type() == $post_type ) {
 
 			// Private forums
-			if ( current_user_can( 'read_private_forums' ) )
+			if ( current_user_can( 'read_private_forums' ) ) {
 				$post_stati[] = bbp_get_private_status_id();
+			}
 
 			// Hidden forums
-			if ( current_user_can( 'read_hidden_forums' ) )
+			if ( current_user_can( 'read_hidden_forums' ) ) {
 				$post_stati[] = bbp_get_hidden_status_id();
+			}
 		}
 
 		// Setup the post statuses
@@ -1364,7 +1365,6 @@ function bbp_the_content( $args = array() ) {
 	 *
 	 * @since bbPress (r3586)
 	 *
-	 * @global obj $post
 	 * @param array $args
 	 *
 	 * @uses apply_filter() To filter args and output
@@ -1406,10 +1406,9 @@ function bbp_the_content( $args = array() ) {
 		// Use TinyMCE if available
 		if ( function_exists( 'wp_editor' ) && bbp_use_wp_editor() ) {
 
-			// If it's an edit, use the $post global
+			// If it's an edit, use the global post's post_content
 			if ( bbp_is_edit() ) {
-				global $post;
-				$post_content = $post->post_content;
+				$post_content = bbp_get_global_post_field( 'post_content', 'raw' );
 			}
 
 			$settings = array(
@@ -1516,7 +1515,8 @@ function bbp_view_title( $view = '' ) {
 	function bbp_get_view_title( $view = '' ) {
 		global $bbp;
 
-		if ( !$view = bbp_get_view_id( $view ) )
+		$view = bbp_get_view_id( $view );
+		if ( empty( $view ) )
 			return false;
 
 		return $bbp->views[$view]['title'];
@@ -1549,7 +1549,8 @@ function bbp_view_url( $view = false ) {
 	function bbp_get_view_url( $view = false ) {
 		global $bbp, $wp_rewrite;
 
-		if ( !$view = bbp_get_view_id( $view ) )
+		$view = bbp_get_view_id( $view );
+		if ( empty( $view ) )
 			return home_url();
 
 		// Pretty permalinks

@@ -152,14 +152,20 @@ function bbp_new_reply_handler() {
 	/** Topic ID **************************************************************/
 
 	// Handle Topic ID to append reply to
-	if ( isset( $_POST['bbp_topic_id'] ) && ( !$topic_id = (int) $_POST['bbp_topic_id'] ) )
+	if ( isset( $_POST['bbp_topic_id'] ) ) {
+		$topic_id = (int) $_POST['bbp_topic_id'];
+	} else {
 		bbp_add_error( 'bbp_reply_topic_id', __( '<strong>ERROR</strong>: Topic ID is missing.', 'bbpress' ) );
+	}
 
 	/** Forum ID **************************************************************/
 
 	// Handle Forum ID to adjust counts of
-	if ( isset( $_POST['bbp_forum_id'] ) && ( !$forum_id = (int) $_POST['bbp_forum_id'] ) )
+	if ( isset( $_POST['bbp_forum_id'] ) ) {
+		$forum_id = (int) $_POST['bbp_forum_id'];
+	} else {
 		bbp_add_error( 'bbp_reply_forum_id', __( '<strong>ERROR</strong>: Forum ID is missing.', 'bbpress' ) );
+	}
 
 	/** Unfiltered HTML *******************************************************/
 
@@ -230,7 +236,7 @@ function bbp_new_reply_handler() {
 
 		/** Create new reply **************************************************/
 
-		// Add the content of the form to $post as an array
+		// Add the content of the form to $reply_data as an array
 		$reply_data = array(
 			'post_author'    => $reply_author,
 			'post_title'     => $reply_title,
@@ -293,6 +299,10 @@ function bbp_new_reply_handler() {
 			/** Update counts, etc... *****************************************/
 
 			do_action( 'bbp_new_reply', $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author );
+
+			/** Additional Actions (After Save) *******************************/
+
+			do_action( 'bbp_new_reply_post_extras', $reply_id );
 
 			/** Redirect ******************************************************/
 
@@ -400,7 +410,7 @@ function bbp_edit_reply_handler() {
 		} else {
 
 			// Filter anonymous data
-			$anonymous_data = bbp_filter_anonymous_post_data( array(), true );
+			$anonymous_data = bbp_filter_anonymous_post_data();
 		}
 	}
 
@@ -483,7 +493,7 @@ function bbp_edit_reply_handler() {
 	// Handle insertion into posts table
 	if ( !bbp_has_errors() ) {
 
-		// Add the content of the form to $post as an array
+		// Add the content of the form to $reply_data as an array
 		$reply_data = array(
 			'ID'           => $reply_id,
 			'post_title'   => $reply_title,
@@ -517,13 +527,16 @@ function bbp_edit_reply_handler() {
 			$reply_edit_reason = esc_attr( strip_tags( $_POST['bbp_reply_edit_reason'] ) );
 
 		// Update revision log
-		if ( !empty( $_POST['bbp_log_reply_edit'] ) && ( 1 == $_POST['bbp_log_reply_edit'] ) && ( $revision_id = wp_save_post_revision( $reply_id ) ) ) {
-			bbp_update_reply_revision_log( array(
-				'reply_id'    => $reply_id,
-				'revision_id' => $revision_id,
-				'author_id'   => bbp_get_current_user_id(),
-				'reason'      => $reply_edit_reason
-			) );
+		if ( !empty( $_POST['bbp_log_reply_edit'] ) && ( 1 == $_POST['bbp_log_reply_edit'] ) ) {
+			$revision_id = wp_save_post_revision( $reply_id );
+			if ( !empty( $revision_id ) ) {
+				bbp_update_reply_revision_log( array(
+					'reply_id'    => $reply_id,
+					'revision_id' => $revision_id,
+					'author_id'   => bbp_get_current_user_id(),
+					'reason'      => $reply_edit_reason
+				) );
+			}
 		}
 
 		/** No Errors *********************************************************/
@@ -616,19 +629,23 @@ function bbp_update_reply( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymo
 	// It expects anonymous_data to be sanitized.
 	// Check bbp_filter_anonymous_post_data() for sanitization.
 	if ( !empty( $anonymous_data ) && is_array( $anonymous_data ) ) {
-		extract( $anonymous_data );
 
-		update_post_meta( $reply_id, '_bbp_anonymous_name',  $bbp_anonymous_name,  false );
-		update_post_meta( $reply_id, '_bbp_anonymous_email', $bbp_anonymous_email, false );
+		// Always set at least these three values to empty
+		$defaults = array(
+			'bbp_anonymous_name'    => '',
+			'bbp_anonymous_email'   => '',
+			'bbp_anonymous_website' => '',
+		);
+		$r = wp_parse_args( $anonymous_data, $defaults );
+
+		// Update all anonymous metas
+		foreach( $r as $anon_key => $anon_value ) {
+			update_post_meta( $reply_id, '_' . $anon_key, (string) $anon_value, false );
+		}
 
 		// Set transient for throttle check (only on new, not edit)
 		if ( empty( $is_edit ) ) {
 			set_transient( '_bbp_' . bbp_current_author_ip() . '_last_posted', time() );
-		}
-
-		// Website is optional
-		if ( !empty( $bbp_anonymous_website ) ) {
-			update_post_meta( $reply_id, '_bbp_anonymous_website', $bbp_anonymous_website, false );
 		}
 
 	} else {
@@ -1094,7 +1111,8 @@ function bbp_toggle_reply_handler() {
 function bbp_spam_reply( $reply_id = 0 ) {
 
 	// Get reply
-	if ( !$reply = wp_get_single_post( $reply_id, ARRAY_A ) )
+	$reply = wp_get_single_post( $reply_id, ARRAY_A );
+	if ( empty( $reply ) )
 		return $reply;
 
 	// Bail if already spam
@@ -1140,7 +1158,8 @@ function bbp_spam_reply( $reply_id = 0 ) {
 function bbp_unspam_reply( $reply_id = 0 ) {
 
 	// Get reply
-	if ( !$reply = wp_get_single_post( $reply_id, ARRAY_A ) )
+	$reply = wp_get_single_post( $reply_id, ARRAY_A );
+	if ( empty( $reply ) )
 		return $reply;
 
 	// Bail if already not spam

@@ -41,7 +41,6 @@ class BBP_Forums_Admin {
 	function __construct() {
 		$this->setup_globals();
 		$this->setup_actions();
-		$this->setup_help();
 	}
 
 	/**
@@ -74,6 +73,10 @@ class BBP_Forums_Admin {
 		// Columns (in page row)
 		add_action( 'manage_' . $this->post_type . '_posts_custom_column',  array( $this, 'column_data'    ), 10, 2 );
 		add_filter( 'page_row_actions',                                     array( $this, 'row_actions'    ), 10, 2 );
+
+		// Contextual Help
+		add_action( 'load-edit.php',     array( $this, 'edit_help' ) );
+		add_action( 'load-post-new.php', array( $this, 'new_help'  ) );
 	}
 
 	/**
@@ -88,87 +91,159 @@ class BBP_Forums_Admin {
 		$this->post_type = bbp_get_forum_post_type();
 	}
 
+	/** Contextual Help *******************************************************/
+
 	/**
-	 * Contextual help for forums
+	 * Contextual help for bbPress forum edit page
 	 *
 	 * @since bbPress (r3119)
-	 * @access private
+	 * @uses get_current_screen()
 	 */
-	function setup_help() {
+	public function edit_help() {
 
-		// Define local variable(s)
-		$contextual_help      = '';
-		$bbp_contextual_help = array();
+		$current_screen = get_current_screen();
+		$post_type      = !empty( $_REQUEST['post_type'] ) ? $_REQUEST['post_type'] : '';
 
-		/** New/Edit **********************************************************/
+		// Bail if current screen could not be found
+		if ( empty( $current_screen ) )
+			return;
 
-		$bbp_contextual_help[] = __( 'The forum title field and the big forum editing area are fixed in place, but you can reposition all the other boxes using drag and drop, and can minimize or expand them by clicking the title bar of the box. Use the Screen Options tab to unhide more boxes (like Slug) or to choose a 1- or 2-column layout for this screen.', 'bbpress' );
-		$bbp_contextual_help[] = __( '<strong>Title</strong> - Enter a title for your forum. After you enter a title, you will see the permalink appear below it, which is fully editable.', 'bbpress' );
-		$bbp_contextual_help[] = __( '<strong>Post editor</strong> - Enter the description for your forum. There are two modes of editing: Visual and HTML. Choose the mode by clicking on the appropriate tab. Visual mode gives you a WYSIWYG editor. Click the last icon in the row to get a second row of controls. The screen icon just before that allows you to expand the edit box to full screen. The HTML mode allows you to enter raw HTML along with your forum text. You can insert media files by clicking the icons above the post editor and following the directions.', 'bbpress' );
-		$bbp_contextual_help[] = __( '<strong>Forum Attributes</strong> - Select the various attributes that your forum should have:', 'bbpress' );
-		$bbp_contextual_help[] =
-			'<ul>' .
-				'<li>' . __( 'Forum Type determines whether it is a Forum (by default) or a Category, which means no new topics (only other forums) can be created within it.', 'bbpress' ) . '</li>' .
-				'<li>' . __( 'Forum Status controls whether it is open (and thus can be posted to) or closed (thus not able to be posted to).',                                 'bbpress' ) . '</li>' .
-				'<li>' . __( 'Visibility can be set to either Public (by default, seen by everyone), Private (seen only by chosen users), and Hidden (hidden from all users).', 'bbpress' ) . '</li>' .
-				'<li>' . __( 'Parent turns the forum into a child forum of the selected forum/category in the dropdown.',                                                       'bbpress' ) . '</li>' .
-				'<li>' . __( 'Order determines the order that forums in the given hierarchy are displayed (lower numbers first, higher numbers last).',                         'bbpress' ) . '</li>' .
-			'</ul>';
+		// Bail if not the forum post type
+		if ( $post_type != $this->post_type )
+			return;
 
-		$bbp_contextual_help[] = __( '<strong>Publish</strong> - The Publish box will allow you to Preview your forum before it is published, Publish your forum to your site, or Move to Trash will move your forum to the trash.', 'bbpress' );
-		$bbp_contextual_help[] = __( '<strong>Revisions</strong> - Revisions show past versions of the saved forum. Each revision can be compared to the current version, or another revision. Revisions can also be restored to the current version.', 'bbpress' );
-		$bbp_contextual_help[] = __( '<strong>For more information:</strong>', 'bbpress' );
-		$bbp_contextual_help[] =
-			'<ul>' .
-				'<li>' . __( '<a href="http://bbpress.org/documentation/">bbPress Documentation</a>', 'bbpress' ) . '</li>' .
-				'<li>' . __( '<a href="http://bbpress.org/forums/">bbPress Support Forums</a>',       'bbpress' ) . '</li>' .
-			'</ul>';
+		// Overview
+		$current_screen->add_help_tab( array(
+			'id'		=> 'overview',
+			'title'		=> __( 'Overview', 'bbpress' ),
+			'content'	=>
+				'<p>' . __( 'This screen provides access to all of your replies. You can customize the display of this screen to suit your workflow.', 'bbpress' ) . '</p>'
+		) );
 
-		// Wrap each help item in paragraph tags
-		foreach( $bbp_contextual_help as $paragraph )
-			$contextual_help .= '<p>' . $paragraph . '</p>';
+		// Screen Content
+		$current_screen->add_help_tab( array(
+			'id'		=> 'screen-content',
+			'title'		=> __( 'Screen Content', 'bbpress' ),
+			'content'	=>
+				'<p>' . __( 'You can customize the display of this screen&#8217;s contents in a number of ways:' ) . '</p>' .
+				'<ul>' .
+					'<li>' . __( 'You can hide/display columns based on your needs and decide how many replies to list per screen using the Screen Options tab.',                                                                                                                                                                          'bbpress' ) . '</li>' .
+					'<li>' . __( 'You can filter the list of replies by forum status using the text links in the upper left to show All, Published, Draft, or Trashed replies. The default view is to show all replies.',                                                                                                                   'bbpress' ) . '</li>' .
+					'<li>' . __( 'You can view replies in a simple title list or with an excerpt. Choose the view you prefer by clicking on the icons at the top of the list on the right.',                                                                                                                                             'bbpress' ) . '</li>' .
+					'<li>' . __( 'You can refine the list to show only replies in a specific category or from a specific month by using the dropdown menus above the replies list. Click the Filter button after making your selection. You also can refine the list by clicking on the forum author, category or tag in the replies list.', 'bbpress' ) . '</li>' .
+				'</ul>'
+		) );
 
-		// Add help
-		add_contextual_help( bbp_get_forum_post_type(), $contextual_help );
+		// Available Actions
+		$current_screen->add_help_tab( array(
+			'id'		=> 'action-links',
+			'title'		=> __( 'Available Actions', 'bbpress' ),
+			'content'	=>
+				'<p>' . __( 'Hovering over a row in the replies list will display action links that allow you to manage your forum. You can perform the following actions:', 'bbpress' ) . '</p>' .
+				'<ul>' .
+					'<li>' . __( '<strong>Edit</strong> takes you to the editing screen for that forum. You can also reach that screen by clicking on the forum title.',                                                                                 'bbpress' ) . '</li>' .
+					//'<li>' . __( '<strong>Quick Edit</strong> provides inline access to the metadata of your forum, allowing you to update forum details without leaving this screen.',                                                                  'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Trash</strong> removes your forum from this list and places it in the trash, from which you can permanently delete it.',                                                                                       'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Spam</strong> removes your forum from this list and places it in the spam queue, from which you can permanently delete it.',                                                                                   'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Preview</strong> will show you what your draft forum will look like if you publish it. View will take you to your live site to view the forum. Which link is available depends on your forum&#8217;s status.', 'bbpress' ) . '</li>' .
+				'</ul>'
+		) );
 
-		// Reset
-		$contextual_help     = '';
-		$bbp_contextual_help = array();
+		// Bulk Actions
+		$current_screen->add_help_tab( array(
+			'id'		=> 'bulk-actions',
+			'title'		=> __( 'Bulk Actions', 'bbpress' ),
+			'content'	=>
+				'<p>' . __( 'You can also edit or move multiple replies to the trash at once. Select the replies you want to act on using the checkboxes, then select the action you want to take from the Bulk Actions menu and click Apply.',           'bbpress' ) . '</p>' .
+				'<p>' . __( 'When using Bulk Edit, you can change the metadata (categories, author, etc.) for all selected replies at once. To remove a forum from the grouping, just click the x next to its name in the Bulk Edit area that appears.', 'bbpress' ) . '</p>'
+		) );
 
-		/** Post Rows *********************************************************/
+		// Help Sidebar
+		$current_screen->set_help_sidebar(
+			'<p><strong>' . __( 'For more information:' ) . '</strong></p>' .
+			'<p>' . __( '<a href="http://bbpress.org/documentation/" target="_blank">bbPress Documentation</a>', 'bbpress' ) . '</p>' .
+			'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>',       'bbpress' ) . '</p>'
+		);
+	}
 
-		$bbp_contextual_help[] = __( 'This screen displays the forums available on your site.',           'bbpress' );
-		$bbp_contextual_help[] = __( 'You can customize the display of this screen in a number of ways:', 'bbpress' );
-		$bbp_contextual_help[] =
-			'<ul>' .
-				'<li>' . __( 'You can hide/display columns based on your needs and decide how many forums to list per screen using the Screen Options tab.',                                                                                                                                'bbpress' ) . '</li>' .
-				'<li>' . __( 'You can filter the list of forums by forum status using the text links in the upper left to show All, Published, or Trashed forums. The default view is to show all forums.',                                                                                 'bbpress' ) . '</li>' .
-				'<li>' . __( 'You can refine the list to show only forums from a specific month by using the dropdown menus above the forums list. Click the Filter button after making your selection. You also can refine the list by clicking on the forum creator in the forums list.', 'bbpress' ) . '</li>' .
-			'</ul>';
+	/**
+	 * Contextual help for bbPress forum edit page
+	 *
+	 * @since bbPress (r3119)
+	 * @uses get_current_screen()
+	 */
+	public function new_help() {
 
-		$bbp_contextual_help[] = __( 'Hovering over a row in the forums list will display action links that allow you to manage your forum. You can perform the following actions:', 'bbpress' );
-		$bbp_contextual_help[] =
-			'<ul>' .
-				'<li>' . __( 'Edit takes you to the editing screen for that forum. You can also reach that screen by clicking on the forum title.', 'bbpress' ) . '</li>' .
-				'<li>' . __( 'Trash removes your forum from this list and places it in the trash, from which you can permanently delete it.',       'bbpress' ) . '</li>' .
-				'<li>' . __( 'View will take you to your live forum to view the forum.',                                                            'bbpress' ) . '</li>' .
-			'</ul>';
+		$current_screen = get_current_screen();
+		$post_type      = !empty( $_REQUEST['post_type'] ) ? $_REQUEST['post_type'] : '';
 
-		$bbp_contextual_help[] = __( 'You can also edit multiple forums at once. Select the forums you want to edit using the checkboxes, select Edit from the Bulk Actions menu and click Apply. You will be able to change the metadata for all selected forums at once. To remove a forum from the grouping, just click the x next to its name in the Bulk Edit area that appears.', 'bbpress' );
-		$bbp_contextual_help[] = __( 'The Bulk Actions menu may also be used to delete multiple forums at once. Select Delete from the dropdown after making your selection.', 'bbpress' );
-		$bbp_contextual_help[] = __( '<strong>For more information:</strong>', 'bbpress' );
-		$bbp_contextual_help[] =
-			'<ul>' .
-				'<li>' . __( '<a href="http://bbpress.org/documentation/">bbPress Documentation</a>', 'bbpress' ) . '</li>' .
-				'<li>' . __( '<a href="http://bbpress.org/forums/">bbPress Support Forums</a>',       'bbpress' ) . '</li>' .
-			'</ul>';
+		// Bail if current screen could not be found
+		if ( empty( $current_screen ) )
+			return;
 
-		// Wrap each help item in paragraph tags
-		foreach( $bbp_contextual_help as $paragraph )
-			$contextual_help .= '<p>' . $paragraph . '</p>';
+		// Bail if not the forum post type
+		if ( $post_type != $this->post_type )
+			return;
 
-		// Add help
-		add_contextual_help( 'edit-' . bbp_get_forum_post_type(), $contextual_help );
+		$customize_display = '<p>' . __( 'The title field and the big forum editing Area are fixed in place, but you can reposition all the other boxes using drag and drop, and can minimize or expand them by clicking the title bar of each box. Use the Screen Options tab to unhide more boxes (Excerpt, Send Trackbacks, Custom Fields, Discussion, Slug, Author) or to choose a 1- or 2-column layout for this screen.', 'bbpress' ) . '</p>';
+
+		$current_screen->add_help_tab( array(
+			'id'      => 'customize-display',
+			'title'   => __( 'Customizing This Display', 'bbpress' ),
+			'content' => $customize_display,
+		) );
+
+		$current_screen->add_help_tab( array(
+			'id'      => 'title-forum-editor',
+			'title'   => __( 'Title and Forum Editor', 'bbpress' ),
+			'content' =>
+				'<p>' . __( '<strong>Title</strong> - Enter a title for your forum. After you enter a title, you&#8217;ll see the permalink below, which you can edit.', 'bbpress' ) . '</p>' .
+				'<p>' . __( '<strong>Forum Editor</strong> - Enter the text for your forum. There are two modes of editing: Visual and HTML. Choose the mode by clicking on the appropriate tab. Visual mode gives you a WYSIWYG editor. Click the last icon in the row to get a second row of controls. The HTML mode allows you to enter raw HTML along with your forum text. You can insert media files by clicking the icons above the forum editor and following the directions. You can go to the distraction-free writing screen via the Fullscreen icon in Visual mode (second to last in the top row) or the Fullscreen button in HTML mode (last in the row). Once there, you can make buttons visible by hovering over the top area. Exit Fullscreen back to the regular forum editor.', 'bbpress' ) . '</p>'
+		) );
+
+		$publish_box = '<p>' . __( '<strong>Publish</strong> - You can set the terms of publishing your forum in the Publish box. For Status, Visibility, and Publish (immediately), click on the Edit link to reveal more options. Visibility includes options for password-protecting a forum or making it stay at the top of your blog indefinitely (sticky). Publish (immediately) allows you to set a future or past date and time, so you can schedule a forum to be published in the future or backdate a forum.', 'bbpress' ) . '</p>';
+
+		if ( current_theme_supports( 'forum-formats' ) && forum_type_supports( 'forum', 'forum-formats' ) ) {
+			$publish_box .= '<p>' . __( '<strong>forum Format</strong> - This designates how your theme will display a specific forum. For example, you could have a <em>standard</em> blog forum with a title and paragraphs, or a short <em>aside</em> that omits the title and contains a short text blurb. Please refer to the Codex for <a href="http://codex.wordpress.org/Post_Formats#Supported_Formats">descriptions of each forum format</a>. Your theme could enable all or some of 10 possible formats.', 'bbpress' ) . '</p>';
+		}
+
+		if ( current_theme_supports( 'forum-thumbnails' ) && forum_type_supports( 'forum', 'thumbnail' ) ) {
+			$publish_box .= '<p>' . __( '<strong>Featured Image</strong> - This allows you to associate an image with your forum without inserting it. This is usually useful only if your theme makes use of the featured image as a forum thumbnail on the home page, a custom header, etc.', 'bbpress' ) . '</p>';
+		}
+
+		$current_screen->add_help_tab( array(
+			'id'      => 'forum-attributes',
+			'title'   => __( 'Forum Attributes', 'bbpress' ),
+			'content' =>
+				'<p>' . __( 'Select the attributes that your forum should have:', 'bbpress' ) . '</p>' .
+				'<ul>' .
+					'<li>' . __( '<strong>Type</strong> indicates if the forum is a category or forum. Categories generally contain other forums.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Status</strong> allows you to close a forum to new topics and replies.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Visibility</strong> lets you pick the scope of each forum and what users are allowed to access it.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Parent</strong> dropdown determines the parent forum. Select the forum or category from the dropdown, or leave the default (No Parent) to create the forum at the root of your forums.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Order</strong> allows you to order your forums numerically.', 'bbpress' ) . '</li>' .
+				'</ul>'
+		) );
+
+		$current_screen->add_help_tab( array(
+			'id'      => 'publish-box',
+			'title'   => __( 'Publish Box', 'bbpress' ),
+			'content' => $publish_box,
+		) );
+
+		$current_screen->add_help_tab( array(
+			'id'      => 'discussion-settings',
+			'title'   => __( 'Discussion Settings', 'bbpress' ),
+			'content' =>
+				'<p>' . __( '<strong>Send Trackbacks</strong> - Trackbacks are a way to notify legacy blog systems that you&#8217;ve linked to them. Enter the URL(s) you want to send trackbacks. If you link to other WordPress sites they&#8217;ll be notified automatically using pingbacks, and this field is unnecessary.', 'bbpress' ) . '</p>' .
+				'<p>' . __( '<strong>Discussion</strong> - You can turn comments and pings on or off, and if there are comments on the forum, you can see them here and moderate them.', 'bbpress' ) . '</p>'
+		) );
+
+		$current_screen->set_help_sidebar(
+			'<p><strong>' . __( 'For more information:', 'bbpress' ) . '</strong></p>' .
+			'<p>' . __( '<a href="http://bbpress.org/documentation/" target="_blank">bbPress Documentation</a>', 'bbpress' ) . '</p>' .
+			'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>',       'bbpress' ) . '</p>'
+		);
 	}
 
 	/**
@@ -230,59 +305,12 @@ class BBP_Forums_Admin {
 			return $forum_id;
 
 		// Load the forum
-		if ( !$forum = bbp_get_forum( $forum_id ) )
+		$forum = bbp_get_forum( $forum_id );
+		if ( empty( $forum ) )
 			return $forum_id;
 
-		// Closed?
-		if ( !empty( $_POST['bbp_forum_status'] ) && in_array( $_POST['bbp_forum_status'], array( 'open', 'closed' ) ) ) {
-			if ( 'closed' == $_POST['bbp_forum_status'] && !bbp_is_forum_closed( $forum_id, false ) )
-				bbp_close_forum( $forum_id );
-			elseif ( 'open' == $_POST['bbp_forum_status'] && bbp_is_forum_closed( $forum_id, false ) )
-				bbp_open_forum( $forum_id );
-		}
-
-		// Category?
-		if ( !empty( $_POST['bbp_forum_type'] ) && in_array( $_POST['bbp_forum_type'], array( 'forum', 'category' ) ) ) {
-			if ( 'category' == $_POST['bbp_forum_type'] && !bbp_is_forum_category( $forum_id ) ) {
-				bbp_categorize_forum( $forum_id );
-			} elseif ( 'forum' == $_POST['bbp_forum_type'] && bbp_is_forum_category( $forum_id ) ) {
-				bbp_normalize_forum( $forum_id );
-			}
-		}
-
-		// Visibility
-		if ( !empty( $_POST['bbp_forum_visibility'] ) && in_array( $_POST['bbp_forum_visibility'], array( bbp_get_public_status_id(), bbp_get_private_status_id(), bbp_get_hidden_status_id() ) ) ) {
-
-			// Get forums current visibility
-			$visibility = bbp_get_forum_visibility( $forum_id );
-
-			// If new visibility is different, change it
-			if ( $visibility != $_POST['bbp_forum_visibility'] ) {
-
-				// What is the new forum visibility setting?
-				switch ( $_POST['bbp_forum_visibility'] ) {
-
-					// Hidden
-					case bbp_get_hidden_status_id()  :
-						bbp_hide_forum( $forum_id, $visibility );
-						break;
-
-					// Private
-					case bbp_get_private_status_id() :
-						bbp_privatize_forum( $forum_id, $visibility );
-						break;
-
-					// Publish (default)
-					case bbp_get_public_status_id()  :
-					default        :
-						bbp_publicize_forum( $forum_id, $visibility );
-						break;
-				}
-			}
-		}
-
 		// Parent ID
-		$parent_id = ( !empty( $_POST['parent_id'] ) && is_numeric( $_POST['parent_id'] ) ) ? $_POST['parent_id'] : 0;
+		$parent_id = ( !empty( $_POST['parent_id'] ) && is_numeric( $_POST['parent_id'] ) ) ? (int) $_POST['parent_id'] : 0;
 
 		// Update the forum meta bidness
 		bbp_update_forum( array(
@@ -435,7 +463,8 @@ class BBP_Forums_Admin {
 				break;
 
 			case 'bbp_forum_freshness' :
-				if ( $last_active = bbp_get_forum_last_active_time( $forum_id, false ) )
+				$last_active = bbp_get_forum_last_active_time( $forum_id, false );
+				if ( !empty( $last_active ) )
 					printf( __( '%s ago', 'bbpress' ), $last_active );
 				else
 					_e( 'No Topics', 'bbpress' );
@@ -477,7 +506,6 @@ class BBP_Forums_Admin {
 	 *
 	 * @since bbPress (r3080)
 	 *
-	 * @global WP_Query $post
 	 * @global int $post_ID
 	 * @uses get_post_type()
 	 * @uses bbp_get_forum_permalink()
@@ -490,13 +518,16 @@ class BBP_Forums_Admin {
 	 * @return array
 	 */
 	function updated_messages( $messages ) {
-		global $post, $post_ID;
+		global $post_ID;
 
 		if ( get_post_type( $post_ID ) != $this->post_type )
 			return $messages;
 
 		// URL for the current forum
 		$forum_url = bbp_get_forum_permalink( $post_ID );
+
+		// Current forum's post_date
+		$post_date = bbp_get_global_post_field( 'post_date', 'raw' );
 
 		// Messages array
 		$messages[$this->post_type] = array(
@@ -533,7 +564,7 @@ class BBP_Forums_Admin {
 			9 => sprintf( __( 'Forum scheduled for: <strong>%1$s</strong>. <a target="_blank" href="%2$s">Preview forum</a>', 'bbpress' ),
 					// translators: Publish box date format, see http://php.net/date
 					date_i18n( __( 'M j, Y @ G:i' ),
-					strtotime( $post->post_date ) ),
+					strtotime( $post_date ) ),
 					$forum_url ),
 
 			// Forum draft updated

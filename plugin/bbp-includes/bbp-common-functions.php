@@ -656,7 +656,8 @@ function bbp_deregister_view( $view ) {
  */
 function bbp_view_query( $view = '', $new_args = '' ) {
 
-	if ( !$view = bbp_get_view_id( $view ) )
+	$view = bbp_get_view_id( $view );
+	if ( empty( $view ) )
 		return false;
 
 	$query_args = bbp_get_view_query_args( $view );
@@ -670,24 +671,21 @@ function bbp_view_query( $view = '', $new_args = '' ) {
 }
 
 /**
- * Run the view's query's arguments
+ * Return the view's query arguments
  *
  * @since bbPress (r2789)
  *
  * @param string $view View name
  * @uses bbp_get_view_id() To get the view id
- * @uses sanitize_title() To sanitize the view name
  * @return array Query arguments
  */
 function bbp_get_view_query_args( $view ) {
 	global $bbp;
 
-	$views = bbp_get_view_id( $view );
+	$view   = bbp_get_view_id( $view );
+	$retval = !empty( $view ) ? $bbp->views[$view]['query'] : false;
 
-	if ( empty( $views ) )
-		return false;
-
-	return $bbp->views[$view]['query'];
+	return apply_filters( 'bbp_get_view_query_args', $retval, $view );
 }
 
 /** New/edit topic/reply helpers **********************************************/
@@ -698,6 +696,9 @@ function bbp_get_view_query_args( $view ) {
  * We use REMOTE_ADDR here directly. If you are behind a proxy, you should
  * ensure that it is properly set, such as in wp-config.php, for your
  * environment. See {@link http://core.trac.wordpress.org/ticket/9235}
+ *
+ * Note that bbp_pre_anonymous_filters() is responsible for sanitizing each
+ * of the filtered core anonymous values here.
  *
  * If there are any errors, those are directly added to {@link bbPress:errors}
  *
@@ -726,10 +727,12 @@ function bbp_filter_anonymous_post_data( $args = '' ) {
 	extract( $r );
 
 	// Filter variables and add errors if necessary
-	if ( !$bbp_anonymous_name  = apply_filters( 'bbp_pre_anonymous_post_author_name',  $bbp_anonymous_name  ) )
+	$bbp_anonymous_name = apply_filters( 'bbp_pre_anonymous_post_author_name',  $bbp_anonymous_name  );
+	if ( empty( $bbp_anonymous_name ) )
 		bbp_add_error( 'bbp_anonymous_name',  __( '<strong>ERROR</strong>: Invalid author name submitted!',   'bbpress' ) );
 
-	if ( !$bbp_anonymous_email = apply_filters( 'bbp_pre_anonymous_post_author_email', $bbp_anonymous_email ) )
+	$bbp_anonymous_email = apply_filters( 'bbp_pre_anonymous_post_author_email', $bbp_anonymous_email );
+	if ( empty( $bbp_anonymous_email ) )
 		bbp_add_error( 'bbp_anonymous_email', __( '<strong>ERROR</strong>: Invalid email address submitted!', 'bbpress' ) );
 
 	// Website is optional
@@ -774,14 +777,10 @@ function bbp_check_for_duplicate( $post_data ) {
 
 	// Check for anonymous post
 	if ( empty( $post_author ) && !empty( $anonymous_data['bbp_anonymous_email'] ) ) {
-
-		// WP 3.2
-		if ( function_exists( 'get_meta_sql' ) )
-			$clauses = get_meta_sql( array( array( 'key' => '_bbp_anonymous_email', 'value' => $anonymous_data['bbp_anonymous_email'] ) ), 'post', $wpdb->posts, 'ID' );
-
-		// WP 3.1
-		elseif ( function_exists( '_get_meta_sql' ) )
-			$clauses = _get_meta_sql( array( array( 'key' => '_bbp_anonymous_email', 'value' => $anonymous_data['bbp_anonymous_email'] ) ), 'post', $wpdb->posts, 'ID' );
+		$clauses = get_meta_sql( array( array(
+			'key'   => '_bbp_anonymous_email',
+			'value' => $anonymous_data['bbp_anonymous_email']
+		) ), 'post', $wpdb->posts, 'ID' );
 
 		$join    = $clauses['join'];
 		$where   = $clauses['where'];
@@ -825,24 +824,31 @@ function bbp_check_for_duplicate( $post_data ) {
  * @uses get_transient() To get the last posted transient of the ip
  * @uses get_user_meta() To get the last posted meta of the user
  * @uses current_user_can() To check if the current user can throttle
- * @return bool True if there is no flooding, true if there is
+ * @return bool True if there is no flooding, false if there is
  */
 function bbp_check_for_flood( $anonymous_data = false, $author_id = 0 ) {
 
 	// Option disabled. No flood checks.
-	if ( !$throttle_time = get_option( '_bbp_throttle_time' ) )
+	$throttle_time = get_option( '_bbp_throttle_time' );
+	if ( empty( $throttle_time ) )
 		return true;
 
+	// User is anonymous, so check a transient based on the IP
 	if ( !empty( $anonymous_data ) && is_array( $anonymous_data ) ) {
 		$last_posted = get_transient( '_bbp_' . bbp_current_author_ip() . '_last_posted' );
-		if ( !empty( $last_posted ) && time() < $last_posted + $throttle_time )
+
+		if ( !empty( $last_posted ) && time() < $last_posted + $throttle_time ) {
 			return false;
+		}
+		
+	// User is logged in, so check their last posted time
 	} elseif ( !empty( $author_id ) ) {
 		$author_id   = (int) $author_id;
 		$last_posted = get_user_meta( $author_id, '_bbp_last_posted', true );
 
-		if ( isset( $last_posted ) && time() < $last_posted + $throttle_time && !current_user_can( 'throttle' ) )
+		if ( isset( $last_posted ) && time() < $last_posted + $throttle_time && !current_user_can( 'throttle' ) ) {
 			return false;
+		}
 	} else {
 		return false;
 	}
@@ -871,7 +877,7 @@ function bbp_check_for_moderation( $anonymous_data = false, $author_id = 0, $tit
 		return true;
 
 	// Define local variable(s)
-	$post      = array();
+	$_post     = array();
 	$match_out = '';
 
 	/** Blacklist *************************************************************/
@@ -887,9 +893,9 @@ function bbp_check_for_moderation( $anonymous_data = false, $author_id = 0, $tit
 
 	// Map anonymous user data
 	if ( !empty( $anonymous_data ) ) {
-		$post['author'] = $anonymous_data['bbp_anonymous_name'];
-		$post['email']  = $anonymous_data['bbp_anonymous_email'];
-		$post['url']    = $anonymous_data['bbp_anonymous_website'];
+		$_post['author'] = $anonymous_data['bbp_anonymous_name'];
+		$_post['email']  = $anonymous_data['bbp_anonymous_email'];
+		$_post['url']    = $anonymous_data['bbp_anonymous_website'];
 
 	// Map current user data
 	} elseif ( !empty( $author_id ) ) {
@@ -899,19 +905,19 @@ function bbp_check_for_moderation( $anonymous_data = false, $author_id = 0, $tit
 
 		// If data exists, map it
 		if ( !empty( $user ) ) {
-			$post['author'] = $user->display_name;
-			$post['email']  = $user->user_email;
-			$post['url']    = $user->user_url;
+			$_post['author'] = $user->display_name;
+			$_post['email']  = $user->user_email;
+			$_post['url']    = $user->user_url;
 		}
 	}
 
 	// Current user IP and user agent
-	$post['user_ip'] = bbp_current_author_ip();
-	$post['user_ua'] = bbp_current_author_ua();
+	$_post['user_ip'] = bbp_current_author_ip();
+	$_post['user_ua'] = bbp_current_author_ua();
 
 	// Post title and content
-	$post['title']   = $title;
-	$post['content'] = $content;
+	$_post['title']   = $title;
+	$_post['content'] = $content;
 
 	/** Max Links *************************************************************/
 
@@ -922,7 +928,7 @@ function bbp_check_for_moderation( $anonymous_data = false, $author_id = 0, $tit
 		$num_links = preg_match_all( '/<a [^>]*href/i', $content, $match_out );
 
 		// Allow for bumping the max to include the user's URL
-		$num_links = apply_filters( 'comment_max_links_url', $num_links, $post['url'] );
+		$num_links = apply_filters( 'comment_max_links_url', $num_links, $_post['url'] );
 
 		// Das ist zu viele links!
 		if ( $num_links >= $max_links ) {
@@ -950,7 +956,7 @@ function bbp_check_for_moderation( $anonymous_data = false, $author_id = 0, $tit
 		$pattern = "#$word#i";
 
 		// Loop through post data
-		foreach( $post as $post_data ) {
+		foreach( $_post as $post_data ) {
 
 			// Check each user data for current word
 			if ( preg_match( $pattern, $post_data ) ) {
@@ -986,7 +992,7 @@ function bbp_check_for_blacklist( $anonymous_data = false, $author_id = 0, $titl
 		return true;
 
 	// Define local variable
-	$post = array();
+	$_post = array();
 
 	/** Blacklist *************************************************************/
 
@@ -1001,9 +1007,9 @@ function bbp_check_for_blacklist( $anonymous_data = false, $author_id = 0, $titl
 
 	// Map anonymous user data
 	if ( !empty( $anonymous_data ) ) {
-		$post['author'] = $anonymous_data['bbp_anonymous_name'];
-		$post['email']  = $anonymous_data['bbp_anonymous_email'];
-		$post['url']    = $anonymous_data['bbp_anonymous_website'];
+		$_post['author'] = $anonymous_data['bbp_anonymous_name'];
+		$_post['email']  = $anonymous_data['bbp_anonymous_email'];
+		$_post['url']    = $anonymous_data['bbp_anonymous_website'];
 
 	// Map current user data
 	} elseif ( !empty( $author_id ) ) {
@@ -1013,19 +1019,19 @@ function bbp_check_for_blacklist( $anonymous_data = false, $author_id = 0, $titl
 
 		// If data exists, map it
 		if ( !empty( $user ) ) {
-			$post['author'] = $user->display_name;
-			$post['email']  = $user->user_email;
-			$post['url']    = $user->user_url;
+			$_post['author'] = $user->display_name;
+			$_post['email']  = $user->user_email;
+			$_post['url']    = $user->user_url;
 		}
 	}
 
 	// Current user IP and user agent
-	$post['user_ip'] = bbp_current_author_ip();
-	$post['user_ua'] = bbp_current_author_ua();
+	$_post['user_ip'] = bbp_current_author_ip();
+	$_post['user_ua'] = bbp_current_author_ua();
 
 	// Post title and content
-	$post['title']   = $title;
-	$post['content'] = $content;
+	$_post['title']   = $title;
+	$_post['content'] = $content;
 
 	/** Words *****************************************************************/
 
@@ -1047,7 +1053,7 @@ function bbp_check_for_blacklist( $anonymous_data = false, $author_id = 0, $titl
 		$pattern = "#$word#i";
 
 		// Loop through post data
-		foreach( $post as $post_data ) {
+		foreach( $_post as $post_data ) {
 
 			// Check each user data for current word
 			if ( preg_match( $pattern, $post_data ) ) {
@@ -1094,7 +1100,6 @@ function bbp_check_for_blacklist( $anonymous_data = false, $author_id = 0, $titl
  * @return bool True on success, false on failure
  */
 function bbp_notify_subscribers( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymous_data = false, $reply_author = 0 ) {
-	global $wpdb;
 
 	// Bail if subscriptions are turned off
 	if ( !bbp_is_subscriptions_active() )
@@ -1224,19 +1229,18 @@ function bbp_query_post_parent__in( $where, $object = '' ) {
 
 	// Including specific post_parent's
 	if ( ! empty( $object->query_vars['post_parent__in'] ) ) {
-		$ids    = implode( ',', array_map( 'absint', $object->query_vars['post_parent__in'][0] ) );
+		$ids    = implode( ',', array_map( 'absint', $object->query_vars['post_parent__in'] ) );
 		$where .= " AND $wpdb->posts.post_parent IN ($ids)";
 
 	// Excluding specific post_parent's
 	} elseif ( ! empty( $object->query_vars['post_parent__not_in'] ) ) {
-		$ids    = implode( ',', array_map( 'absint', $object->query_vars['post_parent__not_in'][0] ) );
+		$ids    = implode( ',', array_map( 'absint', $object->query_vars['post_parent__not_in'] ) );
 		$where .= " AND $wpdb->posts.post_parent NOT IN ($ids)";
 	}
 
 	// Return possibly modified $where
 	return $where;
 }
-//add_filter( 'posts_where', 'bbp_query_post_parent__in', 10, 2 );
 
 /**
  * Query the DB and get the last public post_id that has parent_id as post_parent
@@ -1271,7 +1275,8 @@ function bbp_get_public_child_last_id( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	if ( !$child_id = wp_cache_get( $cache_id, 'bbpress' ) ) {
+	$child_id = wp_cache_get( $cache_id, 'bbpress' );
+	if ( empty( $child_id ) ) {
 		$child_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s' ORDER BY ID DESC LIMIT 1;", $parent_id, $post_type ) );
 		wp_cache_set( $cache_id, $child_id, 'bbpress' );
 	}
@@ -1313,7 +1318,8 @@ function bbp_get_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	if ( !$child_count = wp_cache_get( $cache_id, 'bbpress' ) ) {
+	$child_count = wp_cache_get( $cache_id, 'bbpress' );
+	if ( empty( $child_count ) ) {
 		$child_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s';", $parent_id, $post_type ) );
 		wp_cache_set( $cache_id, $child_count, 'bbpress' );
 	}
@@ -1355,7 +1361,8 @@ function bbp_get_public_child_ids( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	if ( !$child_ids = wp_cache_get( $cache_id, 'bbpress' ) ) {
+	$child_ids = wp_cache_get( $cache_id, 'bbpress' );
+	if ( empty( $child_ids ) ) {
 		$child_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s' ORDER BY ID DESC;", $parent_id, $post_type ) );
 		wp_cache_set( $cache_id, $child_ids, 'bbpress' );
 	}
@@ -1415,13 +1422,37 @@ function bbp_get_all_child_ids( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	if ( !$child_ids = wp_cache_get( $cache_id, 'bbpress' ) ) {
+	$child_ids = wp_cache_get( $cache_id, 'bbpress' );
+	if ( empty( $child_ids ) ) {
 		$child_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s' ORDER BY ID DESC;", $parent_id, $post_type ) );
 		wp_cache_set( $cache_id, $child_ids, 'bbpress' );
 	}
 
 	// Filter and return
 	return apply_filters( 'bbp_get_all_child_ids', $child_ids, (int) $parent_id, $post_type );
+}
+
+/** Globals *******************************************************************/
+
+/**
+ * Get the unfiltered value of a global $post's key
+ *
+ * Used most frequently when editing a forum/topic/reply
+ *
+ * @since bbPress (r3694)
+ *
+ * @global WP_Query $post
+ * @param string $field Name of the key
+ * @param string $context How to sanitize - raw|edit|db|display|attribute|js
+ * @return string Field value
+ */
+function bbp_get_global_post_field( $field = 'ID', $context = 'edit' ) {
+	global $post;
+
+	$retval = isset( $post->$field ) ? $post->$field : '';
+	$retval = sanitize_post_field( $field, $retval, $post->ID, $context );
+
+	return apply_filters( 'bbp_get_global_post_field', $retval, $post );
 }
 
 /** Feeds *********************************************************************/
@@ -1443,7 +1474,7 @@ function bbp_request_feed_trap( $query_vars ) {
 	// Looking at a feed
 	if ( isset( $query_vars['feed'] ) ) {
 
-		// Forum Feed
+		// Forum/Topic/Reply Feed
 		if ( isset( $query_vars['post_type'] ) ) {
 
 			// What bbPress post type are we looking for feeds on?
@@ -1578,7 +1609,25 @@ function bbp_request_feed_trap( $query_vars ) {
 
 					break;
 			}
+
+		// Single Topic Vview
+		} elseif ( isset( $query_vars['bbp_view'] ) ) {
+
+			// Get the view
+			$view = $query_vars['bbp_view'];
+
+			// We have a view to display a feed
+			if ( !empty( $view ) ) {
+
+				// Get the view query
+				$the_query = bbp_get_view_query_args( $view );
+
+				// Output the feed
+				bbp_display_topics_feed_rss2( $the_query );
+			}
 		}
+
+		// @todo User profile feeds
 	}
 
 	// No feed so continue on
@@ -1633,6 +1682,57 @@ function bbp_has_errors() {
 	$has_errors = apply_filters( 'bbp_has_errors', $has_errors, $bbp->errors );
 
 	return $has_errors;
+}
+
+/** Templates ******************************************************************/
+
+/**
+ * Used to guess if page exists at requested path
+ *
+ * @since bbPress (r3304)
+ *
+ * @uses get_option() To see if pretty permalinks are enabled
+ * @uses get_page_by_path() To see if page exists at path
+ *
+ * @param string $path
+ * @return mixed False if no page, Page object if true
+ */
+function bbp_get_page_by_path( $path = '' ) {
+
+	// Default to false
+	$retval = false;
+
+	// Path is not empty
+	if ( !empty( $path ) ) {
+
+		// Pretty permalinks are on so path might exist
+		if ( get_option( 'permalink_structure' ) ) {
+			$retval = get_page_by_path( $path );
+		}
+	}
+
+	return apply_filters( 'bbp_get_page_by_path', $retval, $path );
+}
+
+/**
+ * Sets the 404 status.
+ *
+ * Used primarily with topics/replies inside hidden forums.
+ *
+ * @since bbPress (r3051)
+ *
+ * @global WP_Query $wp_query
+ * @uses WP_Query::set_404()
+ */
+function bbp_set_404() {
+	global $wp_query;
+
+	if ( ! isset( $wp_query ) ) {
+		_doing_it_wrong( __FUNCTION__, __( 'Conditional query tags do not work before the query is run. Before then, they always return false.' ), '3.1' );
+		return false;
+	}
+
+	$wp_query->set_404();
 }
 
 /** Post Statuses *************************************************************/

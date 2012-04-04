@@ -314,7 +314,7 @@ class bbPress {
 	 */
 	public $options = array();
 
-	/** Functions *************************************************************/
+	/** Private Methods *******************************************************/
 
 	/**
 	 * The main bbPress loader
@@ -438,19 +438,23 @@ class bbPress {
 
 		/** Core **************************************************************/
 
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-hooks.php'         ); // All filters and actions
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-options.php'       ); // Configuration Options
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-caps.php'          ); // Roles and capabilities
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-classes.php'       ); // Common classes
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-widgets.php'       ); // Sidebar widgets
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-shortcodes.php'    ); // Shortcodes for use with pages and posts
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-compatibility.php' ); // Theme compatibility for existing themes
-		require( $this->plugin_dir . 'bbp-includes/bbp-core-update.php'        ); // Database updater
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-hooks.php'      ); // All filters and actions
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-options.php'    ); // Configuration Options
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-caps.php'       ); // Roles and capabilities
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-classes.php'    ); // Common classes
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-widgets.php'    ); // Sidebar widgets
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-shortcodes.php' ); // Shortcodes for use with pages and posts
+		require( $this->plugin_dir . 'bbp-includes/bbp-core-update.php'     ); // Database updater
+		
+		/** Templates *********************************************************/
+		
+		require( $this->plugin_dir . 'bbp-includes/bbp-template-functions.php'  ); // Template functions
+		require( $this->plugin_dir . 'bbp-includes/bbp-template-loader.php'     ); // Template loader
+		require( $this->plugin_dir . 'bbp-includes/bbp-theme-compatibility.php' ); // Theme compatibility for existing themes
 		
 		/** Extensions ********************************************************/
 		
-		require( $this->plugin_dir . 'bbp-includes/bbp-extend-akismet.php'     ); // Spam prevention for topics and replies
-		require( $this->plugin_dir . 'bbp-includes/bbp-extend-genesis.php'     ); // Popular theme framework
+		require( $this->plugin_dir . 'bbp-includes/bbp-extend-akismet.php' ); // Spam prevention for topics and replies
 
 		/**
 		 * BuddyPress extension is loaded in bbp-core-hooks.php
@@ -518,7 +522,12 @@ class bbPress {
 		// Add the actions
 		foreach( $actions as $class_action )
 			add_action( 'bbp_' . $class_action, array( $this, $class_action ), 5 );
+
+		// All bbPress actions are setup (includes bbp-core-hooks.php)
+		do_action_ref_array( 'bbp_after_setup_actions', array( &$this ) );
 	}
+
+	/** Public Methods ********************************************************/
 
 	/**
 	 * Load the translation file for current language. Checks the languages
@@ -985,8 +994,9 @@ class bbPress {
 			$this->user_slug      . '/([^/]+)/edit/?$'              => 'index.php?' . $this->user_id  . '=' . $wp_rewrite->preg_index( 1 ) . '&edit=1',
 
 			// View Page
-			$this->view_slug . '/([^/]+)/page/?([0-9]{1,})/?$' => 'index.php?' . $this->view_id . '=' . $wp_rewrite->preg_index( 1 ) . '&paged=' . $wp_rewrite->preg_index( 2 ),
-			$this->view_slug . '/([^/]+)/?$'                   => 'index.php?' . $this->view_id . '=' . $wp_rewrite->preg_index( 1 )
+			$this->view_slug      . '/([^/]+)/page/?([0-9]{1,})/?$' => 'index.php?' . $this->view_id . '=' . $wp_rewrite->preg_index( 1 ) . '&paged=' . $wp_rewrite->preg_index( 2 ),
+			$this->view_slug      . '/([^/]+)/feed/?$'              => 'index.php?' . $this->view_id . '=' . $wp_rewrite->preg_index( 1 ) . '&feed='  . $wp_rewrite->preg_index( 2 ),
+			$this->view_slug      . '/([^/]+)/?$'                   => 'index.php?' . $this->view_id . '=' . $wp_rewrite->preg_index( 1 )
 		);
 
 		// Merge bbPress rules with existing

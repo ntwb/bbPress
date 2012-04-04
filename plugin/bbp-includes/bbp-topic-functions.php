@@ -265,7 +265,7 @@ function bbp_new_topic_handler() {
 
 		/** Create new topic **************************************************/
 
-		// Add the content of the form to $post as an array
+		// Add the content of the form to $topic_data as an array
 		$topic_data = array(
 			'post_author'    => $topic_author,
 			'post_title'     => $topic_title,
@@ -337,6 +337,10 @@ function bbp_new_topic_handler() {
 			/** Update counts, etc... *****************************************/
 
 			do_action( 'bbp_new_topic', $topic_id, $forum_id, $anonymous_data, $topic_author );
+
+			/** Additional Actions (After Save) *******************************/
+
+			do_action( 'bbp_new_topic_post_extras', $topic_id );
 
 			/** Redirect ******************************************************/
 
@@ -591,7 +595,7 @@ function bbp_edit_topic_handler() {
 
 		/** Update the topic **************************************************/
 
-		// Add the content of the form to $post as an array
+		// Add the content of the form to $topic_data as an array
 		$topic_data = array(
 			'ID'           => $topic_id,
 			'post_title'   => $topic_title,
@@ -724,20 +728,25 @@ function bbp_update_topic( $topic_id = 0, $forum_id = 0, $anonymous_data = false
 	// It expects anonymous_data to be sanitized.
 	// Check bbp_filter_anonymous_post_data() for sanitization.
 	if ( !empty( $anonymous_data ) && is_array( $anonymous_data ) ) {
-		extract( $anonymous_data );
 
-		update_post_meta( $topic_id, '_bbp_anonymous_name',  $bbp_anonymous_name,  false );
-		update_post_meta( $topic_id, '_bbp_anonymous_email', $bbp_anonymous_email, false );
+		// Always set at least these three values to empty
+		$defaults = array(
+			'bbp_anonymous_name'    => '',
+			'bbp_anonymous_email'   => '',
+			'bbp_anonymous_website' => '',
+		);
+		$r = wp_parse_args( $anonymous_data, $defaults );
+
+		// Update all anonymous metas
+		foreach( $r as $anon_key => $anon_value ) {
+			update_post_meta( $topic_id, '_' . $anon_key, (string) $anon_value, false );
+		}
 
 		// Set transient for throttle check (only on new, not edit)
 		if ( empty( $is_edit ) ) {
 			set_transient( '_bbp_' . bbp_current_author_ip() . '_last_posted', time() );
 		}
 
-		// Website is optional
-		if ( !empty( $bbp_anonymous_website ) ) {
-			update_post_meta( $topic_id, '_bbp_anonymous_website', $bbp_anonymous_website, false );
-		}
 	} else {
 		if ( empty( $is_edit ) && !current_user_can( 'throttle' ) ) {
 			update_user_meta( $author_id, '_bbp_last_posted', time() );
@@ -1586,7 +1595,7 @@ function bbp_split_topic_count( $from_reply_id, $source_topic_id, $destination_t
  * @uses is_wp_error() To check if the value retrieved is a {@link WP_Error}
  * @uses wp_redirect() To redirect to the url
  */
-function bbp_manage_topic_tag_handler() {
+function bbp_edit_topic_tag_handler() {
 
 	// Bail if not a POST action
 	if ( 'POST' !== strtoupper( $_SERVER['REQUEST_METHOD'] ) )
@@ -2739,13 +2748,10 @@ function bbp_delete_topic( $topic_id = 0 ) {
 
 	do_action( 'bbp_delete_topic', $topic_id );
 
-	// Valid topic/reply statuses
-	$post_stati = join( ',', array( bbp_get_public_status_id(), bbp_get_spam_status_id(), bbp_get_trash_status_id() ) );
-
 	// Topic is being permanently deleted, so its replies gotta go too
 	if ( bbp_has_replies( array(
 		'post_type'      => bbp_get_reply_post_type(),
-		'post_status'    => $post_stati,
+		'post_status'    => 'any',
 		'posts_per_page' => -1,
 		'meta_query'     => array( array(
 			'key'        => '_bbp_topic_id',

@@ -27,9 +27,18 @@ if ( !defined( 'ABSPATH' ) ) exit;
 /**
  * Attach bbPress to WordPress
  *
- * bbPress uses its own internal actions to help aid in additional plugin
+ * bbPress uses its own internal actions to help aid in third-party plugin
  * development, and to limit the amount of potential future code changes when
- * updates to WordPress occur.
+ * updates to WordPress core occur.
+ *
+ * These actions exist to create the concept of 'plugin dependencies'. They
+ * provide a safe way for plugins to execute code *only* when bbPress is
+ * installed and activated, without needing to do complicated guesswork.
+ *
+ * For more information on how this works, see the 'Plugin Dependency' section
+ * near the bottom of this file.
+ *
+ *           v--WordPress Actions       v--bbPress Sub-actions
  */
 add_action( 'plugins_loaded',         'bbp_loaded',                 10 );
 add_action( 'init',                   'bbp_init',                   10 );
@@ -38,6 +47,7 @@ add_action( 'generate_rewrite_rules', 'bbp_generate_rewrite_rules', 10 );
 add_action( 'wp_enqueue_scripts',     'bbp_enqueue_scripts',        10 );
 add_action( 'template_redirect',      'bbp_template_redirect',      10 );
 add_filter( 'template_include',       'bbp_template_include',       10 );
+add_action( 'set_current_user',       'bbp_setup_current_user',     10 );
 
 /**
  * bbp_loaded - Attached to 'plugins_loaded' above
@@ -61,7 +71,6 @@ add_action( 'bbp_loaded', 'bbp_register_theme_directory', 10 );
  */
 add_action( 'bbp_init', 'bbp_load_textdomain',        2   );
 add_action( 'bbp_init', 'bbp_setup_option_filters',   4   );
-add_action( 'bbp_init', 'bbp_setup_current_user',     6   );
 add_action( 'bbp_init', 'bbp_setup_theme_compat',     8   );
 add_action( 'bbp_init', 'bbp_register_post_types',    10  );
 add_action( 'bbp_init', 'bbp_register_post_statuses', 12  );
@@ -79,7 +88,6 @@ add_action( 'bbp_init', 'bbp_ready',                  999 );
  *                                                v---Load order
  */
 add_action( 'bbp_ready',  'bbp_setup_akismet',    2  ); // Spam prevention for topics and replies
-add_action( 'bbp_ready',  'bbp_setup_genesis',    6  ); // Popular theme framework
 add_action( 'bp_include', 'bbp_setup_buddypress', 10 ); // Social network integration
 
 // Multisite Global Forum Access
@@ -114,15 +122,12 @@ add_action( 'bbp_deactivation', 'bbp_remove_caps',   1     );
 add_action( 'bbp_deactivation', 'bbp_remove_roles',  2     );
 
 // Options & Settings
-add_action( 'bbp_activation',   'bbp_add_options',   1     );
+add_action( 'bbp_activation', 'bbp_add_options', 1 );
 
 // Multisite
 add_action( 'bbp_new_site', 'bbp_add_roles',   2 );
 add_action( 'bbp_new_site', 'bbp_add_caps',    4 );
 add_action( 'bbp_new_site', 'bbp_add_options', 6 );
-
-// Topic Tag Page
-add_action( 'template_redirect', 'bbp_manage_topic_tag_handler', 1 );
 
 // Parse the main query
 add_action( 'parse_query', 'bbp_parse_query', 2 );
@@ -130,29 +135,38 @@ add_action( 'parse_query', 'bbp_parse_query', 2 );
 // Always exclude private/hidden forums if needed
 add_action( 'pre_get_posts', 'bbp_pre_get_posts_exclude_forums', 4 );
 
-// Restrict forum access
-add_action( 'template_redirect', 'bbp_forum_enforce_hidden',        -1 );
-add_action( 'template_redirect', 'bbp_forum_enforce_private',       -1 );
-
-// Profile Edit
-add_action( 'template_redirect', 'bbp_edit_user_handler', 1 );
-
 // Profile Page Messages
 add_action( 'bbp_template_notices', 'bbp_notice_edit_user_success'           );
 add_action( 'bbp_template_notices', 'bbp_notice_edit_user_is_super_admin', 2 );
 
-// Update forum branch
-add_action( 'bbp_trashed_forum',   'bbp_update_forum_walker' );
-add_action( 'bbp_untrashed_forum', 'bbp_update_forum_walker' );
-add_action( 'bbp_deleted_forum',   'bbp_update_forum_walker' );
-add_action( 'bbp_spammed_forum',   'bbp_update_forum_walker' );
-add_action( 'bbp_unspammed_forum', 'bbp_update_forum_walker' );
+// Before Delete/Trash/Untrash Topic
+add_action( 'wp_trash_post', 'bbp_trash_forum'   );
+add_action( 'trash_post',    'bbp_trash_forum'   );
+add_action( 'untrash_post',  'bbp_untrash_forum' );
+add_action( 'delete_post',   'bbp_delete_forum'  );
+
+// After Deleted/Trashed/Untrashed Topic
+add_action( 'trashed_post',   'bbp_trashed_forum'   );
+add_action( 'untrashed_post', 'bbp_untrashed_forum' );
+add_action( 'deleted_post',   'bbp_deleted_forum'   );
+
+// Auto trash/untrash/delete a forums topics
+add_action( 'bbp_delete_forum',  'bbp_delete_forum_topics',  10 );
+add_action( 'bbp_trash_forum',   'bbp_trash_forum_topics',   10 );
+add_action( 'bbp_untrash_forum', 'bbp_untrash_forum_topics', 10 );
+
+// New/Edit Forum
+add_action( 'bbp_new_forum',  'bbp_update_forum', 10 );
+add_action( 'bbp_edit_forum', 'bbp_update_forum', 10 );
+
+// Save forum extra metadata
+add_action( 'bbp_new_forum_post_extras',         'bbp_save_forum_extras', 2 );
+add_action( 'bbp_edit_forum_post_extras',        'bbp_save_forum_extras', 2 );
+add_action( 'bbp_forum_attributes_metabox_save', 'bbp_save_forum_extras', 2 );
 
 // New/Edit Reply
-add_action( 'template_redirect', 'bbp_new_reply_handler'         );
-add_action( 'template_redirect', 'bbp_edit_reply_handler', 1     );
-add_action( 'bbp_new_reply',     'bbp_update_reply',       10, 6 );
-add_action( 'bbp_edit_reply',    'bbp_update_reply',       10, 6 );
+add_action( 'bbp_new_reply',  'bbp_update_reply', 10, 6 );
+add_action( 'bbp_edit_reply', 'bbp_update_reply', 10, 6 );
 
 // Before Delete/Trash/Untrash Reply
 add_action( 'wp_trash_post', 'bbp_trash_reply'   );
@@ -166,16 +180,12 @@ add_action( 'untrashed_post', 'bbp_untrashed_reply' );
 add_action( 'deleted_post',   'bbp_deleted_reply'   );
 
 // New/Edit Topic
-add_action( 'template_redirect', 'bbp_new_topic_handler'         );
-add_action( 'template_redirect', 'bbp_edit_topic_handler', 1     );
-add_action( 'bbp_new_topic',     'bbp_update_topic',       10, 5 );
-add_action( 'bbp_edit_topic',    'bbp_update_topic',       10, 5 );
+add_action( 'bbp_new_topic',  'bbp_update_topic', 10, 5 );
+add_action( 'bbp_edit_topic', 'bbp_update_topic', 10, 5 );
 
 // Split/Merge Topic
-add_action( 'template_redirect',    'bbp_merge_topic_handler', 1    );
-add_action( 'template_redirect',    'bbp_split_topic_handler', 1    );
-add_action( 'bbp_merged_topic',     'bbp_merge_topic_count',   1, 3 );
-add_action( 'bbp_post_split_topic', 'bbp_split_topic_count',   1, 3 );
+add_action( 'bbp_merged_topic',     'bbp_merge_topic_count', 1, 3 );
+add_action( 'bbp_post_split_topic', 'bbp_split_topic_count', 1, 3 );
 
 // Before Delete/Trash/Untrash Topic
 add_action( 'wp_trash_post', 'bbp_trash_topic'   );
@@ -188,20 +198,14 @@ add_action( 'trashed_post',   'bbp_trashed_topic'   );
 add_action( 'untrashed_post', 'bbp_untrashed_topic' );
 add_action( 'deleted_post',   'bbp_deleted_topic'   );
 
-// Topic/Reply Actions
-add_action( 'template_redirect', 'bbp_toggle_topic_handler', 1 );
-add_action( 'template_redirect', 'bbp_toggle_reply_handler', 1 );
-
 // Favorites
-add_action( 'template_redirect', 'bbp_favorites_handler',              1 );
-add_action( 'bbp_trash_topic',   'bbp_remove_topic_from_all_favorites'   );
-add_action( 'bbp_delete_topic',  'bbp_remove_topic_from_all_favorites'   );
+add_action( 'bbp_trash_topic',  'bbp_remove_topic_from_all_favorites' );
+add_action( 'bbp_delete_topic', 'bbp_remove_topic_from_all_favorites' );
 
 // Subscriptions
-add_action( 'template_redirect', 'bbp_subscriptions_handler',              1    );
-add_action( 'bbp_trash_topic',   'bbp_remove_topic_from_all_subscriptions'      );
-add_action( 'bbp_delete_topic',  'bbp_remove_topic_from_all_subscriptions'      );
-add_action( 'bbp_new_reply',     'bbp_notify_subscribers',                 1, 5 );
+add_action( 'bbp_trash_topic',  'bbp_remove_topic_from_all_subscriptions'      );
+add_action( 'bbp_delete_topic', 'bbp_remove_topic_from_all_subscriptions'      );
+add_action( 'bbp_new_reply',    'bbp_notify_subscribers',                 1, 5 );
 
 // Sticky
 add_action( 'bbp_trash_topic',  'bbp_unstick_topic' );
@@ -233,12 +237,34 @@ add_action( 'bbp_new_reply', 'bbp_global_access_auto_role' );
 add_action( 'bbp_activation',   'flush_rewrite_rules' );
 add_action( 'bbp_deactivation', 'flush_rewrite_rules' );
 
-// Redirect user if needed
-add_action( 'bbp_template_redirect', 'bbp_check_user_edit',      10 );
-add_action( 'bbp_template_redirect', 'bbp_check_forum_edit',     10 );
-add_action( 'bbp_template_redirect', 'bbp_check_topic_edit',     10 );
-add_action( 'bbp_template_redirect', 'bbp_check_reply_edit',     10 );
-add_action( 'bbp_template_redirect', 'bbp_check_topic_tag_edit', 10 );
+/**
+ * bbPress needs to redirect the user around in a few different circumstances:
+ *
+ * 1. Form submission within a theme (new and edit)
+ * 2. Accessing private or hidden forums
+ * 3. Editing forums, topics, replies, users, and tags
+ */
+add_action( 'bbp_template_redirect', 'bbp_forum_enforce_hidden',    -1 );
+add_action( 'bbp_template_redirect', 'bbp_forum_enforce_private',   -1 );
+add_action( 'bbp_template_redirect', 'bbp_new_forum_handler',       10 );
+add_action( 'bbp_template_redirect', 'bbp_new_reply_handler',       10 );
+add_action( 'bbp_template_redirect', 'bbp_new_topic_handler',       10 );
+add_action( 'bbp_template_redirect', 'bbp_edit_topic_tag_handler',  1  );
+add_action( 'bbp_template_redirect', 'bbp_edit_user_handler',       1  );
+add_action( 'bbp_template_redirect', 'bbp_edit_forum_handler',      1  );
+add_action( 'bbp_template_redirect', 'bbp_edit_reply_handler',      1  );
+add_action( 'bbp_template_redirect', 'bbp_edit_topic_handler',      1  );
+add_action( 'bbp_template_redirect', 'bbp_merge_topic_handler',     1  );
+add_action( 'bbp_template_redirect', 'bbp_split_topic_handler',     1  );
+add_action( 'bbp_template_redirect', 'bbp_toggle_topic_handler',    1  );
+add_action( 'bbp_template_redirect', 'bbp_toggle_reply_handler',    1  );
+add_action( 'bbp_template_redirect', 'bbp_favorites_handler',       1  );
+add_action( 'bbp_template_redirect', 'bbp_subscriptions_handler',   1  );
+add_action( 'bbp_template_redirect', 'bbp_check_user_edit',         10 );
+add_action( 'bbp_template_redirect', 'bbp_check_forum_edit',        10 );
+add_action( 'bbp_template_redirect', 'bbp_check_topic_edit',        10 );
+add_action( 'bbp_template_redirect', 'bbp_check_reply_edit',        10 );
+add_action( 'bbp_template_redirect', 'bbp_check_topic_tag_edit',    10 );
 
 /**
  * Requires and creates the BuddyPress extension, and adds component creation
@@ -297,6 +323,15 @@ add_action( 'wpmu_new_blog', 'bbp_new_site', 10, 6 );
 /** FILTERS *******************************************************************/
 
 /**
+ * Feeds
+ *
+ * bbPress comes with a number of custom RSS2 feeds that get handled outside
+ * the normal scope of feeds that WordPress would normally serve. To do this,
+ * we filter every page request, listen for a feed request, and trap it.
+ */
+add_filter( 'request', 'bbp_request_feed_trap' );
+
+/**
  * Template Compatibility
  *
  * If you want to completely bypass this and manage your own custom bbPress
@@ -305,15 +340,6 @@ add_action( 'wpmu_new_blog', 'bbp_new_site', 10, 6 );
  */
 add_filter( 'bbp_template_include', 'bbp_template_include_theme_supports', 2, 1 );
 add_filter( 'bbp_template_include', 'bbp_template_include_theme_compat',   4, 2 );
-
-/**
- * Feeds
- *
- * bbPress comes with a number of custom RSS2 feeds that get handled outside
- * the normal scope of feeds that WordPress would normally serve. To do this,
- * we filter every page request, listen for a feed request, and trap it.
- */
-add_filter( 'request', 'bbp_request_feed_trap' );
 
 // Links
 add_filter( 'paginate_links',          'bbp_add_view_all' );
@@ -382,7 +408,7 @@ add_filter( 'bbp_get_reply_content', 'bbp_reply_content_append_revisions',  1, 2
 add_filter( 'bbp_get_topic_content', 'bbp_topic_content_append_revisions',  1, 2 );
 
 // Canonical
-add_filter( 'redirect_canonical',    'bbp_redirect_canonical' );
+add_filter( 'redirect_canonical', 'bbp_redirect_canonical' );
 
 // Login/Register/Lost Password
 add_filter( 'login_redirect', 'bbp_redirect_login', 2, 3 );
@@ -402,6 +428,9 @@ add_filter( 'bbp_get_reply_author_link',    'bbp_suppress_private_author_link', 
 
 // Force comments_status on bbPress post types
 add_filter( 'comments_open', 'bbp_force_comment_status' );
+
+// Add post_parent__in to posts_where
+add_filter( 'posts_where', 'bbp_query_post_parent__in', 10, 2 );
 
 /**
  * Add filters to anonymous post author data
@@ -459,10 +488,12 @@ if ( is_admin() ) {
 	add_action( 'bbp_admin_init',    'bbp_admin_forums',         9 );
 	add_action( 'bbp_admin_init',    'bbp_admin_topics',         9 );
 	add_action( 'bbp_admin_init',    'bbp_admin_replies',        9 );
-	add_action( 'bbp_admin_init',    'bbp_admin_settings_help'     );
 	add_action( 'admin_menu',        'bbp_admin_separator'         );
 	add_action( 'custom_menu_order', 'bbp_admin_custom_menu_order' );
 	add_action( 'menu_order',        'bbp_admin_menu_order'        );
+
+	// Contextual Helpers
+	add_action( 'load-settings_page_bbpress', 'bbp_admin_settings_help' );
 
 	/**
 	 * Run the updater late on 'bbp_admin_init' to ensure that all alterations
@@ -608,8 +639,6 @@ function bbp_widgets_init() {
 	do_action ( 'bbp_widgets_init' );
 }
 
-/** Supplemental Actions ******************************************************/
-
 /**
  * Setup the currently logged-in user
  *
@@ -620,6 +649,8 @@ function bbp_widgets_init() {
 function bbp_setup_current_user() {
 	do_action ( 'bbp_setup_current_user' );
 }
+
+/** Supplemental Actions ******************************************************/
 
 /**
  * Load translations for current language
