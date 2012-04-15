@@ -78,7 +78,7 @@ function bbp_has_forums( $args = '' ) {
 	}
 
 	// The default forum query for most circumstances
-	$default = array (
+	$defaults = array (
 		'post_type'      => bbp_get_forum_post_type(),
 		'post_parent'    => bbp_is_forum_archive() ? 0 : bbp_get_forum_id() ,
 		'post_status'    => implode( ',', $post_stati ),
@@ -86,15 +86,7 @@ function bbp_has_forums( $args = '' ) {
 		'orderby'        => 'menu_order',
 		'order'          => 'ASC'
 	);
-
-	// Filter the default arguments
-	$args  = apply_filters( 'bbp_pre_has_forums_query', $args );
-
-	// Parse the default against what is requested
-	$bbp_f = wp_parse_args( $args, $default );
-
-	// Filter the forums query to allow just-in-time modifications
-	$bbp_f = apply_filters( 'bbp_has_forums_query', $bbp_f );
+	$bbp_f = bbp_parse_args( $args, $defaults, 'has_forums' );
 
 	// Run the query
 	$bbp->forum_query = new WP_Query( $bbp_f );
@@ -638,15 +630,17 @@ function bbp_forum_get_subforums( $args = '' ) {
 	} else {
 
 		// Check if user can read private forums
-		if ( current_user_can( 'read_private_forums' ) )
+		if ( current_user_can( 'read_private_forums' ) ) {
 			$post_stati[] = bbp_get_private_status_id();
+		}
 
 		// Check if user can read hidden forums
-		if ( current_user_can( 'read_hidden_forums' ) )
+		if ( current_user_can( 'read_hidden_forums' ) ) {
 			$post_stati[] = bbp_get_hidden_status_id();
+		}
 	}
 
-	$default = array(
+	$defaults = array(
 		'post_parent'    => 0,
 		'post_type'      => bbp_get_forum_post_type(),
 		'post_status'    => implode( ',', $post_stati ),
@@ -654,8 +648,7 @@ function bbp_forum_get_subforums( $args = '' ) {
 		'orderby'        => 'menu_order',
 		'order'          => 'ASC'
 	);
-
-	$r = wp_parse_args( $args, $default );
+	$r = bbp_parse_args( $args, $defaults, 'forum_get_subforums' );
 	$r['post_parent'] = bbp_get_forum_id( $r['post_parent'] );
 
 	// No forum passed
@@ -704,7 +697,7 @@ function bbp_list_forums( $args = '' ) {
 		'show_topic_count'  => true,
 		'show_reply_count'  => true,
 	);
-	$r = wp_parse_args( $args, $defaults );
+	$r = bbp_parse_args( $args, $defaults, 'list_forums' );
 	extract( $r, EXTR_SKIP );
 
 	// Bail if there are no subforums
@@ -1193,7 +1186,7 @@ function bbp_forum_subforum_count( $forum_id = 0 ) {
 		$forum_id    = bbp_get_forum_id( $forum_id );
 		$forum_count = get_post_meta( $forum_id, '_bbp_forum_subforum_count', true );
 
-		return (int) apply_filters( 'bbp_get_forum_subforum_count', (int) $forum_count, $forum_id );
+		return apply_filters( 'bbp_get_forum_subforum_count', (int) $forum_count, $forum_id );
 	}
 
 /**
@@ -1226,7 +1219,7 @@ function bbp_forum_topic_count( $forum_id = 0, $total_count = true ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$topics   = get_post_meta( $forum_id, empty( $total_count ) ? '_bbp_topic_count' : '_bbp_total_topic_count', true );
 
-		return (int) apply_filters( 'bbp_get_forum_topic_count', (int) $topics, $forum_id );
+		return apply_filters( 'bbp_get_forum_topic_count', (int) $topics, $forum_id );
 	}
 
 /**
@@ -1259,7 +1252,7 @@ function bbp_forum_reply_count( $forum_id = 0, $total_count = true ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$replies  = get_post_meta( $forum_id, empty( $total_count ) ? '_bbp_reply_count' : '_bbp_total_reply_count', true );
 
-		return (int) apply_filters( 'bbp_get_forum_reply_count', (int) $replies, $forum_id );
+		return apply_filters( 'bbp_get_forum_reply_count', (int) $replies, $forum_id );
 	}
 
 /**
@@ -1293,7 +1286,7 @@ function bbp_forum_post_count( $forum_id = 0, $total_count = true ) {
 		$topics   = bbp_get_forum_topic_count( $forum_id, $total_count );
 		$replies  = get_post_meta( $forum_id, empty( $total_count ) ? '_bbp_reply_count' : '_bbp_total_reply_count', true );
 
-		return (int) apply_filters( 'bbp_get_forum_post_count', (int) $replies + (int) $topics, $forum_id );
+		return apply_filters( 'bbp_get_forum_post_count', (int) $replies + (int) $topics, $forum_id );
 	}
 
 /**
@@ -1826,7 +1819,7 @@ function bbp_single_forum_description( $args = '' ) {
 			'size'      => 14,
 			'feed'      => true
 		);
-		$r = wp_parse_args( $args, $defaults );
+		$r = bbp_parse_args( $args, $defaults, 'get_single_forum_description' );
 		extract( $r );
 
 		// Validate forum_id
