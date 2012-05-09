@@ -60,55 +60,58 @@ class BBP_Converter {
 	public function register_admin_settings() {
 
 		// Add the main section
-		add_settings_section( 'bbpress_converter',         __( 'Main Settings',   'bbpress' ),  'bbp_converter_setting_callback_main_section', 'bbpress_converter' );
+		add_settings_section( 'bbpress_converter_main',     __( 'Main Settings',     'bbpress' ),  'bbp_converter_setting_callback_main_section', 'bbpress_converter' );
 
 		// System Select
-		add_settings_field( '_bbp_converter_platform',     __( 'Select Platform', 'bbpress' ),  'bbp_converter_setting_callback_platform', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_platform',           'sanitize_title' );
+		add_settings_field( '_bbp_converter_platform',      __( 'Select Platform',   'bbpress' ),  'bbp_converter_setting_callback_platform', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_platform',           'sanitize_title' );
 
 		// Database Server
-		add_settings_field( '_bbp_converter_db_server',    __( 'Database Server', 'bbpress' ),  'bbp_converter_setting_callback_dbserver', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_db_server',          'sanitize_title' );
+		add_settings_field( '_bbp_converter_db_server',     __( 'Database Server',   'bbpress' ),  'bbp_converter_setting_callback_dbserver', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_db_server',          'sanitize_title' );
 
 		// Database Server Port
-		add_settings_field( '_bbp_converter_db_port',      __( 'Database Port',   'bbpress' ),  'bbp_converter_setting_callback_dbport', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_db_port',            'sanitize_title' );
-
-		// Database User
-		add_settings_field( '_bbp_converter_db_user',      __( 'Database User',   'bbpress' ),  'bbp_converter_setting_callback_dbuser', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_db_user',            'sanitize_title' );
-
-		// Database Pass
-		add_settings_field( '_bbp_converter_db_pass',      __( 'Database Pass',   'bbpress' ),  'bbp_converter_setting_callback_dbpass', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_db_pass',            'sanitize_title' );
+		add_settings_field( '_bbp_converter_db_port',       __( 'Database Port',     'bbpress' ),  'bbp_converter_setting_callback_dbport', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_db_port',            'sanitize_title' );
 
 		// Database Name
-		add_settings_field( '_bbp_converter_db_name',      __( 'Database Name',   'bbpress' ),  'bbp_converter_setting_callback_dbname', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_db_name',            'sanitize_title' );
+		add_settings_field( '_bbp_converter_db_name',       __( 'Database Name',     'bbpress' ),  'bbp_converter_setting_callback_dbname', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_db_name',            'sanitize_title' );
+
+		// Database User
+		add_settings_field( '_bbp_converter_db_user',       __( 'Database User',     'bbpress' ),  'bbp_converter_setting_callback_dbuser', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_db_user',            'sanitize_title' );
+
+		// Database Pass
+		add_settings_field( '_bbp_converter_db_pass',       __( 'Database Password', 'bbpress' ),  'bbp_converter_setting_callback_dbpass', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_db_pass',            'sanitize_title' );
 
 		// Database Prefix
-		add_settings_field( '_bbp_converter_db_prefix',    __( 'Table Prefix',    'bbpress' ),  'bbp_converter_setting_callback_dbprefix', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_db_prefix',          'sanitize_title' );
+		add_settings_field( '_bbp_converter_db_prefix',     __( 'Table Prefix',      'bbpress' ),  'bbp_converter_setting_callback_dbprefix', 'bbpress_converter', 'bbpress_converter_main' );
+		register_setting  ( 'bbpress_converter_main',       '_bbp_converter_db_prefix',          'sanitize_title' );
+
+		// Add the options section
+		add_settings_section( 'bbpress_converter_opt',      __( 'Options',           'bbpress' ),  'bbp_converter_setting_callback_options_section', 'bbpress_converter' );
 
 		// Rows Limit
-		add_settings_field( '_bbp_converter_rows',         __( 'Rows Limit',      'bbpress' ),  'bbp_converter_setting_callback_rows', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',           '_bbp_converter_rows',               'intval' );
+		add_settings_field( '_bbp_converter_rows',          __( 'Rows Limit',        'bbpress' ),  'bbp_converter_setting_callback_rows', 'bbpress_converter', 'bbpress_converter_opt' );
+		register_setting  ( 'bbpress_converter_opt',        '_bbp_converter_rows',               'intval' );
 
 		// Delay Time
-		add_settings_field( '_bbp_converter_delay_time',    __( 'Delay Time',      'bbpress' ), 'bbp_converter_setting_callback_delay_time', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',            '_bbp_converter_delay_time',        'intval' );
-
-		// Clean
-		add_settings_field( '_bbp_converter_clean',         __( 'Clean',           'bbpress' ), 'bbp_converter_setting_callback_clean', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',            '_bbp_converter_clean',             'intval' );
-
-		// Restart
-		add_settings_field( '_bbp_converter_restart',       __( 'Restart',         'bbpress' ), 'bbp_converter_setting_callback_restart', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',            '_bbp_converter_restart',           'intval' );
+		add_settings_field( '_bbp_converter_delay_time',    __( 'Delay Time',        'bbpress' ), 'bbp_converter_setting_callback_delay_time', 'bbpress_converter', 'bbpress_converter_opt' );
+		register_setting  ( 'bbpress_converter_opt',        '_bbp_converter_delay_time',        'intval' );
 
 		// Convert Users ?
-		add_settings_field( '_bbp_converter_convert_users', __( 'Convert Users',   'bbpress' ), 'bbp_converter_setting_callback_convert_users', 'bbpress_converter', 'bbpress_converter' );
-		register_setting  ( 'bbpress_converter',            '_bbp_converter_convert_users',     'intval' );
+		add_settings_field( '_bbp_converter_convert_users', __( 'Convert Users',     'bbpress' ), 'bbp_converter_setting_callback_convert_users', 'bbpress_converter', 'bbpress_converter_opt' );
+		register_setting  ( 'bbpress_converter_opt',        '_bbp_converter_convert_users',     'intval' );
+
+		// Clean
+		add_settings_field( '_bbp_converter_clean',         __( 'Clean',             'bbpress' ), 'bbp_converter_setting_callback_clean', 'bbpress_converter', 'bbpress_converter_opt' );
+		register_setting  ( 'bbpress_converter_opt',        '_bbp_converter_clean',             'intval' );
+
+		// Restart
+		add_settings_field( '_bbp_converter_restart',       __( 'Restart',           'bbpress' ), 'bbp_converter_setting_callback_restart', 'bbpress_converter', 'bbpress_converter_opt' );
+		register_setting  ( 'bbpress_converter_opt',        '_bbp_converter_restart',           'intval' );
 	}
 
 	/**
@@ -130,16 +133,24 @@ class BBP_Converter {
 			}
 
 			div.bbp-converter-updated {
-				height:150px;
-				overflow:auto;
-				display:none;
+				height: 300px;
+				overflow: auto;
+				display: none;
 				background-color: #FFFFE0;
 				border-color: #E6DB55;
+				font-family: monospace;
 			}
 
 			div.bbp-converter-updated p {
 				margin: 0.5em 0;
 				padding: 2px;
+			}
+			
+			div.bbp-converter-updated p strong.loading {
+				padding: 2px 20px 2px 0;
+				background-image: url('<?php echo admin_url(); ?>images/wpspin_light.gif');
+				background-repeat: no-repeat;
+				background-position: center right;
 			}
 
 			#bbp-converter-stop {
@@ -168,15 +179,17 @@ class BBP_Converter {
 				if( values['_bbp_converter_restart'] ) {
 					jQuery('#_bbp_converter_restart').removeAttr("checked");
 				}
+
 				if( values['_bbp_converter_delay_time'] ) {
 					bbconverter_delay_time = values['_bbp_converter_delay_time'] * 1000;
 				}
+
 				values['action'] = 'bbconverter_process';
 				return values;
 			}
 
 			function bbconverter_start() {
-				if( !bbconverter_is_running ) {
+				if( false == bbconverter_is_running ) {
 					bbconverter_is_running = true;
 					jQuery('#bbp-converter-start').hide();
 					jQuery('#bbp-converter-stop').show();
@@ -200,16 +213,18 @@ class BBP_Converter {
 
 			function bbconverter_stop() {
 				bbconverter_is_running = false;
+				jQuery('#bbp-converter-message strong').removeClass( 'loading' );
 			}
 
 			function bbconverter_success(response) {
 				bbconverter_log(response);
 				
 				if ( response == 'Conversion Complete' || response.indexOf('error') > -1 ) {
-					bbconverter_log('<b>Update your counts: <a href="tools.php?page=bbp-recount">Continue</a></b>');
+					bbconverter_log('<b>Repair any missing information: <a href="<?php echo admin_url(); ?>tools.php?page=bbp-repair">Continue</a></b>');
 					jQuery('#bbp-converter-start').show();
 					jQuery('#bbp-converter-stop').hide();
 					jQuery('#bbp-converter-progress').hide();
+					bbconverter_stop();
 					clearTimeout( bbconverter_run_timer );
 				} else if( bbconverter_is_running ) { // keep going
 					jQuery('#bbp-converter-progress').show();
@@ -224,18 +239,18 @@ class BBP_Converter {
 			}
 
 			function bbconverter_log(text) {
-				if(jQuery('#bbp-converter-message').css('display') == 'none') {
+				if ( jQuery('#bbp-converter-message').css('display') == 'none' ) {
 					jQuery('#bbp-converter-message').show();
 				}
-				if( text ) {
-					jQuery('#bbp-converter-message').prepend('<p><strong>' + text + '</strong></p>');
+				if ( text ) {
+					jQuery('#bbp-converter-message strong').removeClass( 'loading' );
+					jQuery('#bbp-converter-message').prepend('<p><strong class="loading">' + text + '</strong></p>');
 				}
 			}
 
 		</script>
 
 		<?php
-
 	}
 
 	/**
@@ -247,7 +262,8 @@ class BBP_Converter {
 
 		if ( ! ini_get( 'safe_mode' ) ) {
 			set_time_limit( 0 );
-			ini_set( 'memory_limit', '256M' );
+			ini_set( 'memory_limit',   '256M' );
+			ini_set( 'implicit_flush', '1'    );
 			ignore_user_abort( true );
 		}
 
@@ -259,7 +275,7 @@ class BBP_Converter {
 
 		$step  = (int) get_option( '_bbp_converter_step',  1 );
 		$min   = (int) get_option( '_bbp_converter_start', 0 );
-		$max   = $min + (int) get_option( '_bbp_converter_rows', 100 ) - 1;
+		$max   = $min + (int) get_option( '_bbp_converter_rows', !empty( $_POST['_bbp_converter_rows'] ) ? (int) $_POST['_bbp_converter_rows'] : 100 ) - 1;
 		$start = $min;
 
 		// Bail if platform did not get saved
@@ -286,13 +302,11 @@ class BBP_Converter {
 					} else {
 						update_option( '_bbp_converter_start', $max + 1 );
 
-						_e( 'Delete previous converted data (' . $min . ' - ' . $max . ')', 'bbpress' );
+						_e( 'Deleting previously converted data (' . $min . ' - ' . $max . ')', 'bbpress' );
 					}
 				} else {
 					update_option( '_bbp_converter_step',  $step + 1 );
 					update_option( '_bbp_converter_start', 0         );
-
-					_e( 'Not Cleaning Data', 'bbpress' );
 				}
 				
 				break;
@@ -310,13 +324,11 @@ class BBP_Converter {
 					} else {
 						update_option( '_bbp_converter_start', $max + 1 );
 
-						_e( 'Convert users (' . $min . ' - ' . $max . ')', 'bbpress' );
+						_e( 'Converting users (' . $min . ' - ' . $max . ')', 'bbpress' );
 					}
 				} else {
 					update_option( '_bbp_converter_step',  $step + 1 );
 					update_option( '_bbp_converter_start', 0         );
-
-					_e( 'Not Converting users Selected', 'bbpress' );
 				}
 
 				break;
@@ -339,8 +351,6 @@ class BBP_Converter {
 				} else {
 					update_option( '_bbp_converter_step',  $step + 1 );
 					update_option( '_bbp_converter_start', 0         );
-
-					_e( 'Not clearing default passwords', 'bbpress' );
 				}
 
 				break;
@@ -357,7 +367,7 @@ class BBP_Converter {
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
 
-					_e( 'Convert forums (' . $min . ' - ' . $max . ')', 'bbpress' );
+					_e( 'Converting forums (' . $min . ' - ' . $max . ')', 'bbpress' );
 				}
 
 				break;
@@ -370,12 +380,12 @@ class BBP_Converter {
 					update_option( '_bbp_converter_start', 0         );
 
 					if ( empty( $start ) ) {
-						_e( 'No forums to convert parents', 'bbpress' );
+						_e( 'No forum parents to convert', 'bbpress' );
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
 
-					_e( 'Convert forum parents (' . $min . ' - ' . $max . ')', 'bbpress' );
+					_e( 'Converting forum parents (' . $min . ' - ' . $max . ')', 'bbpress' );
 				}
 
 				break;
@@ -393,7 +403,7 @@ class BBP_Converter {
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
 
-					_e( 'Convert topics (' . $min . ' - ' . $max . ')', 'bbpress' );
+					_e( 'Converting topics (' . $min . ' - ' . $max . ')', 'bbpress' );
 				}
 
 				break;
@@ -411,23 +421,23 @@ class BBP_Converter {
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
 
-					_e( 'Convert tags (' . $min . ' - ' . $max . ')', 'bbpress' );
+					_e( 'Converting tags (' . $min . ' - ' . $max . ')', 'bbpress' );
 				}
 
 				break;
 
-			// STEP 8. Convert posts.
+			// STEP 8. Convert replies.
 			case 8 :
 				if ( $converter->convert_replies( $start ) ) {
 					update_option( '_bbp_converter_step',  $step + 1 );
 					update_option( '_bbp_converter_start', 0         );
 					if ( empty( $start ) ) {
-						_e( 'No posts to convert', 'bbpress' );
+						_e( 'No replies to convert', 'bbpress' );
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
 
-					_e( 'Convert posts (' . $min . ' - ' . $max . ')', 'bbpress' );
+					_e( 'Converting replies (' . $min . ' - ' . $max . ')', 'bbpress' );
 				}
 
 				break;
@@ -436,7 +446,7 @@ class BBP_Converter {
 				delete_option( '_bbp_converter_step' );
 				delete_option( '_bbp_converter_start' );
 
-				echo 'Conversion Complete';
+				_e( 'Conversion Complete', 'bbpress' );
 
 				break;
 			
@@ -450,20 +460,18 @@ class BBP_Converter {
 	 * @global WPDB $wpdb
 	 */
 	public function convert_pass() {
-		global $wpdb;
 
-		$username = $_POST['log'];
-		if ( $username != '' ) {
-			$row = $wpdb->get_row(
-						"SELECT * FROM {$wpdb->users}
-						INNER JOIN {$wpdb->usermeta} ON user_id = ID
-						WHERE meta_key = '_bbp_converter_class' AND user_login = '{$username}'
-						LIMIT 1"
-					);
+		$username = !empty( $_POST['log'] ) ? $_POST['log'] : '';
+
+		if ( !empty( $username ) ) {
+
+			global $wpdb;
+
+			$row = $wpdb->get_row( "SELECT * FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON user_id = ID WHERE meta_key = '_bbp_converter_class' AND user_login = '{$username}' LIMIT 1" );
 
 			if ( !empty( $row ) ) {
 				$converter = bbp_new_converter( $row->meta_value );
-				$converter->translate_pass( $username, $_POST['pwd'] );
+				$converter->callback_pass( $username, $_POST['pwd'] );
 			}
 		}
 	}
@@ -476,35 +484,37 @@ class BBP_Converter {
 	public function sync_table( $drop = false ) {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . "bbp_converter_translator";
+		$table_name = $wpdb->prefix . 'bbp_converter_translator';
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) == $table_name ) {
 			$wpdb->query( "DROP TABLE {$table_name}" );
 		}
-		if ( !$drop ) {
+
+		if ( empty( $drop ) ) {
 			require_once( ABSPATH . '/wp-admin/includes/upgrade.php' );
 
 			if ( !empty( $wpdb->charset ) ) {
 				$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
 			}
+
 			if ( !empty( $wpdb->collate ) ) {
 				$charset_collate .= " COLLATE $wpdb->collate";
 			}
 
-			//------ Translator -----------------------------------------------
+			/** Translator ****************************************************/
+
 			$sql = "CREATE TABLE {$table_name} (
 						meta_id mediumint(8) unsigned not null auto_increment,
 						value_type varchar(25) null,
 						value_id bigint(20) unsigned not null default '0',
 						meta_key varchar(25) null,
 						meta_value varchar(25) null,
-						PRIMARY KEY  (meta_id),
+					PRIMARY KEY  (meta_id),
 						KEY value_id (value_id),
 						KEY meta_join (meta_key, meta_value) ) {$charset_collate};";
 
 			dbDelta( $sql );
 		}
 	}
-
 }
 
 /**
@@ -569,10 +579,12 @@ abstract class BBP_Converter_Base {
 	 */
 	public $sync_table_name;
 
+	/** Methods ***************************************************************/
+
 	/**
 	 * This is the constructor and it connects to the platform databases.
 	 */
-	function __construct() {
+	public function __construct() {
 		$this->setup_globals();
 	}
 
@@ -595,7 +607,7 @@ abstract class BBP_Converter_Base {
 		/**
 		 * Syncing
 		 */
-		$this->sync_table_name = $this->wpdb->prefix . "bbconverter_translator";
+		$this->sync_table_name = $this->wpdb->prefix . 'bbp_converter_translator';
 		if ( $this->wpdb->get_var( "SHOW TABLES LIKE '" . $this->sync_table_name . "'" ) == $this->sync_table_name ) {
 			$this->sync_table = true;
 		} else {
@@ -686,7 +698,7 @@ abstract class BBP_Converter_Base {
 
 		/** User Section ******************************************************/
 
-		$default_role = get_option( '_bbp_allow_global_access' ) ? bbp_get_participant_role() : get_option( 'default_role' );
+		$default_role = ( is_multisite() && get_option( '_bbp_allow_global_access' ) ) ? bbp_get_participant_role() : get_option( 'default_role' );
 		$this->field_map[] = array(
 			'to_type'      => 'user',
 			'to_fieldname' => 'role',
@@ -736,88 +748,137 @@ abstract class BBP_Converter_Base {
 	 * @param int Start row
 	 */
 	public function convert_table( $to_type, $start ) {
+
+		// Are we usig a sync table, or postmeta?
 		if ( $this->wpdb->get_var( "SHOW TABLES LIKE '" . $this->sync_table_name . "'" ) == $this->sync_table_name ) {
 			$this->sync_table = true;
 		} else {
 			$this->sync_table = false;
 		}
+
+		// Set some defaults
 		$has_insert     = false;
 		$from_tablename = '';
 		$field_list     = $from_tables = $tablefield_array = array();
 
+		// Toggle Table Name based on $to_type (destination)
 		switch ( $to_type ) {
-			case 'user':
+			case 'user' :
 				$tablename = $this->wpdb->users;
 				break;
 
-			case 'tags':
+			case 'tags' :
 				$tablename = '';
 				break;
 
-			default:
+			default :
 				$tablename = $this->wpdb->posts;
 		}
 
+		// Get the fields from the destination table
 		if ( !empty( $tablename ) ) {
 			$tablefield_array = $this->get_fields( $tablename );
 		}
 
+		/** Step 1 ************************************************************/
+
+		// Loop through the field maps, and look for to_type matches
 		foreach ( $this->field_map as $item ) {
+
+			// Yay a match, and we have a from table, too
 			if ( ( $item['to_type'] == $to_type ) && !empty( $item['from_tablename'] ) ) {
-				if ( !empty( $from_tablename ) ) {
+
+				// $from_tablename was set from a previous loop iteration
+				if ( ! empty( $from_tablename ) ) {
+
+					// Doing some joining
 					if ( !in_array( $item['from_tablename'], $from_tables ) && in_array( $item['join_tablename'], $from_tables ) ) {
 						$from_tablename .= ' ' . $item['join_type'] . ' JOIN ' . $this->opdb->prefix . $item['from_tablename'] . ' AS ' . $item['from_tablename'] . ' ' . $item['join_expression'];
 					}
+
+				// $from_tablename needs to be set
 				} else {
 					$from_tablename = $item['from_tablename'] . ' AS ' . $item['from_tablename'];
 				}
+
+				// Specific FROM expression data used
 				if ( !empty( $item['from_expression'] ) ) {
+
+					// No 'WHERE' in expression
 					if ( stripos( $from_tablename, "WHERE" ) === false ) {
 						$from_tablename .= ' ' . $item['from_expression'];
+
+					// 'WHERE' in expression, so replace with 'AND'
 					} else {
 						$from_tablename .= ' ' . str_replace( "WHERE", "AND", $item['from_expression'] );
 					}
 				}
+
+				// Add tablename and fieldname to arrays, formatted for querying
 				$from_tables[] = $item['from_tablename'];
 				$field_list[]  = 'convert(' . $item['from_tablename'] . '.' . $item['from_fieldname'] . ' USING "' . $this->charset . '") AS ' . $item['from_fieldname'];
 			}
 		}
 
+		/** Step 2 ************************************************************/
+
+		// We have a $from_tablename, so we want to get some data to convert
 		if ( !empty( $from_tablename ) ) {
+
+			// Get some data from the old forums
 			$forum_array = $this->opdb->get_results( 'SELECT ' . implode( ',', $field_list ) . ' FROM ' . $this->opdb->prefix . $from_tablename . ' LIMIT ' . $start . ', ' . $this->max_rows, ARRAY_A );
+
+			// Query returned some results
 			if ( !empty( $forum_array ) ) {
 
+				// Loop through results
 				foreach ( (array) $forum_array as $forum ) {
-					$insert_post = $insert_postmeta = $insert_data = array( );
 
+					// Reset some defaults
+					$insert_post = $insert_postmeta = $insert_data = array();
+
+					// Loop through field map, again...
 					foreach ( $this->field_map as $row ) {
-						if ( $row['to_type'] == $to_type && !is_null( $row['to_fieldname'] ) ) {
+
+						// Types matchand to_fieldname is present. This means
+						// we have some work to do here.
+						if ( ( $row['to_type'] == $to_type ) && ! is_null( $row['to_fieldname'] ) ) {
+
+							// This row has a destination that matches one of the
+							// columns in this table.
 							if ( in_array( $row['to_fieldname'], $tablefield_array ) ) {
-								if ( isset( $row['default'] ) ) { //Allows us to set default fields.
+								
+								// Allows us to set default fields.
+								if ( isset( $row['default'] ) ) {
 									$insert_post[$row['to_fieldname']] = $row['default'];
-								} elseif ( isset( $row['translate_method'] ) ) { //Translates a field from the old forum.
-									if ( $row['translate_method'] == 'translate_userid' && empty( $_POST['_bbp_converter_convert_users'] ) ) {
+
+								// Translates a field from the old forum.
+								} elseif ( isset( $row['callback_method'] ) ) {
+									if ( ( 'callback_userid' == $row['callback_method'] ) && empty( $_POST['_bbp_converter_convert_users'] ) ) {
 										$insert_post[$row['to_fieldname']] = $forum[$row['from_fieldname']];
 									} else {
-										$insert_post[$row['to_fieldname']] = call_user_func_array( array( $this, $row['translate_method'] ), array( $forum[$row['from_fieldname']], $forum ) );
+										$insert_post[$row['to_fieldname']] = call_user_func_array( array( $this, $row['callback_method'] ), array( $forum[$row['from_fieldname']], $forum ) );
 									}
 									
 								// Maps the field from the old forum.
 								} else {
 									$insert_post[$row['to_fieldname']] = $forum[$row['from_fieldname']];
 								}
-							} elseif ( $row['to_fieldname'] != '' ) {
+
+							// Destination field is not empty, so we might need
+							// to do some extra work or set a default.
+							} elseif ( !empty( $row['to_fieldname'] ) ) {
 								
 								// Allows us to set default fields.
 								if ( isset( $row['default'] ) ) {
 									$insert_postmeta[$row['to_fieldname']] = $row['default'];
 
 								// Translates a field from the old forum.
-								} elseif ( isset( $row['translate_method'] ) ) {
-									if ( $row['translate_method'] == 'translate_userid' && $_POST['_bbp_converter_convert_users'] == 0 ) {
+								} elseif ( isset( $row['callback_method'] ) ) {
+									if ( ( $row['callback_method'] == 'callback_userid' ) && ( 0 == $_POST['_bbp_converter_convert_users'] ) ) {
 										$insert_postmeta[$row['to_fieldname']] = $forum[$row['from_fieldname']];
 									} else {
-										$insert_postmeta[$row['to_fieldname']] = call_user_func_array( array( $this, $row['translate_method'] ), array( $forum[$row['from_fieldname']], $forum ) );
+										$insert_postmeta[$row['to_fieldname']] = call_user_func_array( array( $this, $row['callback_method'] ), array( $forum[$row['from_fieldname']], $forum ) );
 									}
 
 								// Maps the field from the old forum.
@@ -828,8 +889,15 @@ abstract class BBP_Converter_Base {
 						}
 					}
 
+					/** Step 3 ************************************************/
+
+					// Something to insert into the destination field
 					if ( count( $insert_post ) > 0 || ( $to_type == 'tags' && count( $insert_postmeta ) > 0 ) ) {
+
 						switch ( $to_type ) {
+							
+							/** New user **************************************/
+
 							case 'user':
 								if ( username_exists( $insert_post['user_login'] ) ) {
 									$insert_post['user_login'] = 'imported_' . $insert_post['user_login'];
@@ -840,35 +908,57 @@ abstract class BBP_Converter_Base {
 								}
 
 								$post_id = wp_insert_user( $insert_post );
+
 								if ( is_numeric( $post_id ) ) {
+
 									foreach ( $insert_postmeta as $key => $value ) {
-										//add_user_meta( $post_id, $key, $value, true );
-										if ( substr( $key, -3 ) == "_id" && $this->sync_table === true ) {
+
+										add_user_meta( $post_id, $key, $value, true );
+
+										if ( '_id' == substr( $key, -3 ) && ( true === $this->sync_table ) ) {
 											$this->wpdb->insert( $this->sync_table_name, array( 'value_type' => 'user', 'value_id' => $post_id, 'meta_key' => $key, 'meta_value' => $value ) );
-										} else {
-											add_user_meta( $post_id, $key, $value, true );
 										}
 									}
 								}
 								break;
 
+							/** New Topic-Tag *********************************/
+
 							case 'tags':
-								wp_set_object_terms( $insert_postmeta['objectid'], $insert_postmeta['name'], 'topic-tag', true );
+								$post_id = wp_set_object_terms( $insert_postmeta['objectid'], $insert_postmeta['name'], 'topic-tag', true );
 								break;
+
+							/** Forum, Topic, Reply ***************************/
 
 							default:
 								$post_id = wp_insert_post( $insert_post );
+
 								if ( is_numeric( $post_id ) ) {
+
 									foreach ( $insert_postmeta as $key => $value ) {
-										//add_post_meta( $post_id, $key, $value, true );
-										if ( substr( $key, -3 ) == "_id" && $this->sync_table === true ) {
+
+										add_post_meta( $post_id, $key, $value, true );
+
+										// Topics need an extra bit of metadata
+										// to be keyed to the new post_id
+										if ( ( 'topic' == $to_type ) && ( '_bbp_topic_id' == $key ) ) {
+
+											// Update the live topic ID
+											update_post_meta( $post_id, $key, $post_id );
+
+											// Save the old topic ID
+											add_post_meta( $post_id, '_bbp_old_topic_id', $value );
+											if ( '_id' == substr( $key, -3 ) && ( true === $this->sync_table ) ) {
+												$this->wpdb->insert( $this->sync_table_name, array( 'value_type' => 'post', 'value_id' => $post_id, 'meta_key' => '_bbp_topic_id',     'meta_value' => $post_id ) );
+												$this->wpdb->insert( $this->sync_table_name, array( 'value_type' => 'post', 'value_id' => $post_id, 'meta_key' => '_bbp_old_topic_id', 'meta_value' => $value   ) );
+											}
+
+										} elseif ( '_id' == substr( $key, -3 ) && ( true === $this->sync_table ) ) {
 											$this->wpdb->insert( $this->sync_table_name, array( 'value_type' => 'post', 'value_id' => $post_id, 'meta_key' => $key, 'meta_value' => $value ) );
-										} else {
-											add_post_meta( $post_id, $key, $value, true );
 										}
 									}
 								}
-							break;
+								break;
 						}
 						$has_insert = true;
 					}
@@ -883,35 +973,32 @@ abstract class BBP_Converter_Base {
 		$has_update = false;
 
 		if ( !empty( $this->sync_table ) ) {
-			$forum_array = $this->wpdb->get_results( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name .
-					' WHERE meta_key = "_bbp_converter_parent_id" AND meta_value > 0 LIMIT ' . $start . ', ' . $this->max_rows );
+			$forum_array = $this->wpdb->get_results( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name . ' WHERE meta_key = "_bbp_forum_parent_id" AND meta_value > 0 LIMIT ' . $start . ', ' . $this->max_rows );
 		} else {
-			$forum_array = $this->wpdb->get_results( 'SELECT post_id AS value_id, meta_value FROM ' . $this->wpdb->postmeta .
-					' WHERE meta_key = "_bbp_converter_parent_id" AND meta_value > 0 LIMIT ' . $start . ', ' . $this->max_rows );
+			$forum_array = $this->wpdb->get_results( 'SELECT post_id AS value_id, meta_value FROM ' . $this->wpdb->postmeta . ' WHERE meta_key = "_bbp_forum_parent_id" AND meta_value > 0 LIMIT ' . $start . ', ' . $this->max_rows );
 		}
 		foreach ( (array) $forum_array as $row ) {
-			$parent_id = $this->translate_forumid( $row->meta_value );
-			$this->wpdb->query( 'UPDATE ' . $this->wpdb->posts . ' SET post_parent = "' .
-					$parent_id . '" WHERE ID = "' . $row->value_id . '" LIMIT 1' );
-
+			$parent_id = $this->callback_forumid( $row->meta_value );
+			$this->wpdb->query( 'UPDATE ' . $this->wpdb->posts . ' SET post_parent = "' . $parent_id . '" WHERE ID = "' . $row->value_id . '" LIMIT 1' );
 			$has_update = true;
 		}
 
-		return !$has_update;
+		return ! $has_update;
 	}
 
 	/**
 	 * This method deletes data from the wp database.
 	 */
 	public function clean( $start ) {
+		$start      = 0;
 		$has_delete = false;
 
 		/** Delete bbconverter topics/forums/posts ****************************/
 
 		if ( true === $this->sync_table ) {
-			$bbconverter = $this->wpdb->get_results( 'SELECT value_id FROM ' . $this->sync_table_name . ' INNER JOIN ' . $this->wpdb->posts . ' ON(value_id = ID) WHERE meta_key LIKE "_bbp_converter_%" AND value_type = "post" GROUP BY value_id ORDER BY value_id DESC LIMIT ' . $this->max_rows, ARRAY_A );
+			$bbconverter = $this->wpdb->get_results( 'SELECT value_id FROM ' . $this->sync_table_name . ' INNER JOIN ' . $this->wpdb->posts . ' ON(value_id = ID) WHERE meta_key LIKE "_bbp_%" AND value_type = "post" GROUP BY value_id ORDER BY value_id DESC LIMIT ' . $this->max_rows, ARRAY_A );
 		} else {
-			$bbconverter = $this->wpdb->get_results( 'SELECT post_id AS value_id FROM ' . $this->wpdb->postmeta . ' WHERE meta_key LIKE "_bbp_converter_%" GROUP BY post_id ORDER BY post_id DESC LIMIT ' . $this->max_rows, ARRAY_A );
+			$bbconverter = $this->wpdb->get_results( 'SELECT post_id AS value_id FROM ' . $this->wpdb->postmeta . ' WHERE meta_key LIKE "_bbp_%" GROUP BY post_id ORDER BY post_id DESC LIMIT ' . $this->max_rows, ARRAY_A );
 		}
 
 		if ( !empty( $bbconverter ) ) {
@@ -924,9 +1011,9 @@ abstract class BBP_Converter_Base {
 		/** Delete bbconverter users ******************************************/
 
 		if ( true === $this->sync_table ) {
-			$bbconverter = $this->wpdb->get_results( 'SELECT value_id FROM ' . $this->sync_table_name . ' INNER JOIN ' . $this->wpdb->users . ' ON(value_id = ID) WHERE meta_key = "_bbp_converter_user_id" AND value_type = "user" LIMIT ' . $this->max_rows, ARRAY_A );
+			$bbconverter = $this->wpdb->get_results( 'SELECT value_id FROM ' . $this->sync_table_name . ' INNER JOIN ' . $this->wpdb->users . ' ON(value_id = ID) WHERE meta_key = "_bbp_user_id" AND value_type = "user" LIMIT ' . $this->max_rows, ARRAY_A );
 		} else {
-			$bbconverter = $this->wpdb->get_results( 'SELECT user_id AS value_id FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_converter_user_id" LIMIT ' . $this->max_rows, ARRAY_A );
+			$bbconverter = $this->wpdb->get_results( 'SELECT user_id AS value_id FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_user_id" LIMIT ' . $this->max_rows, ARRAY_A );
 		}
 
 		if ( !empty( $bbconverter ) ) {
@@ -949,20 +1036,15 @@ abstract class BBP_Converter_Base {
 
 		/** Delete bbconverter passwords **************************************/
 
-		$bbconverter = $this->wpdb->get_results( 'SELECT user_id, meta_value FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_converter_password" LIMIT ' . $start . ', ' . $this->max_rows, ARRAY_A );
+		$bbconverter = $this->wpdb->get_results( 'SELECT user_id, meta_value FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_password" LIMIT ' . $start . ', ' . $this->max_rows, ARRAY_A );
 		if ( !empty( $bbconverter ) ) {
 
 			foreach ( $bbconverter as $value ) {
 				if ( is_serialized( $value['meta_value'] ) ) {
-					$this->wpdb->query( 'UPDATE ' . $this->wpdb->users . ' ' .
-							'SET user_pass = "" ' .
-							'WHERE ID = "' . $value['user_id'] . '"' );
+					$this->wpdb->query( 'UPDATE ' . $this->wpdb->users . ' ' . 'SET user_pass = "" ' . 'WHERE ID = "' . $value['user_id'] . '"' );
 				} else {
-					$this->wpdb->query( 'UPDATE ' . $this->wpdb->users . ' ' .
-							'SET user_pass = "' . $value['meta_value'] . '" ' .
-							'WHERE ID = "' . $value['user_id'] . '"' );
-
-					$this->wpdb->query( 'DELETE FROM ' . $this->wpdb->usermeta . ' WHERE meta_key LIKE "_bbp_converter_password" AND user_id = "' . $value['user_id'] . '"' );
+					$this->wpdb->query( 'UPDATE ' . $this->wpdb->users . ' ' . 'SET user_pass = "' . $value['meta_value'] . '" ' . 'WHERE ID = "' . $value['user_id'] . '"' );
+					$this->wpdb->query( 'DELETE FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_password" AND user_id = "' . $value['user_id'] . '"' );
 				}
 			}
 			$has_delete = true;
@@ -983,7 +1065,7 @@ abstract class BBP_Converter_Base {
 	abstract protected function info();
 
 	/**
-	 * This method grabs appropriet fields from the table specified
+	 * This method grabs appropriate fields from the table specified
 	 *
 	 * @param string The table name to grab fields from
 	 */
@@ -1003,34 +1085,41 @@ abstract class BBP_Converter_Base {
 		}
 		return $rval;
 	}
+	
+	/** Callbacks *************************************************************/
 
-	public function translate_pass( $username, $password ) {
+	/**
+	 * Run password through wp_hash_password()
+	 *
+	 * @param string $username
+	 * @param string $password 
+	 */
+	public function callback_pass( $username, $password ) {
 		$user = $this->wpdb->get_row( 'SELECT * FROM ' . $this->wpdb->users . ' WHERE user_login = "' . $username . '" AND user_pass = "" LIMIT 1' );
 		if ( !empty( $user ) ) {
-			$usermeta = $this->wpdb->get_row( 'SELECT * FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_converter_password" AND user_id = "' . $user->ID . '" LIMIT 1' );
+			$usermeta = $this->wpdb->get_row( 'SELECT * FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_password" AND user_id = "' . $user->ID . '" LIMIT 1' );
 
 			if ( !empty( $usermeta ) ) {
 				if ( $this->authenticate_pass( $password, $usermeta->meta_value ) ) {
-					$this->wpdb->query( 'UPDATE ' . $this->wpdb->users . ' ' .
-							'SET user_pass = "' . wp_hash_password( $password ) . '" ' .
-							'WHERE ID = "' . $user->ID . '"' );
-
-					$this->wpdb->query( 'DELETE FROM ' . $this->wpdb->usermeta . ' WHERE meta_key LIKE "%_bbp_converter_%" AND user_id = "' . $user->ID . '"' );
+					$this->wpdb->query( 'UPDATE ' . $this->wpdb->users . ' ' . 'SET user_pass = "' . wp_hash_password( $password ) . '" ' . 'WHERE ID = "' . $user->ID . '"' );
+					$this->wpdb->query( 'DELETE FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_password" AND user_id = "' . $user->ID . '"' );
 				}
 			}
 		}
 	}
 
-	private function translate_forumid( $field ) {
-		if ( !isset( $this->map_forumid[$field] ) ) { //This is a mini cache system to reduce database calls.
+	/**
+	 * A mini cache system to reduce database calls to forum ID's
+	 *
+	 * @param string $field
+	 * @return string 
+	 */
+	private function callback_forumid( $field ) {
+		if ( !isset( $this->map_forumid[$field] ) ) {
 			if ( !empty( $this->sync_table ) ) {
-				$row = $this->wpdb->get_row( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name .
-						' WHERE meta_key = "_bbp_converter_forum_id" AND meta_value = "' . $field .
-						'" LIMIT 1' );
+				$row = $this->wpdb->get_row( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name . ' WHERE meta_key = "_bbp_forum_id" AND meta_value = "' . $field . '" LIMIT 1' );
 			} else {
-				$row = $this->wpdb->get_row( 'SELECT post_id AS value_id FROM ' . $this->wpdb->postmeta .
-						' WHERE meta_key = "_bbp_converter_forum_id" AND meta_value = "' . $field .
-						'" LIMIT 1' );
+				$row = $this->wpdb->get_row( 'SELECT post_id AS value_id FROM ' . $this->wpdb->postmeta . ' WHERE meta_key = "_bbp_forum_id" AND meta_value = "' . $field . '" LIMIT 1' );
 			}
 
 			if ( !is_null( $row ) ) {
@@ -1042,16 +1131,18 @@ abstract class BBP_Converter_Base {
 		return $this->map_forumid[$field];
 	}
 
-	private function translate_topicid( $field ) {
-		if ( !isset( $this->map_topicid[$field] ) ) { //This is a mini cache system to reduce database calls.
+	/**
+	 * A mini cache system to reduce database calls to topic ID's
+	 *
+	 * @param string $field
+	 * @return string 
+	 */
+	private function callback_topicid( $field ) {
+		if ( !isset( $this->map_topicid[$field] ) ) {
 			if ( !empty( $this->sync_table ) ) {
-				$row = $this->wpdb->get_row( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name .
-						' WHERE meta_key = "_bbp_converter_topic_id" AND meta_value = "' . $field .
-						'" LIMIT 1' );
+				$row = $this->wpdb->get_row( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name . ' WHERE meta_key = "_bbp_old_topic_id" AND meta_value = "' . $field . '" LIMIT 1' );
 			} else {
-				$row = $this->wpdb->get_row( 'SELECT post_id AS value_id FROM ' . $this->wpdb->postmeta .
-						' WHERE meta_key = "_bbp_converter_topic_id" AND meta_value = "' . $field .
-						'" LIMIT 1' );
+				$row = $this->wpdb->get_row( 'SELECT post_id AS value_id FROM ' . $this->wpdb->postmeta . ' WHERE meta_key = "_bbp_old_topic_id" AND meta_value = "' . $field . '" LIMIT 1' );
 			}
 
 			if ( !is_null( $row ) ) {
@@ -1063,16 +1154,18 @@ abstract class BBP_Converter_Base {
 		return $this->map_topicid[$field];
 	}
 
-	private function translate_userid( $field ) {
-		if ( !isset( $this->map_userid[$field] ) ) { //This is a mini cache system to reduce database calls.
+	/**
+	 * A mini cache system to reduce database calls to user ID's
+	 *
+	 * @param string $field
+	 * @return string 
+	 */
+	private function callback_userid( $field ) {
+		if ( !isset( $this->map_userid[$field] ) ) {
 			if ( !empty( $this->sync_table ) ) {
-				$row = $this->wpdb->get_row( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name .
-						' WHERE meta_key = "_bbp_converter_user_id" AND meta_value = "' . $field .
-						'" LIMIT 1' );
+				$row = $this->wpdb->get_row( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name . ' WHERE meta_key = "_bbp_user_id" AND meta_value = "' . $field . '" LIMIT 1' );
 			} else {
-				$row = $this->wpdb->get_row( 'SELECT user_id AS value_id FROM ' . $this->wpdb->usermeta .
-						' WHERE meta_key = "_bbp_converter_user_id" AND meta_value = "' . $field .
-						'" LIMIT 1' );
+				$row = $this->wpdb->get_row( 'SELECT user_id AS value_id FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_user_id" AND meta_value = "' . $field . '" LIMIT 1' );
 			}
 
 			if ( !is_null( $row ) ) {
@@ -1088,14 +1181,18 @@ abstract class BBP_Converter_Base {
 		return $this->map_userid[$field];
 	}
 
-	private function translate_topicid_to_forumid( $field ) {
-		$topicid = $this->translate_topicid( $field );
+	/**
+	 * A mini cache system to reduce database calls map topics ID's to forum ID's
+	 *
+	 * @param string $field
+	 * @return string 
+	 */
+	private function callback_topicid_to_forumid( $field ) {
+		$topicid = $this->callback_topicid( $field );
 		if ( empty( $topicid ) ) {
 			$this->map_topicid_to_forumid[$topicid] = 0;
-		} else if ( !isset( $this->map_topicid_to_forumid[$topicid] ) ) { //This is a mini cache system to reduce database calls.
-			$row = $this->wpdb->get_row(
-					'SELECT post_parent FROM ' .
-					$this->wpdb->posts . ' WHERE ID = "' . $topicid . '" LIMIT 1' );
+		} elseif ( ! isset( $this->map_topicid_to_forumid[$topicid] ) ) {
+			$row = $this->wpdb->get_row( 'SELECT post_parent FROM ' . $this->wpdb->posts . ' WHERE ID = "' . $topicid . '" LIMIT 1' );
 
 			if ( !is_null( $row ) ) {
 				$this->map_topicid_to_forumid[$topicid] = $row->post_parent;
@@ -1107,11 +1204,11 @@ abstract class BBP_Converter_Base {
 		return $this->map_topicid_to_forumid[$topicid];
 	}
 
-	protected function translate_title( $field ) {
+	protected function callback_slug( $field ) {
 		return sanitize_title_with_dashes( $field );
 	}
 
-	protected function translate_negative( $field ) {
+	protected function callback_negative( $field ) {
 		if ( $field < 0 ) {
 			return 0;
 		} else {
@@ -1119,13 +1216,13 @@ abstract class BBP_Converter_Base {
 		}
 	}
 
-	protected function translate_html( $field ) {
+	protected function callback_html( $field ) {
 		require_once( bbpress()->admin->admin_dir . 'bbp-parser.php' );
 		$bbcode = BBCode::getInstance();
-		return $bbcode->Parse( $field );
+		return html_entity_decode( $bbcode->Parse( $field ) );
 	}
 
-	protected function translate_null( $field ) {
+	protected function callback_null( $field ) {
 		if ( is_null( $field ) ) {
 			return '';
 		} else {
@@ -1133,7 +1230,7 @@ abstract class BBP_Converter_Base {
 		}
 	}
 
-	protected function translate_datetime( $field ) {
+	protected function callback_datetime( $field ) {
 		if ( is_numeric( $field ) ) {
 			return date( 'Y-m-d H:i:s', $field );
 		} else {
@@ -1143,9 +1240,9 @@ abstract class BBP_Converter_Base {
 }
 
 /**
- * This is a function that is purposely written to look
- * like a "new" statement.  It is basically a dynamic loader
- * that will load in the platform conversion of your choice.
+ * This is a function that is purposely written to look like a "new" statement.
+ * It is basically a dynamic loader that will load in the platform conversion
+ * of your choice.
  *
  * @param string $platform Name of valid platform class.
  */

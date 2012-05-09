@@ -74,39 +74,17 @@ function bbp_has_topics( $args = '' ) {
 
 	// Default arguments
 	$default = array(
-
-		// Narrow query down to bbPress topics
-		'post_type'      => bbp_get_topic_post_type(),
-
-		// Forum ID
-		'post_parent'    => bbp_is_single_forum() ? bbp_get_forum_id() : 'any',
-
-		// Make sure topic has some last activity time
-		'meta_key'       => '_bbp_last_active_time',
-
-		// 'meta_value', 'author', 'date', 'title', 'modified', 'parent', rand',
-		'orderby'        => 'meta_value',
-
-		// 'ASC', 'DESC'
-		'order'          => 'DESC',
-
-		// Topics per page
-		'posts_per_page' => bbp_get_topics_per_page(),
-
-		// Page Number
-		'paged'          => bbp_get_paged(),
-
-		// Topic Search
-		's'              => !empty( $_REQUEST['ts'] ) ? $_REQUEST['ts'] : '',
-
-		// Ignore sticky topics?
-		'show_stickies'  => bbp_is_single_forum(),
-
-		// Maximum number of pages to show
-		'max_num_pages'  => false,
-
-		// Post Status
-		'post_status'    => $default_status,
+		'post_type'      => bbp_get_topic_post_type(),                          // Narrow query down to bbPress topics
+		'post_parent'    => bbp_is_single_forum() ? bbp_get_forum_id() : 'any', // Forum ID
+		'meta_key'       => '_bbp_last_active_time',                            // Make sure topic has some last activity time
+		'orderby'        => 'meta_value',                                       // 'meta_value', 'author', 'date', 'title', 'modified', 'parent', rand',
+		'order'          => 'DESC',                                             // 'ASC', 'DESC'
+		'posts_per_page' => bbp_get_topics_per_page(),                          // Topics per page
+		'paged'          => bbp_get_paged(),                                    // Page Number
+		's'              => !empty( $_REQUEST['ts'] ) ? $_REQUEST['ts'] : '',   // Topic Search
+		'show_stickies'  => bbp_is_single_forum() || bbp_is_topic_archive(),    // Ignore sticky topics?
+		'max_num_pages'  => false,                                              // Maximum number of pages to show
+		'post_status'    => $default_status,                                    // Post Status
 	);
 
 	// Maybe query for topic tags
@@ -797,9 +775,9 @@ function bbp_topic_revision_log( $topic_id = 0 ) {
 
 			$r .= "\t" . '<li id="bbp-topic-revision-log-' . $topic_id . '-item-' . $revision->ID . '" class="bbp-topic-revision-log-item">' . "\n";
 			if ( !empty( $reason ) ) {
-				$r .= "\t\t" . sprintf( __( 'This topic was modified %1$s ago by %2$s. Reason: %3$s', 'bbpress' ), $since, $author, $reason ) . "\n";
+				$r .= "\t\t" . sprintf( __( 'This topic was modified %1$s by %2$s. Reason: %3$s', 'bbpress' ), $since, $author, $reason ) . "\n";
 			} else {
-				$r .= "\t\t" . sprintf( __( 'This topic was modified %1$s ago by %2$s.', 'bbpress' ), $since, $author ) . "\n";
+				$r .= "\t\t" . sprintf( __( 'This topic was modified %1$s by %2$s.', 'bbpress' ), $since, $author ) . "\n";
 			}
 			$r .= "\t" . '</li>' . "\n";
 
@@ -1235,8 +1213,12 @@ function bbp_topic_author_link( $args = '' ) {
 	 * @uses bbp_get_topic_author_display_name() To get the topic author
 	 * @uses bbp_is_topic_anonymous() To check if the topic is by an
 	 *                                 anonymous user
-	 * @uses bbp_get_topic_author_avatar() To get the topic author avatar
 	 * @uses bbp_get_topic_author_url() To get the topic author url
+	 * @uses bbp_get_topic_author_avatar() To get the topic author avatar
+	 * @uses bbp_get_topic_author_display_name() To get the topic author display
+	 *                                      name
+	 * @uses bbp_get_user_display_role() To get the topic author display role
+	 * @uses bbp_get_topic_author_id() To get the topic author id
 	 * @uses apply_filters() Calls 'bbp_get_topic_author_link' with the link
 	 *                        and args
 	 * @return string Author link of topic
@@ -1247,7 +1229,8 @@ function bbp_topic_author_link( $args = '' ) {
 			'link_title' => '',
 			'type'       => 'both',
 			'size'       => 80,
-			'sep'        => '&nbsp;'
+			'sep'        => '&nbsp;',
+			'show_role'  => false
 		);
 		$r = bbp_parse_args( $args, $defaults, 'get_topic_author_link' );
 		extract( $r );
@@ -1293,6 +1276,11 @@ function bbp_topic_author_link( $args = '' ) {
 					$link_class = ' class="bbp-author-' . $link . '"';
 					$author_link[] = sprintf( '<a href="%1$s"%2$s%3$s>%4$s</a>', $author_url, $link_title, $link_class, $link_text );
 				}
+
+				if ( true === $show_role ) {
+					$author_link[] = bbp_get_topic_author_role( array( 'topic_id' => $topic_id ) );
+				}
+
 				$author_link = join( $sep, $author_link );
 
 			// No links if anonymous
@@ -1405,6 +1393,48 @@ function bbp_topic_author_email( $topic_id = 0 ) {
 
 		return apply_filters( 'bbp_get_topic_author_email', $author_email, $topic_id );
 	}
+
+/**
+ * Output the topic author role
+ *
+ * @since bbPress (r3860)
+ *
+ * @param array $args Optional.
+ * @uses bbp_get_topic_author_role() To get the topic author role
+ */
+function bbp_topic_author_role( $args = array() ) {
+	echo bbp_get_topic_author_role( $args );
+}
+	/**
+	 * Return the topic author role
+	 *
+	 * @since bbPress (r3860)
+	 *
+	 * @param array $args Optional.
+	 * @uses bbp_get_topic_id() To get the topic id
+	 * @uses bbp_get_user_display_role() To get the user display role
+	 * @uses bbp_get_topic_author_id() To get the topic author id
+	 * @uses apply_filters() Calls bbp_get_topic_author_role with the author
+	 *                        role & args
+	 * @return string topic author role
+	 */
+	function bbp_get_topic_author_role( $args = array() ) {
+		$defaults = array(
+			'topic_id' => 0,
+			'class'    => 'bbp-author-role',
+			'before'   => '',
+			'after'    => ''
+		);
+		$args = bbp_parse_args( $args, $defaults, 'get_topic_author_role' );
+		extract( $args, EXTR_SKIP );
+
+		$topic_id    = bbp_get_topic_id( $topic_id );
+		$role        = bbp_get_user_display_role( bbp_get_topic_author_id( $topic_id ) );
+		$author_role = sprintf( '%1$s<div class="%2$s">%3$s</div>%4$s', $before, $class, $role, $after );
+
+		return apply_filters( 'bbp_get_topic_author_role', $author_role, $args );
+	}
+
 
 /**
  * Output the title of the forum a topic belongs to
@@ -2795,11 +2825,15 @@ function bbp_single_topic_description( $args = '' ) {
 		$last_reply = bbp_get_topic_last_active_id( $topic_id );
 		if ( !empty( $last_reply ) ) {
 			$last_updated_by = bbp_get_author_link( array( 'post_id' => $last_reply, 'size' => $size ) );
-			$retstr = sprintf( __( 'This topic contains %1$s, has %2$s, and was last updated by %3$s %4$s ago.', 'bbpress' ), $reply_count, $voice_count, $last_updated_by, $time_since );
+			$retstr          = sprintf( __( 'This topic contains %1$s, has %2$s, and was last updated by %3$s %4$s.', 'bbpress' ), $reply_count, $voice_count, $last_updated_by, $time_since );
 
 		// Topic has no replies
-		} else {
+		} elseif ( ! empty( $voice_count ) && ! empty( $reply_count ) ) {
 			$retstr = sprintf( __( 'This topic contains %1$s and has %2$s.', 'bbpress' ), $voice_count, $reply_count );
+
+		// Topic has no replies and no voices
+		} elseif ( empty( $voice_count ) && empty( $reply_count ) ) {
+			$retstr = sprintf( __( 'This topic has no replies.', 'bbpress' ), $voice_count, $reply_count );
 		}
 
 		// Add the 'view all' filter back

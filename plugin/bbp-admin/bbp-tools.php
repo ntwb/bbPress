@@ -10,52 +10,46 @@
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
+/** Repair ********************************************************************/
+
 /**
- * Admin tools page
+ * Admin repair page
  *
  * @since bbPress (r2613)
  *
- * @uses bbp_recount_list() To get the recount list
+ * @uses bbp_admin_repair_list() To get the recount list
  * @uses check_admin_referer() To verify the nonce and the referer
  * @uses wp_cache_flush() To flush the cache
  * @uses do_action() Calls 'admin_notices' to display the notices
  * @uses screen_icon() To display the screen icon
  * @uses wp_nonce_field() To add a hidden nonce field
  */
-function bbp_admin_tools_screen() {
-
-	$recount_list = bbp_recount_list(); ?>
+function bbp_admin_repair() {
+?>
 
 	<div class="wrap">
 
 		<?php screen_icon( 'tools' ); ?>
 
-		<h2><?php _e( 'bbPress Recount', 'bbpress' ) ?></h2>
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( __( 'Repair Forums', 'bbpress' ) ); ?></h2>
 
-		<p><?php _e( 'bbPress keeps a running count of things like replies to each topic and topics in each forum. In rare occasions these counts can fall out of sync. Using this form you can have bbPress manually recount these items.', 'bbpress' ); ?></p>
-		<p><?php _e( 'You can also use this form to clean out stale items like empty tags.', 'bbpress' ); ?></p>
+		<p><?php _e( 'bbPress keeps track of relationships between forums, topics, replies, and topic tags, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
+		<p class="description"><?php _e( 'Some of these tools create substantial database overhead. Avoid running more than 1 repair job at a time.', 'bbpress' ); ?></p>
 
 		<form class="settings" method="post" action="">
 			<table class="form-table">
 				<tbody>
 					<tr valign="top">
-						<th scope="row"><?php _e( 'Things to recount:', 'bbpress' ) ?></th>
+						<th scope="row"><?php _e( 'Relationships to Repair:', 'bbpress' ) ?></th>
 						<td>
 							<fieldset>
-								<legend class="screen-reader-text"><span><?php _e( 'Recount', 'bbpress' ) ?></span></legend>
+								<legend class="screen-reader-text"><span><?php _e( 'Repair', 'bbpress' ) ?></span></legend>
 
-								<?php if ( !empty( $recount_list ) ) :
+								<?php foreach ( bbp_admin_repair_list() as $item ) : ?>
 
-										foreach ( $recount_list as $item ) {
-											echo '<label><input type="checkbox" class="checkbox" name="' . esc_attr( $item[0] ) . '" id="' . esc_attr( str_replace( '_', '-', $item[0] ) ) . '" value="1" /> ' . esc_html( $item[1] ) . '</label><br />' . "\n";
-										}
-								?>
+									<label><input type="checkbox" class="checkbox" name="<?php echo esc_attr( $item[0] ) . '" id="' . esc_attr( str_replace( '_', '-', $item[0] ) ); ?>" value="1" /> <?php echo esc_html( $item[1] ); ?></label><br />
 
-								<?php else : ?>
-
-									<p><?php _e( 'There are no recount tools available.', 'bbpress' ) ?></p>
-
-								<?php endif; ?>
+								<?php endforeach; ?>
 
 							</fieldset>
 						</td>
@@ -64,7 +58,7 @@ function bbp_admin_tools_screen() {
 			</table>
 
 			<fieldset class="submit">
-				<input class="button-primary" type="submit" name="submit" value="<?php _e( 'Recount Items', 'bbpress' ); ?>" />
+				<input class="button-primary" type="submit" name="submit" value="<?php _e( 'Repair Items', 'bbpress' ); ?>" />
 				<?php wp_nonce_field( 'bbpress-do-counts' ); ?>
 			</fieldset>
 		</form>
@@ -78,23 +72,22 @@ function bbp_admin_tools_screen() {
  *
  * @since bbPress (r2613)
  *
- * @uses bbp_recount_list() To get the recount list
+ * @uses bbp_admin_repair_list() To get the recount list
  * @uses check_admin_referer() To verify the nonce and the referer
  * @uses wp_cache_flush() To flush the cache
  * @uses do_action() Calls 'admin_notices' to display the notices
  */
-function bbp_admin_tools_handler() {
+function bbp_admin_repair_handler() {
 
 	if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) ) {
 		check_admin_referer( 'bbpress-do-counts' );
 
 		// Stores messages
-		$messages     = array();
-		$recount_list = bbp_recount_list();
+		$messages = array();
 
 		wp_cache_flush();
 
-		foreach ( (array) $recount_list as $item ) {
+		foreach ( (array) bbp_admin_repair_list() as $item ) {
 			if ( isset( $item[2] ) && isset( $_POST[$item[0]] ) && 1 == $_POST[$item[0]] && is_callable( $item[2] ) ) {
 				$messages[] = call_user_func( $item[2] );
 			}
@@ -102,7 +95,7 @@ function bbp_admin_tools_handler() {
 
 		if ( count( $messages ) ) {
 			foreach ( $messages as $message ) {
-				bbp_tools_feedback( $message[1] );
+				bbp_admin_tools_feedback( $message[1] );
 			}
 		}
 	}
@@ -119,7 +112,7 @@ function bbp_admin_tools_handler() {
  * @uses add_action() Adds the admin notice action with the message HTML
  * @return string The message HTML
  */
-function bbp_tools_feedback( $message, $class = false ) {
+function bbp_admin_tools_feedback( $message, $class = false ) {
 	if ( is_string( $message ) ) {
 		$message = '<p>' . $message . '</p>';
 		$class = $class ? $class : 'updated';
@@ -154,33 +147,35 @@ function bbp_tools_feedback( $message, $class = false ) {
 	return $lambda;
 }
 
-
 /**
- * Get the array of the recount list
+ * Get the array of the repair list
  *
  * @since bbPress (r2613)
  *
- * @uses apply_filters() Calls 'bbp_recount_list' with the recount list array
- * @return array Recount list
+ * @uses apply_filters() Calls 'bbp_repair_list' with the list array
+ * @return array Repair list of options
  */
-function bbp_recount_list() {
-	$recount_list = array(
-		5  => array( 'bbp-forum-topics',           __( 'Count topics in each forum',                        'bbpress' ), 'bbp_recount_forum_topics'         ),
-		10 => array( 'bbp-forum-replies',          __( 'Count replies in each forum',                       'bbpress' ), 'bbp_recount_forum_replies'        ),
-		15 => array( 'bbp-topic-replies',          __( 'Count replies in each topic',                       'bbpress' ), 'bbp_recount_topic_replies'        ),
-		20 => array( 'bbp-topic-voices',           __( 'Count voices in each topic',                        'bbpress' ), 'bbp_recount_topic_voices'         ),
-		25 => array( 'bbp-topic-hidden-replies',   __( 'Count spammed & trashed replies in each topic',     'bbpress' ), 'bbp_recount_topic_hidden_replies' ),
-		30 => array( 'bbp-topics-replied',         __( 'Count replies for each user',                       'bbpress' ), 'bbp_recount_user_topics_replied'  ),
-		35 => array( 'bbp-clean-favorites',        __( 'Remove trashed topics from user favorites',         'bbpress' ), 'bbp_recount_clean_favorites'      ),
-		40 => array( 'bbp-clean-subscriptions',    __( 'Remove trashed topics from user subscriptions',     'bbpress' ), 'bbp_recount_clean_subscriptions'  ),
-		//45 => array( 'bbp-topic-tag-count',        __( 'Count tags for every topic',                        'bbpress' ), 'bbp_recount_topic_tags'           ),
-		//50 => array( 'bbp-tags-tag-count',         __( 'Count topics for every tag',                        'bbpress' ), 'bbp_recount_tag_topics'           ),
-		//55 => array( 'bbp-tags-delete-empty',      __( 'Delete tags with no topics',                        'bbpress' ), 'bbp_recount_tag_delete_empty'     ),
-		60 => array( 'bbp-sync-all-topics-forums', __( 'Recalculate last activity in each topic and forum', 'bbpress' ), 'bbp_recount_rewalk'               )
+function bbp_admin_repair_list() {
+	$repair_list = array(
+		0  => array( 'bbp-sync-topic-meta',        __( 'Recalculate the parent topic for each post',          'bbpress' ), 'bbp_admin_repair_topic_meta'               ),
+		5  => array( 'bbp-sync-forum-meta',        __( 'Recalculate the parent forum for each post',          'bbpress' ), 'bbp_admin_repair_forum_meta'               ),
+		10 => array( 'bbp-forum-topics',           __( 'Count topics in each forum',                          'bbpress' ), 'bbp_admin_repair_forum_topic_count'        ),
+		15 => array( 'bbp-forum-replies',          __( 'Count replies in each forum',                         'bbpress' ), 'bbp_admin_repair_forum_reply_count'        ),
+		20 => array( 'bbp-topic-replies',          __( 'Count replies in each topic',                         'bbpress' ), 'bbp_admin_repair_topic_reply_count'        ),
+		25 => array( 'bbp-topic-voices',           __( 'Count voices in each topic',                          'bbpress' ), 'bbp_admin_repair_topic_voice_count'        ),
+		30 => array( 'bbp-topic-hidden-replies',   __( 'Count spammed & trashed replies in each topic',       'bbpress' ), 'bbp_admin_repair_topic_hidden_reply_count' ),
+		35 => array( 'bbp-user-replies',           __( 'Count topics for each user',                          'bbpress' ), 'bbp_admin_repair_user_topic_count'         ),
+		35 => array( 'bbp-user-topics',            __( 'Count replies for each user',                         'bbpress' ), 'bbp_admin_repair_user_reply_count'         ),
+		40 => array( 'bbp-user-favorites',         __( 'Remove trashed topics from user favorites',           'bbpress' ), 'bbp_admin_repair_user_favorites'           ),
+		45 => array( 'bbp-user-subscriptions',     __( 'Remove trashed topics from user subscriptions',       'bbpress' ), 'bbp_admin_repair_user_subscriptions'       ),
+		50 => array( 'bbp-sync-all-topics-forums', __( 'Recalculate last activity in each topic and forum',   'bbpress' ), 'bbp_admin_repair_freshness'                )
 	);
+	ksort( $repair_list );
 
-	ksort( $recount_list );
-	return apply_filters( 'bbp_recount_list', $recount_list );
+	// DO NOT USE: Legacy filter
+	$repair_list = apply_filters( 'bbp_recount_list', $repair_list );
+
+	return (array) apply_filters( 'bbp_repair_list', $repair_list );
 }
 
 /**
@@ -193,7 +188,7 @@ function bbp_recount_list() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_topic_replies() {
+function bbp_admin_repair_topic_reply_count() {
 	global $wpdb;
 
 	$statement = __( 'Counting the number of replies in each topic&hellip; %s', 'bbpress' );
@@ -237,7 +232,7 @@ function bbp_recount_topic_replies() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_topic_voices() {
+function bbp_admin_repair_topic_voice_count() {
 	global $wpdb;
 
 	$statement = __( 'Counting the number of voices in each topic&hellip; %s', 'bbpress' );
@@ -280,7 +275,7 @@ function bbp_recount_topic_voices() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_topic_hidden_replies() {
+function bbp_admin_repair_topic_hidden_reply_count() {
 	global $wpdb;
 
 	$statement = __( 'Counting the number of spammed and trashed replies in each topic&hellip; %s', 'bbpress' );
@@ -310,7 +305,7 @@ function bbp_recount_topic_hidden_replies() {
  * @uses bbp_update_forum_topic_count() To update the forum topic count
  * @return array An array of the status code and the message
  */
-function bbp_recount_forum_topics() {
+function bbp_admin_repair_forum_topic_count() {
 	global $wpdb;
 
 	$statement = __( 'Counting the number of topics in each forum&hellip; %s', 'bbpress' );
@@ -345,7 +340,7 @@ function bbp_recount_forum_topics() {
  * @uses bbp_update_forum_reply_count() To update the forum reply count
  * @return array An array of the status code and the message
  */
-function bbp_recount_forum_replies() {
+function bbp_admin_repair_forum_reply_count() {
 	global $wpdb;
 
 	$statement = __( 'Counting the number of replies in each forum&hellip; %s', 'bbpress' );
@@ -369,6 +364,52 @@ function bbp_recount_forum_replies() {
 }
 
 /**
+ * Recount topics by the users
+ *
+ * @since bbPress (r3889)
+ *
+ * @uses bbp_get_reply_post_type() To get the reply post type
+ * @uses wpdb::query() To run our recount sql queries
+ * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_repair_user_topic_count() {
+	global $wpdb;
+
+	$statement   = __( 'Counting the number of topics each user has created&hellip; %s', 'bbpress' );
+	$result      = __( 'Failed!', 'bbpress' );
+	$sql_select  = "SELECT `post_author`, COUNT(DISTINCT `ID`) as `_count` FROM `{$wpdb->posts}` WHERE `post_type` = '" . bbp_get_topic_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "' GROUP BY `post_author`;";
+	$insert_rows = $wpdb->get_results( $sql_select );
+
+	if ( is_wp_error( $insert_rows ) )
+		return array( 1, sprintf( $statement, $result ) );
+
+	$insert_values = array();
+	foreach ( $insert_rows as $insert_row )
+		$insert_values[] = "('{$insert_row->post_author}', '_bbp_topic_count', '{$insert_row->_count}')";
+
+	if ( !count( $insert_values ) )
+		return array( 2, sprintf( $statement, $result ) );
+
+	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '_bbp_topic_count';";
+	if ( is_wp_error( $wpdb->query( $sql_delete ) ) )
+		return array( 3, sprintf( $statement, $result ) );
+
+	$insert_values = array_chunk( $insert_values, 10000 );
+	foreach ( $insert_values as $chunk ) {
+		$chunk = "\n" . join( ",\n", $chunk );
+		$sql_insert = "INSERT INTO `{$wpdb->usermeta}` (`user_id`, `meta_key`, `meta_value`) VALUES $chunk;";
+
+		if ( is_wp_error( $wpdb->query( $sql_insert ) ) ) {
+			return array( 4, sprintf( $statement, $result ) );
+		}
+	}
+
+	$result = __( 'Complete!', 'bbpress' );
+	return array( 0, sprintf( $statement, $result ) );
+}
+
+/**
  * Recount topic replied by the users
  *
  * @since bbPress (r2613)
@@ -378,13 +419,12 @@ function bbp_recount_forum_replies() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_user_topics_replied() {
+function bbp_admin_repair_user_reply_count() {
 	global $wpdb;
 
-	$statement = __( 'Counting the number of topics to which each user has replied&hellip; %s', 'bbpress' );
-	$result    = __( 'Failed!', 'bbpress' );
-
-	$sql_select = "SELECT `post_author`, COUNT(DISTINCT `ID`) as `_count` FROM `{$wpdb->posts}` WHERE `post_type` = '" . bbp_get_reply_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "' GROUP BY `post_author`;";
+	$statement   = __( 'Counting the number of topics to which each user has replied&hellip; %s', 'bbpress' );
+	$result      = __( 'Failed!', 'bbpress' );
+	$sql_select  = "SELECT `post_author`, COUNT(DISTINCT `ID`) as `_count` FROM `{$wpdb->posts}` WHERE `post_type` = '" . bbp_get_reply_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "' GROUP BY `post_author`;";
 	$insert_rows = $wpdb->get_results( $sql_select );
 
 	if ( is_wp_error( $insert_rows ) )
@@ -392,12 +432,12 @@ function bbp_recount_user_topics_replied() {
 
 	$insert_values = array();
 	foreach ( $insert_rows as $insert_row )
-		$insert_values[] = "('{$insert_row->post_author}', '_bbp_topics_replied', '{$insert_row->_count}')";
+		$insert_values[] = "('{$insert_row->post_author}', '_bbp_reply_count', '{$insert_row->_count}')";
 
 	if ( !count( $insert_values ) )
 		return array( 2, sprintf( $statement, $result ) );
 
-	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '_bbp_topics_replied';";
+	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '_bbp_reply_count';";
 	if ( is_wp_error( $wpdb->query( $sql_delete ) ) )
 		return array( 3, sprintf( $statement, $result ) );
 
@@ -406,304 +446,12 @@ function bbp_recount_user_topics_replied() {
 		$chunk = "\n" . join( ",\n", $chunk );
 		$sql_insert = "INSERT INTO `{$wpdb->usermeta}` (`user_id`, `meta_key`, `meta_value`) VALUES $chunk;";
 
-		if ( is_wp_error( $wpdb->query( $sql_insert ) ) )
+		if ( is_wp_error( $wpdb->query( $sql_insert ) ) ) {
 			return array( 4, sprintf( $statement, $result ) );
+		}
 	}
 
 	$result = __( 'Complete!', 'bbpress' );
-	return array( 0, sprintf( $statement, $result ) );
-}
-
-// This function bypasses the taxonomy API
-/**
- * Recount topic tags in each topic
- *
- * @since bbPress (r2613)
- *
- * @uses wpdb::query() To run our recount sql queries
- * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
- * @return array An array of the status code and the message
- */
-function bbp_recount_topic_tags() {
-	global $wpdb;
-
-	$statement = __( 'Counting the number of topic tags in each topic&hellip; %s', 'bbpress' );
-	$result    = __( 'Failed!', 'bbpress' );
-
-//	// Delete empty tags
-//	$delete = bbp_recount_tag_delete_empty();
-//	if ( $delete[0] > 0 ) {
-//		$result = __( 'Could not delete empty tags.' );
-//		return array( 1, sprintf( $statement, $result ) );
-//	}
-//
-//	// Get all tags
-//	$sql_terms = "SELECT
-//		`$wpdb->term_relationships`.`object_id`,
-//		`$wpdb->term_taxonomy`.`term_id`
-//	FROM `$wpdb->term_relationships`
-//	JOIN `$wpdb->term_taxonomy`
-//		ON `$wpdb->term_taxonomy`.`term_taxonomy_id` = `$wpdb->term_relationships`.`term_taxonomy_id`
-//	WHERE
-//		`$wpdb->term_taxonomy`.`taxonomy` = 'bb_topic_tag'
-//	ORDER BY
-//		`$wpdb->term_relationships`.`object_id`,
-//		`$wpdb->term_taxonomy`.`term_id`;";
-//
-//	$terms = $wpdb->get_results( $sql_terms );
-//	if ( is_wp_error( $terms ) || !is_array( $terms ) )
-//		return array( 2, sprintf( $statement, $result ) );
-//
-//	if ( empty( $terms ) ) {
-//		$result = __( 'No topic tags found.' );
-//		return array( 3, sprintf( $statement, $result ) );
-//	}
-//
-//	// Count the tags in each topic
-//	$topics = array( );
-//	foreach ( $terms as $term ) {
-//		if ( !isset( $topics[$term->object_id] ) ) {
-//			$topics[$term->object_id] = 1;
-//		} else {
-//			$topics[$term->object_id]++;
-//		}
-//	}
-//
-//	if ( empty( $topics ) )
-//		return array( 4, sprintf( $statement, $result ) );
-//
-//	// Build the values to insert into the SQL statement
-//	$values = array( );
-//	foreach ( $topics as $topic_id => $tag_count )
-//		$values[] = '(' . $topic_id . ', ' . $tag_count . ')';
-//
-//	if ( empty( $values ) )
-//		return array( 5, sprintf( $statement, $result ) );
-//
-//	// Update the topics with the new tag counts
-//	$values = array_chunk( $values, 10000 );
-//	foreach ( $values as $chunk ) {
-//		$sql = "INSERT INTO `$wpdb->topics` (`topic_id`, `tag_count`) VALUES " . implode( ", ", $chunk ) . " ON DUPLICATE KEY UPDATE `tag_count` = VALUES(`tag_count`);";
-//		if ( is_wp_error( $wpdb->query( $sql ) ) ) {
-//			return array( 6, sprintf( $statement, $result ) );
-//		}
-//	}
-//
-//	$result = __( 'Complete!', 'bbpress' );
-	return array( 0, sprintf( $statement, $result ) );
-}
-
-// This function bypasses the taxonomy API
-/**
- * Recount the number of topics in each topic tag
- *
- * @since bbPress (r2613)
- *
- * @uses wpdb::query() To run our recount sql queries
- * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
- * @return array An array of the status code and the message
- */
-function bbp_recount_tag_topics() {
-	global $wpdb;
-
-	$statement = __( 'Counting the number of topics in each topic tag&hellip; %s', 'bbpress' );
-	$result    = __( 'Failed!', 'bbpress' );
-
-//	// Delete empty tags
-//	$delete = bbp_recount_tag_delete_empty();
-//	if ( $delete[0] > 0 ) {
-//		$result = __( 'Could not delete empty tags.' );
-//		return array( 1, sprintf( $statement, $result ) );
-//	}
-//
-//	// Get all tags
-//	$sql_terms = "SELECT
-//		`$wpdb->term_taxonomy`.`term_taxonomy_id`,
-//		`$wpdb->term_relationships`.`object_id`
-//	FROM `$wpdb->term_relationships`
-//	JOIN `$wpdb->term_taxonomy`
-//		ON `$wpdb->term_taxonomy`.`term_taxonomy_id` = `$wpdb->term_relationships`.`term_taxonomy_id`
-//	WHERE
-//		`$wpdb->term_taxonomy`.`taxonomy` = 'bb_topic_tag'
-//	ORDER BY
-//		`$wpdb->term_taxonomy`.`term_taxonomy_id`,
-//		`$wpdb->term_relationships`.`object_id`;";
-//
-//	$terms = $wpdb->get_results( $sql_terms );
-//	if ( is_wp_error( $terms ) || !is_array( $terms ) )
-//		return array( 2, sprintf( $statement, $result ) );
-//
-//	if ( empty( $terms ) ) {
-//		$result = __( 'No topic tags found.', 'bbpress' );
-//		return array( 3, sprintf( $statement, $result ) );
-//	}
-//
-//	// Count the topics in each tag
-//	$tags = array( );
-//	foreach ( $terms as $term ) {
-//		if ( !isset( $tags[$term->term_taxonomy_id] ) ) {
-//			$tags[$term->term_taxonomy_id] = 1;
-//		} else {
-//			$tags[$term->term_taxonomy_id]++;
-//		}
-//	}
-//
-//	if ( empty( $tags ) )
-//		return array( 4, sprintf( $statement, $result ) );
-//
-//	// Build the values to insert into the SQL statement
-//	$values = array( );
-//	foreach ( $tags as $term_taxonomy_id => $count )
-//		$values[] = '(' . $term_taxonomy_id . ', ' . $count . ')';
-//
-//	if ( empty( $values ) )
-//		return array( 5, sprintf( $statement, $result ) );
-//
-//	// Update the terms with the new tag counts
-//	$values = array_chunk( $values, 10000 );
-//	foreach ( $values as $chunk ) {
-//		$sql = "INSERT INTO `$wpdb->term_taxonomy` (`term_taxonomy_id`, `count`) VALUES " . implode( ", ", $chunk ) . " ON DUPLICATE KEY UPDATE `count` = VALUES(`count`);";
-//		if ( is_wp_error( $wpdb->query( $sql ) ) ) {
-//			return array( 6, sprintf( $statement, $result ) );
-//		}
-//	}
-//
-//	if ( $return_boolean )
-//		return true;
-//
-//	$result = __( 'Complete!', 'bbpress' );
-	return array( 0, sprintf( $statement, $result ) );
-}
-
-// This function bypasses the taxonomy API
-/**
- * Recount topic tags with no topics
- *
- * @since bbPress (r2613)
- *
- * @uses wpdb::query() To run our recount sql queries
- * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
- * @return array An array of the status code and the message
- */
-function bbp_recount_tag_delete_empty() {
-	global $wpdb;
-
-	$statement = __( 'Deleting topic tags with no topics&hellip; %s', 'bbpress' );
-	$result    = __( 'Failed!', 'bbpress' );
-
-//	static $run_once;
-//	if ( isset( $run_once ) ) {
-//		if ( $run_once > 0 ) {
-//			$exit = sprintf( __( 'failure (returned code %s)', 'bbpress' ), $run_once );
-//		} else {
-//			$exit = __( 'success', 'bbpress' );
-//		}
-//		$result = sprintf( __( 'Already run with %s.', 'bbpress' ), $exit );
-//		return array( $run_once, sprintf( $statement, $result ) );
-//	}
-//
-//	// Get all topic ids
-//	$sql_topics = "SELECT `topic_id` FROM $wpdb->topics ORDER BY `topic_id`;";
-//	$topics = $wpdb->get_results( $sql_topics );
-//	if ( is_wp_error( $topics ) ) {
-//		$result = __( 'No topics found.', 'bbpress' );
-//		$run_once = 1;
-//		return array( 1, sprintf( $statement, $result ) );
-//	}
-//
-//	$topic_ids = array( );
-//
-//	foreach ( $topics as $topic )
-//		$topic_ids[] = $topic->topic_id;
-//
-//	// Get all topic tag term relationships without a valid topic id
-//	$in_topic_ids = implode( ', ', $topic_ids );
-//	$sql_bad_term_relationships = "SELECT
-//		`$wpdb->term_taxonomy`.`term_taxonomy_id`,
-//		`$wpdb->term_taxonomy`.`term_id`,
-//		`$wpdb->term_relationships`.`object_id`
-//	FROM `$wpdb->term_relationships`
-//	JOIN `$wpdb->term_taxonomy`
-//		ON `$wpdb->term_taxonomy`.`term_taxonomy_id` = `$wpdb->term_relationships`.`term_taxonomy_id`
-//	WHERE
-//		`$wpdb->term_taxonomy`.`taxonomy` = 'bb_topic_tag' AND
-//		`$wpdb->term_relationships`.`object_id` NOT IN ($in_topic_ids)
-//	ORDER BY
-//		`$wpdb->term_relationships`.`object_id`,
-//		`$wpdb->term_taxonomy`.`term_id`,
-//		`$wpdb->term_taxonomy`.`term_taxonomy_id`;";
-//
-//	$bad_term_relationships = $wpdb->get_results( $sql_bad_term_relationships );
-//	if ( is_wp_error( $bad_term_relationships ) || !is_array( $bad_term_relationships ) ) {
-//		$run_once = 2;
-//		return array( 2, sprintf( $statement, $result ) );
-//	}
-//
-//	// Delete those bad term relationships
-//	if ( !empty( $bad_term_relationships ) ) {
-//		$values = array( );
-//		foreach ( $bad_term_relationships as $bad_term_relationship ) {
-//			$values[] = '(`object_id` = ' . $bad_term_relationship->object_id . ' AND `term_taxonomy_id` = ' . $bad_term_relationship->term_taxonomy_id . ')';
-//		}
-//		if ( !empty( $values ) ) {
-//			$values = join( ' OR ', $values );
-//			$sql_bad_term_relationships_delete = "DELETE
-//			FROM `$wpdb->term_relationships`
-//			WHERE $values;";
-//			if ( is_wp_error( $wpdb->query( $sql_bad_term_relationships_delete ) ) ) {
-//				$run_once = 3;
-//				return array( 3, sprintf( $statement, $result ) );
-//			}
-//		}
-//	}
-//
-//	// Now get all term taxonomy ids with term relationships
-//	$sql_term_relationships = "SELECT `term_taxonomy_id` FROM $wpdb->term_relationships ORDER BY `term_taxonomy_id`;";
-//	$term_taxonomy_ids = $wpdb->get_col( $sql_term_relationships );
-//	if ( is_wp_error( $term_taxonomy_ids ) ) {
-//		$run_once = 4;
-//		return array( 4, sprintf( $statement, $result ) );
-//	}
-//	$term_taxonomy_ids = array_unique( $term_taxonomy_ids );
-//
-//	// Delete topic tags that don't have any term relationships
-//	if ( !empty( $term_taxonomy_ids ) ) {
-//		$in_term_taxonomy_ids = implode( ', ', $term_taxonomy_ids );
-//		$sql_delete_term_relationships = "DELETE
-//		FROM $wpdb->term_taxonomy
-//		WHERE
-//			`taxonomy` = 'bb_topic_tag' AND
-//			`term_taxonomy_id` NOT IN ($in_term_taxonomy_ids);";
-//		if ( is_wp_error( $wpdb->query( $sql_delete_term_relationships ) ) ) {
-//			$run_once = 5;
-//			return array( 5, sprintf( $statement, $result ) );
-//		}
-//	}
-//
-//	// Get all valid term ids
-//	$sql_terms = "SELECT `term_id` FROM $wpdb->term_taxonomy ORDER BY `term_id`;";
-//	$term_ids = $wpdb->get_col( $sql_terms );
-//	if ( is_wp_error( $term_ids ) ) {
-//		$run_once = 6;
-//		return array( 6, sprintf( $statement, $result ) );
-//	}
-//	$term_ids = array_unique( $term_ids );
-//
-//	// Delete terms that don't have any associated term taxonomies
-//	if ( !empty( $term_ids ) ) {
-//		$in_term_ids = implode( ', ', $term_ids );
-//		$sql_delete_terms = "DELETE
-//		FROM $wpdb->terms
-//		WHERE
-//			`term_id` NOT IN ($in_term_ids);";
-//		if ( is_wp_error( $wpdb->query( $sql_delete_terms ) ) ) {
-//			$run_once = 7;
-//			return array( 7, sprintf( $statement, $result ) );
-//		}
-//	}
-//
-//	$result = __( 'Complete!', 'bbpress' );
-//	$run_once = 0;
 	return array( 0, sprintf( $statement, $result ) );
 }
 
@@ -717,17 +465,18 @@ function bbp_recount_tag_delete_empty() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_clean_favorites() {
+function bbp_admin_repair_user_favorites() {
 	global $wpdb;
 
 	$statement = __( 'Removing trashed topics from user favorites&hellip; %s', 'bbpress' );
 	$result    = __( 'Failed!', 'bbpress' );
+	$key       = bbp_get_favorites_key();
+	$users     = $wpdb->get_results( "SELECT `user_id`, `meta_value` AS `favorites` FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';" );
 
-	$users = $wpdb->get_results( "SELECT `user_id`, `meta_value` AS `favorites` FROM `$wpdb->usermeta` WHERE `meta_key` = '_bbp_favorites';" );
 	if ( is_wp_error( $users ) )
 		return array( 1, sprintf( $statement, $result ) );
 
-	$topics = $wpdb->get_col( "SELECT `ID` FROM `$wpdb->posts` WHERE `post_type` = '" . bbp_get_topic_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "';" );
+	$topics = $wpdb->get_col( "SELECT `ID` FROM `{$wpdb->posts}` WHERE `post_type` = '" . bbp_get_topic_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "';" );
 
 	if ( is_wp_error( $topics ) )
 		return array( 2, sprintf( $statement, $result ) );
@@ -742,7 +491,7 @@ function bbp_recount_clean_favorites() {
 			continue;
 
 		$favorites = join( ',', $favorites );
-		$values[] = "('$user->user_id', '_bbp_favorites', '$favorites')";
+		$values[] = "('{$user->user_id}', '{$key}, '{$favorites}')";
 	}
 
 	if ( !count( $values ) ) {
@@ -750,7 +499,7 @@ function bbp_recount_clean_favorites() {
 		return array( 0, sprintf( $statement, $result ) );
 	}
 
-	$sql_delete = "DELETE FROM `$wpdb->usermeta` WHERE `meta_key` = '_bbp_favorites';";
+	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';";
 	if ( is_wp_error( $wpdb->query( $sql_delete ) ) )
 		return array( 4, sprintf( $statement, $result ) );
 
@@ -776,17 +525,18 @@ function bbp_recount_clean_favorites() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_clean_subscriptions() {
+function bbp_admin_repair_user_subscriptions() {
 	global $wpdb;
 
 	$statement = __( 'Removing trashed topics from user subscriptions&hellip; %s', 'bbpress' );
 	$result    = __( 'Failed!', 'bbpress' );
+	$key       = bbp_get_subscriptions_key();
+	$users     = $wpdb->get_results( "SELECT `user_id`, `meta_value` AS `subscriptions` FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';" );
 
-	$users = $wpdb->get_results( "SELECT `user_id`, `meta_value` AS `subscriptions` FROM `$wpdb->usermeta` WHERE `meta_key` = '_bbp_subscriptions';" );
 	if ( is_wp_error( $users ) )
 		return array( 1, sprintf( $statement, $result ) );
 
-	$topics = $wpdb->get_col( "SELECT `ID` FROM `$wpdb->posts` WHERE `post_type` = '" . bbp_get_topic_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "';" );
+	$topics = $wpdb->get_col( "SELECT `ID` FROM `{$wpdb->posts}` WHERE `post_type` = '" . bbp_get_topic_post_type() . "' AND `post_status` = '" . bbp_get_public_status_id() . "';" );
 	if ( is_wp_error( $topics ) )
 		return array( 2, sprintf( $statement, $result ) );
 
@@ -800,7 +550,7 @@ function bbp_recount_clean_subscriptions() {
 			continue;
 
 		$subscriptions = join( ',', $subscriptions );
-		$values[] = "('$user->user_id', '_bbp_subscriptions', '$subscriptions')";
+		$values[] = "('{$user->user_id}', '{$key}', '{$subscriptions}')";
 	}
 
 	if ( !count( $values ) ) {
@@ -808,14 +558,14 @@ function bbp_recount_clean_subscriptions() {
 		return array( 0, sprintf( $statement, $result ) );
 	}
 
-	$sql_delete = "DELETE FROM `$wpdb->usermeta` WHERE `meta_key` = '_bbp_subscriptions';";
+	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';";
 	if ( is_wp_error( $wpdb->query( $sql_delete ) ) )
 		return array( 4, sprintf( $statement, $result ) );
 
 	$values = array_chunk( $values, 10000 );
 	foreach ( $values as $chunk ) {
 		$chunk = "\n" . join( ",\n", $chunk );
-		$sql_insert = "INSERT INTO `$wpdb->usermeta` (`user_id`, `meta_key`, `meta_value`) VALUES $chunk;";
+		$sql_insert = "INSERT INTO `{$wpdb->usermeta}` (`user_id`, `meta_key`, `meta_value`) VALUES $chunk;";
 		if ( is_wp_error( $wpdb->query( $sql_insert ) ) )
 			return array( 5, sprintf( $statement, $result ) );
 	}
@@ -833,7 +583,7 @@ function bbp_recount_clean_subscriptions() {
  * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
  * @return array An array of the status code and the message
  */
-function bbp_recount_rewalk() {
+function bbp_admin_repair_freshness() {
 	global $wpdb;
 
 	$statement = __( 'Recomputing latest post in every topic and forum&hellip; %s', 'bbpress' );
@@ -929,6 +679,258 @@ function bbp_recount_rewalk() {
 	// Complete results
 	$result = __( 'Complete!', 'bbpress' );
 	return array( 0, sprintf( $statement, $result ) );
+}
+
+/**
+ * Recaches the forum for each post
+ *
+ * @since bbPress (r3876)
+ *
+ * @uses wpdb::query() To run our recount sql queries
+ * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_repair_forum_meta() {
+	global $wpdb;
+
+	$statement = __( 'Recalculating the forum for each post &hellip; %s', 'bbpress' );
+	$result    = __( 'Failed!', 'bbpress' );
+
+	// First, delete everything.
+	if ( is_wp_error( $wpdb->query( "DELETE FROM `$wpdb->postmeta` WHERE `meta_key` = '_bbp_forum_id';" ) ) )
+		return array( 1, sprintf( $statement, $result ) );
+
+	// Next, give all the topics with replies the ID their last reply.
+	if ( is_wp_error( $wpdb->query( "INSERT INTO `$wpdb->postmeta` (`post_id`, `meta_key`, `meta_value`)
+			( SELECT `forum`.`ID`, '_bbp_forum_id', `forum`.`post_parent`
+			FROM `$wpdb->posts`
+				AS `forum`
+			WHERE `forum`.`post_type` = 'forum'
+			GROUP BY `forum`.`ID` );" ) ) )
+		return array( 2, sprintf( $statement, $result ) );
+
+	// Next, give all the topics with replies the ID their last reply.
+	if ( is_wp_error( $wpdb->query( "INSERT INTO `$wpdb->postmeta` (`post_id`, `meta_key`, `meta_value`)
+			( SELECT `topic`.`ID`, '_bbp_forum_id', `topic`.`post_parent`
+			FROM `$wpdb->posts`
+				AS `topic`
+			WHERE `topic`.`post_type` = 'topic'
+			GROUP BY `topic`.`ID` );" ) ) )
+		return array( 3, sprintf( $statement, $result ) );
+
+	// Next, give all the topics with replies the ID their last reply.
+	if ( is_wp_error( $wpdb->query( "INSERT INTO `$wpdb->postmeta` (`post_id`, `meta_key`, `meta_value`)
+			( SELECT `reply`.`ID`, '_bbp_forum_id', `topic`.`post_parent`
+			FROM `$wpdb->posts`
+				AS `reply`
+			INNER JOIN `$wpdb->posts`
+				AS `topic`
+				ON `reply`.`post_parent` = `topic`.`ID`
+			WHERE `topic`.`post_type` = 'topic'
+				AND `reply`.`post_type` = 'reply'
+			GROUP BY `reply`.`ID` );" ) ) )
+		return array( 4, sprintf( $statement, $result ) );
+
+	// Complete results
+	$result = __( 'Complete!', 'bbpress' );
+	return array( 0, sprintf( $statement, $result ) );
+}
+
+/**
+ * Recaches the topic for each post
+ *
+ * @since bbPress (r3876)
+ *
+ * @uses wpdb::query() To run our recount sql queries
+ * @uses is_wp_error() To check if the executed query returned {@link WP_Error}
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_repair_topic_meta() {
+	global $wpdb;
+
+	$statement = __( 'Recalculating the topic for each post &hellip; %s', 'bbpress' );
+	$result    = __( 'Failed!', 'bbpress' );
+
+	// First, delete everything.
+	if ( is_wp_error( $wpdb->query( "DELETE FROM `$wpdb->postmeta` WHERE `meta_key` = '_bbp_topic_id';" ) ) )
+		return array( 1, sprintf( $statement, $result ) );
+
+	// Next, give all the topics with replies the ID their last reply.
+	if ( is_wp_error( $wpdb->query( "INSERT INTO `$wpdb->postmeta` (`post_id`, `meta_key`, `meta_value`)
+			( SELECT `topic`.`ID`, '_bbp_topic_id', `topic`.`ID`
+			FROM `$wpdb->posts`
+				AS `topic`
+			WHERE `topic`.`post_type` = 'topic'
+			GROUP BY `topic`.`ID` );" ) ) )
+		return array( 3, sprintf( $statement, $result ) );
+
+	// Next, give all the topics with replies the ID their last reply.
+	if ( is_wp_error( $wpdb->query( "INSERT INTO `$wpdb->postmeta` (`post_id`, `meta_key`, `meta_value`)
+			( SELECT `reply`.`ID`, '_bbp_topic_id', `topic`.`ID`
+			FROM `$wpdb->posts`
+				AS `reply`
+			INNER JOIN `$wpdb->posts`
+				AS `topic`
+				ON `reply`.`post_parent` = `topic`.`ID`
+			WHERE `topic`.`post_type` = 'topic'
+				AND `reply`.`post_type` = 'reply'
+			GROUP BY `reply`.`ID` );" ) ) )
+		return array( 4, sprintf( $statement, $result ) );
+
+	// Complete results
+	$result = __( 'Complete!', 'bbpress' );
+	return array( 0, sprintf( $statement, $result ) );
+}
+
+/** Reset ********************************************************************/
+
+/**
+ * Admin reset page
+ *
+ * @since bbPress (r2613)
+ *
+ * @uses check_admin_referer() To verify the nonce and the referer
+ * @uses do_action() Calls 'admin_notices' to display the notices
+ * @uses screen_icon() To display the screen icon
+ * @uses wp_nonce_field() To add a hidden nonce field
+ */
+function bbp_admin_reset() {
+?>
+
+	<div class="wrap">
+
+		<?php screen_icon( 'tools' ); ?>
+
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( __( 'Reset Forums', 'bbpress' ) ); ?></h2>
+		<p><?php _e( 'This will revert your forums back to a brand new installation. This process cannot be undone. <strong>Backup your database before proceeding</strong>.', 'bbpress' ); ?></p>
+
+		<form class="settings" method="post" action="">
+			<table class="form-table">
+				<tbody>
+					<tr valign="top">
+						<th scope="row"><?php _e( 'The following data will be removed:', 'bbpress' ) ?></th>
+						<td>
+							<?php _e( 'All Forums',           'bbpress' ); ?><br />
+							<?php _e( 'All Topics',           'bbpress' ); ?><br />
+							<?php _e( 'All Replies',          'bbpress' ); ?><br />
+							<?php _e( 'All Topic Tags',       'bbpress' ); ?><br />
+							<?php _e( 'Related Meta Data',    'bbpress' ); ?><br />
+							<?php _e( 'Forum Settings',       'bbpress' ); ?><br />
+							<?php _e( 'Forum Activity',       'bbpress' ); ?><br />
+							<?php _e( 'Forum User Roles',     'bbpress' ); ?><br />
+							<?php _e( 'Importer Helper Data', 'bbpress' ); ?><br />
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><?php _e( 'Are you sure you want to do this?', 'bbpress' ) ?></th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text"><span><?php _e( "Say it ain't so!", 'bbpress' ) ?></span></legend>
+								<label><input type="checkbox" class="checkbox" name="bbpress-are-you-sure" id="bbpress-are-you-sure" value="1" /> <?php _e( 'This process cannot be undone.', 'bbpress' ); ?></label>
+							</fieldset>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<fieldset class="submit">
+				<input class="button-primary" type="submit" name="submit" value="<?php _e( 'Reset bbPress', 'bbpress' ); ?>" />
+				<?php wp_nonce_field( 'bbpress-reset' ); ?>
+			</fieldset>
+		</form>
+	</div>
+
+<?php
+}
+
+/**
+ * Handle the processing and feedback of the admin tools page
+ *
+ * @since bbPress (r2613)
+ *
+ * @uses check_admin_referer() To verify the nonce and the referer
+ * @uses wp_cache_flush() To flush the cache
+ */
+function bbp_admin_reset_handler() {
+	if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && !empty( $_POST['bbpress-are-you-sure'] ) ) {
+		check_admin_referer( 'bbpress-reset' );
+
+		global $wpdb;
+
+		// Stores messages
+		$messages = array();
+		$failed   = __( 'Failed',   'bbpress' );
+		$success  = __( 'Success!', 'bbpress' );
+
+		// Flush the cache; things are about to get ugly.
+		wp_cache_flush();
+
+		/** Posts *************************************************************/
+
+		$statement  = __( 'Deleting Posts&hellip; %s', 'bbpress' );
+		$sql_posts  = $wpdb->get_results( "SELECT `ID` FROM `{$wpdb->posts}` WHERE `post_type` IN ('forum', 'topic', 'reply')", OBJECT_K );
+		$sql_delete = "DELETE FROM `{$wpdb->posts}` WHERE `post_type` IN ('forum', 'topic', 'reply')";
+		$result     = is_wp_error( $wpdb->query( $sql_delete ) ) ? $failed : $success;
+		$messages[] = sprintf( $statement, $result );
+
+		
+		/** Post Meta *********************************************************/
+
+		if ( !empty( $sql_posts ) ) {
+			foreach( $sql_posts as $key => $value ) {
+				$sql_meta[] = $key;
+			}
+			$statement  = __( 'Deleting Post Meta&hellip; %s', 'bbpress' );
+			$sql_meta   = implode( "', '", $sql_meta );
+			$sql_delete = "DELETE FROM `{$wpdb->postmeta}` WHERE `post_id` IN ('{$sql_meta}');";
+			$result     = is_wp_error( $wpdb->query( $sql_delete ) ) ? $failed : $success;
+			$messages[] = sprintf( $statement, $result );
+		}
+
+		/** Topic Tags ********************************************************/
+
+		// @todo
+
+		/** User Meta *********************************************************/
+
+		$statement  = __( 'Deleting User Meta&hellip; %s', 'bbpress' );
+		$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` LIKE '%%_bbp_%%';";
+		$result     = is_wp_error( $wpdb->query( $sql_delete ) ) ? $failed : $success;
+		$messages[] = sprintf( $statement, $result );
+
+		/** Converter *********************************************************/
+
+		$statement  = __( 'Deleting Conversion Table&hellip; %s', 'bbpress' );
+		$table_name = $wpdb->prefix . 'bbp_converter_translator';
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) == $table_name ) {
+			$wpdb->query( "DROP TABLE {$table_name}" );
+			$result = $success;
+		} else {
+			$result = $failed;
+		}
+		$messages[] = sprintf( $statement, $result );
+		
+		/** Options ***********************************************************/
+
+		$statement  = __( 'Deleting Settings&hellip; %s', 'bbpress' );
+		$sql_delete = bbp_delete_options();
+		$messages[] = sprintf( $statement, $success );
+
+		/** Roles *************************************************************/
+
+		$statement  = __( 'Deleting Roles and Capabilities&hellip; %s', 'bbpress' );
+		$sql_delete = bbp_remove_roles();
+		$sql_delete = bbp_remove_caps();
+		$messages[] = sprintf( $statement, $success );
+
+		/** Output ************************************************************/
+
+		if ( count( $messages ) ) {
+			foreach ( $messages as $message ) {
+				bbp_admin_tools_feedback( $message );
+			}
+		}
+	}
 }
 
 ?>

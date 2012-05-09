@@ -44,12 +44,12 @@ class BBP_Admin {
 	 */
 	public $styles_url = '';
 
-	/** Recounts **************************************************************/
+	/** Tools *****************************************************************/
 
 	/**
-	 * @var bool Enable recounts in Tools area
+	 * @var bool Enable screens in Tools area
 	 */
-	public $enable_recounts = false;
+	public $enable_tools = false;
 
 	/** Admin Scheme **********************************************************/
 
@@ -150,18 +150,10 @@ class BBP_Admin {
 	 */
 	private function setup_globals() {
 		$bbp = bbpress();
-
-		// Admin url
-		$this->admin_dir  = trailingslashit( $bbp->plugin_dir . 'bbp-admin' );
-
-		// Admin url
-		$this->admin_url  = trailingslashit( $bbp->plugin_url . 'bbp-admin' );
-
-		// Admin images URL
-		$this->images_url = trailingslashit( $this->admin_url . 'images' );
-
-		// Admin images URL
-		$this->styles_url = trailingslashit( $this->admin_url . 'styles' );
+		$this->admin_dir  = trailingslashit( $bbp->plugin_dir . 'bbp-admin' ); // Admin url
+		$this->admin_url  = trailingslashit( $bbp->plugin_url . 'bbp-admin' ); // Admin url
+		$this->images_url = trailingslashit( $this->admin_url . 'images'    ); // Admin images URL
+		$this->styles_url = trailingslashit( $this->admin_url . 'styles'    ); // Admin styles URL
 	}
 
 	/**
@@ -175,25 +167,48 @@ class BBP_Admin {
 	 */
 	public function admin_menus() {
 
-		// Recounts
-		if ( is_super_admin() || !empty( $this->enable_recounts ) ) {
-			add_management_page(
-				__( 'Recount', 'bbpress' ),
-				__( 'Recount', 'bbpress' ),
+		// Are tools enabled
+		if ( is_super_admin() || !empty( $this->enable_tools ) ) {
+
+			$hooks = array();
+
+			// These are later removed in admin_head
+			$hooks[] = add_management_page(
+				__( 'Repair Forums', 'bbpress' ),
+				__( 'Forum Repair', 'bbpress' ),
 				'manage_options',
-				'bbp-recount',
-				'bbp_admin_tools_screen'
+				'bbp-repair',
+				'bbp_admin_repair'
+			);
+			$hooks[] = add_management_page(
+				__( 'Import Forums', 'bbpress' ),
+				__( 'Forum Import', 'bbpress' ),
+				'manage_options',
+				'bbp-converter',
+				'bbp_converter_settings'
+			);
+			$hooks[] = add_management_page(
+				__( 'Reset Forums', 'bbpress' ),
+				__( 'Forum Reset', 'bbpress' ),
+				'manage_options',
+				'bbp-reset',
+				'bbp_admin_reset'
+			);
+
+			// Fudge the highlighted subnav item when on a bbPress admin page
+			foreach( $hooks as $hook ) {
+				add_action( "admin_head-$hook", 'bbp_tools_modify_menu_highlight' );
+			}
+
+			// Forums Tools Root
+			add_management_page(
+				__( 'Forums', 'bbpress' ),
+				__( 'Forums', 'bbpress' ),
+				'manage_options',
+				'bbp-repair',
+				'bbp_admin_repair'
 			);
 		}
-
-		// Converter Page
-		add_management_page(
-			__( 'Converter', 'bbpress' ),
-			__( 'Converter', 'bbpress' ),
-			'manage_options',
-			'bbp-converter',
-			'bbp_converter_settings'
-		);
 
 		// Forums settings
 		add_options_page(
@@ -491,6 +506,12 @@ class BBP_Admin {
 	 * @uses sanitize_html_class() To sanitize the classes
 	 */
 	public function admin_head() {
+
+		// Remove the individual recount and converter menus.
+		// They are grouped together by h2 tabs
+		remove_submenu_page( 'tools.php', 'bbp-repair'    );
+		remove_submenu_page( 'tools.php', 'bbp-converter' );
+		remove_submenu_page( 'tools.php', 'bbp-reset'     );
 
 		// Icons for top level admin menus
 		$menu_icon_url = $this->images_url . 'menu.png';
