@@ -13,7 +13,7 @@
 
 	<div class="bbp-meta">
 
-		<?php printf( __( '%1$s at %2$s', 'bbpress' ), get_the_date(), esc_attr( get_the_time() ) ); ?>
+		<span class="bbp-reply-post-date"><?php bbp_reply_post_date(); ?></span>
 
 		<a href="<?php bbp_reply_url(); ?>" title="<?php bbp_reply_title(); ?>" class="bbp-reply-permalink">#<?php bbp_reply_id(); ?></a>
 
@@ -51,12 +51,12 @@
 
 	<div class="bbp-reply-content">
 
-		<?php do_action( 'bbp_theme_after_reply_content' ); ?>
+		<?php do_action( 'bbp_theme_before_reply_content' ); ?>
 
 		<?php bbp_reply_content(); ?>
 
-		<?php do_action( 'bbp_theme_before_reply_content' ); ?>
+		<?php do_action( 'bbp_theme_after_reply_content' ); ?>
 
 	</div><!-- .bbp-reply-content -->
 
-</div><!-- #post-<?php bbp_topic_id(); ?> -->
+</div><!-- #post-<?php bbp_reply_id(); ?> -->

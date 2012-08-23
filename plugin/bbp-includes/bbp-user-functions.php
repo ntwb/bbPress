@@ -215,31 +215,6 @@ function bbp_get_user_reply_count_raw( $user_id = 0 ) {
 /** Favorites *****************************************************************/
 
 /**
- * Get the meta key for favorites, based on blog prefix
- *
- * @since bbPress (r3856)
- * @param int $blog_id Optional blog id to switch to
- * @global WPDB $wpdb
- * @return string 
- */
-function bbp_get_favorites_key( $blog_id = 0 ) {
-	global $wpdb;
-
-	// If blog ID is passed, switch to that blog
-	if ( !empty( $blog_id ) ) {
-		switch_to_blog( $blog_id );
-		$prefix = $wpdb->prefix;
-		restore_current_blog();
-
-	// Use current blog
-	} else {
-		$prefix = $wpdb->prefix;
-	}
-
-	return apply_filters( 'bbp_get_favorites_key', '_bbp_' . $prefix . 'favorites', $blog_id, $prefix );
-}
-
-/**
  * Get the users who have made the topic favorite
  *
  * @since bbPress (r2658)
@@ -257,7 +232,7 @@ function bbp_get_topic_favoriters( $topic_id = 0 ) {
 	global $wpdb;
 
 	// Get the users who have favorited the topic
-	$key   = bbp_get_favorites_key();
+	$key   = $wpdb->prefix . '_bbp_favorites';
 	$users = $wpdb->get_col( "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$key}' and FIND_IN_SET('{$topic_id}', meta_value) > 0" );
 	$users = apply_filters( 'bbp_get_topic_favoriters', $users, $topic_id );
 
@@ -304,7 +279,7 @@ function bbp_get_user_favorites( $user_id = 0 ) {
  *
  * @param int $user_id Optional. User id
  * @uses bbp_get_user_id() To get the user id
- * @uses get_user_meta() To get the user favorites
+ * @uses get_user_option() To get the user favorites
  * @uses apply_filters() Calls 'bbp_get_user_favorites_topic_ids' with
  *                        the favorites and user id
  * @return array|bool Results if user has favorites, otherwise false
@@ -314,7 +289,7 @@ function bbp_get_user_favorites_topic_ids( $user_id = 0 ) {
 	if ( empty( $user_id ) )
 		return false;
 
-	$favorites = (string) get_user_meta( $user_id, bbp_get_favorites_key(), true );
+	$favorites = (string) get_user_option( '_bbp_favorites', $user_id );
 	$favorites = (array) explode( ',', $favorites );
 	$favorites = array_filter( $favorites );
 
@@ -378,7 +353,7 @@ function bbp_is_user_favorite( $user_id = 0, $topic_id = 0 ) {
  * @param int $user_id Optional. User id
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_user_favorites_topic_ids() To get the user favorites
- * @uses update_user_meta() To update the user favorites
+ * @uses update_user_option() To update the user favorites
  * @uses do_action() Calls 'bbp_add_user_favorite' with the user id and topic id
  * @return bool Always true
  */
@@ -395,7 +370,7 @@ function bbp_add_user_favorite( $user_id = 0, $topic_id = 0 ) {
 		$favorites[] = $topic_id;
 		$favorites   = array_filter( $favorites );
 		$favorites   = (string) implode( ',', $favorites );
-		update_user_meta( $user_id, bbp_get_favorites_key(), $favorites );
+		update_user_option( $user_id, '_bbp_favorites', $favorites );
 	}
 
 	do_action( 'bbp_add_user_favorite', $user_id, $topic_id );
@@ -411,8 +386,8 @@ function bbp_add_user_favorite( $user_id = 0, $topic_id = 0 ) {
  * @param int $user_id Optional. User id
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_user_favorites_topic_ids() To get the user favorites
- * @uses update_user_meta() To update the user favorites
- * @uses delete_user_meta() To delete the user favorites meta
+ * @uses update_user_option() To update the user favorites
+ * @uses delete_user_option() To delete the user favorites meta
  * @uses do_action() Calls 'bbp_remove_user_favorite' with the user & topic id
  * @return bool True if the topic was removed from user's favorites, otherwise
  *               false
@@ -432,9 +407,9 @@ function bbp_remove_user_favorite( $user_id, $topic_id ) {
 
 		if ( !empty( $favorites ) ) {
 			$favorites = implode( ',', $favorites );
-			update_user_meta( $user_id, bbp_get_favorites_key(), $favorites );
+			update_user_option( $user_id, '_bbp_favorites', $favorites );
 		} else {
-			delete_user_meta( $user_id, bbp_get_favorites_key() );
+			delete_user_option( $user_id, '_bbp_favorites' );
 		}
 	}
 
@@ -447,6 +422,7 @@ function bbp_remove_user_favorite( $user_id, $topic_id ) {
  * Handles the front end adding and removing of favorite topics
  *
  * @uses bbp_get_user_id() To get the user id
+ * @uses bbp_verify_nonce_request() To verify the nonce and check the request
  * @uses current_user_can() To check if the current user can edit the user
  * @uses bbPress:errors:add() To log the error messages
  * @uses bbp_is_user_favorite() To check if the topic is in user's favorites
@@ -457,7 +433,7 @@ function bbp_remove_user_favorite( $user_id, $topic_id ) {
  * @uses bbp_is_favorites() To check if it's the favorites page
  * @uses bbp_get_favorites_link() To get the favorites page link
  * @uses bbp_get_topic_permalink() To get the topic permalink
- * @uses wp_redirect() To redirect to the url
+ * @uses wp_safe_redirect() To redirect to the url
  */
 function bbp_favorites_handler() {
 
@@ -483,90 +459,68 @@ function bbp_favorites_handler() {
 		return;
 
 	// What action is taking place?
-	$action  = $_GET['action'];
+	$action      = $_GET['action'];
+	$topic_id    = intval( $_GET['topic_id'] );
+	$user_id     = bbp_get_user_id( 0, true, true );
 
-	// Get user_id
-	$user_id = bbp_get_user_id( 0, true, true );
+	// Check for empty topic
+	if ( empty( $topic_id ) ) {
+		bbp_add_error( 'bbp_favorite_topic_id', __( '<strong>ERROR</strong>: No topic was found! Which topic are you marking/unmarking as favorite?', 'bbpress' ) );
+
+	// Check nonce
+	} elseif ( ! bbp_verify_nonce_request( 'toggle-favorite_' . $topic_id ) ) {
+		bbp_add_error( 'bbp_favorite_nonce', __( '<strong>ERROR</strong>: Are you sure you wanted to do that?', 'bbpress' ) );
 
 	// Check current user's ability to edit the user
-	if ( !current_user_can( 'edit_user', $user_id ) )
+	} elseif ( !current_user_can( 'edit_user', $user_id ) ) {
 		bbp_add_error( 'bbp_favorite_permissions', __( '<strong>ERROR</strong>: You don\'t have the permission to edit favorites of that user!', 'bbpress' ) );
+	}
 
-	// Load favorite info
-	$topic_id = intval( $_GET['topic_id'] );
-	if ( empty( $topic_id ) )
-		bbp_add_error( 'bbp_favorite_topic_id', __( '<strong>ERROR</strong>: No topic was found! Which topic are you marking/unmarking as favorite?', 'bbpress' ) );
+	// Bail if errors
+	if ( bbp_has_errors() )
+		return;
+
+	/** No errors *************************************************************/
 
 	$is_favorite = bbp_is_user_favorite( $user_id, $topic_id );
 	$success     = false;
 
-	// Handle insertion into posts table
-	if ( !empty( $topic_id ) && !empty( $user_id ) && ( !bbp_has_errors() ) ) {
+	if ( true == $is_favorite && 'bbp_favorite_remove' == $action )
+		$success = bbp_remove_user_favorite( $user_id, $topic_id );
+	elseif ( false == $is_favorite && 'bbp_favorite_add' == $action )
+		$success = bbp_add_user_favorite( $user_id, $topic_id );
 
-		if ( $is_favorite && 'bbp_favorite_remove' == $action ) {
-			$success = bbp_remove_user_favorite( $user_id, $topic_id );
-		} elseif ( !$is_favorite && 'bbp_favorite_add' == $action ) {
-			$success = bbp_add_user_favorite( $user_id, $topic_id );
+	// Do additional favorites actions
+	do_action( 'bbp_favorites_handler', $success, $user_id, $topic_id, $action );
+
+	// Success!
+	if ( true == $success ) {
+
+		// Redirect back from whence we came
+		if ( bbp_is_favorites() ) {
+			$redirect = bbp_get_favorites_permalink( $user_id );
+		} elseif ( bbp_is_single_user() ) {
+			$redirect = bbp_get_user_profile_url();
+		} elseif ( is_singular( bbp_get_topic_post_type() ) ) {
+			$redirect = bbp_get_topic_permalink( $topic_id );
+		} elseif ( is_single() || is_page() ) {
+			$redirect = get_permalink();
 		}
 
-		// Do additional favorites actions
-		do_action( 'bbp_favorites_handler', $success, $user_id, $topic_id, $action );
+		wp_safe_redirect( $redirect );
 
-		// Check for missing reply_id or error
-		if ( true == $success ) {
+		// For good measure
+		exit();
 
-			// Redirect back to new reply
-			if ( bbp_is_favorites() ) {
-				$redirect = bbp_get_favorites_permalink( $user_id );
-			} elseif ( bbp_is_single_user() ) {
-				$redirect = bbp_get_user_profile_url();
-			} elseif ( is_singular( bbp_get_topic_post_type() ) ) {
-				$redirect = bbp_get_topic_permalink( $topic_id );
-			} elseif ( is_single() || is_page() ) {
-				$redirect = get_permalink();
-			}
-
-			wp_redirect( $redirect );
-
-			// For good measure
-			exit();
-
-		// Handle errors
-		} else {
-			if ( $is_favorite && 'bbp_favorite_remove' == $action ) {
-				bbp_add_error( 'bbp_favorite_remove', __( '<strong>ERROR</strong>: There was a problem removing that topic from favorites!', 'bbpress' ) );
-			} elseif ( !$is_favorite && 'bbp_favorite_add' == $action ) {
-				bbp_add_error( 'bbp_favorite_add',    __( '<strong>ERROR</strong>: There was a problem favoriting that topic!', 'bbpress' ) );
-			}
-		}
+	// Fail! Handle errors
+	} elseif ( true == $is_favorite && 'bbp_favorite_remove' == $action ) {
+		bbp_add_error( 'bbp_favorite_remove', __( '<strong>ERROR</strong>: There was a problem removing that topic from favorites!', 'bbpress' ) );
+	} elseif ( false == $is_favorite && 'bbp_favorite_add' == $action ) {
+		bbp_add_error( 'bbp_favorite_add',    __( '<strong>ERROR</strong>: There was a problem favoriting that topic!', 'bbpress' ) );
 	}
 }
 
 /** Subscriptions *************************************************************/
-
-/**
- * Get the meta key for subscriptions, based on blog prefix
- *
- * @since bbPress (r3856)
- * @global WPDB $wpdb
- * @return string 
- */
-function bbp_get_subscriptions_key( $blog_id = 0 ) {
-	global $wpdb;
-
-	// If blog ID is passed, switch to that blog
-	if ( !empty( $blog_id ) ) {
-		switch_to_blog( $blog_id );
-		$prefix = $wpdb->prefix;
-		restore_current_blog();
-
-	// Use current blog
-	} else {
-		$prefix = $wpdb->prefix;
-	}
-
-	return apply_filters( 'bbp_get_subscriptions_key', '_bbp_' . $prefix . 'subscriptions', $blog_id, $prefix );
-}
 
 /**
  * Get the users who have subscribed to the topic
@@ -583,7 +537,7 @@ function bbp_get_topic_subscribers( $topic_id = 0 ) {
 
 	global $wpdb;
 
-	$key   = bbp_get_subscriptions_key();
+	$key   = $wpdb->prefix . '_bbp_subscriptions';
 	$users = wp_cache_get( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress' );
 	if ( empty( $users ) ) {
 		$users = $wpdb->get_col( "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$key}' and FIND_IN_SET('{$topic_id}', meta_value) > 0" );
@@ -634,7 +588,7 @@ function bbp_get_user_subscriptions( $user_id = 0 ) {
  *
  * @param int $user_id Optional. User id
  * @uses bbp_get_user_id() To get the user id
- * @uses get_user_meta() To get the user's subscriptions
+ * @uses get_user_option() To get the user's subscriptions
  * @uses apply_filters() Calls 'bbp_get_user_subscribed_topic_ids' with
  *                        the subscriptions and user id
  * @return array|bool Results if user has subscriptions, otherwise false
@@ -644,7 +598,7 @@ function bbp_get_user_subscribed_topic_ids( $user_id = 0 ) {
 	if ( empty( $user_id ) )
 		return false;
 
-	$subscriptions = (string) get_user_meta( $user_id, bbp_get_subscriptions_key(), true );
+	$subscriptions = (string) get_user_option( '_bbp_subscriptions', $user_id );
 	$subscriptions = (array) explode( ',', $subscriptions );
 	$subscriptions = array_filter( $subscriptions );
 
@@ -710,7 +664,7 @@ function bbp_is_user_subscribed( $user_id = 0, $topic_id = 0 ) {
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_user_subscribed_topic_ids() To get the user's subscriptions
  * @uses bbp_get_topic() To get the topic
- * @uses update_user_meta() To update the user's subscriptions
+ * @uses update_user_option() To update the user's subscriptions
  * @uses do_action() Calls 'bbp_add_user_subscription' with the user & topic id
  * @return bool Always true
  */
@@ -728,7 +682,7 @@ function bbp_add_user_subscription( $user_id = 0, $topic_id = 0 ) {
 		$subscriptions[] = $topic_id;
 		$subscriptions   = array_filter( $subscriptions );
 		$subscriptions   = (string) implode( ',', $subscriptions );
-		update_user_meta( $user_id, bbp_get_subscriptions_key(), $subscriptions );
+		update_user_option( $user_id, '_bbp_subscriptions', $subscriptions );
 
 		wp_cache_delete( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress' );
 	}
@@ -746,8 +700,8 @@ function bbp_add_user_subscription( $user_id = 0, $topic_id = 0 ) {
  * @param int $user_id Optional. User id
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_user_subscribed_topic_ids() To get the user's subscriptions
- * @uses update_user_meta() To update the user's subscriptions
- * @uses delete_user_meta() To delete the user's subscriptions meta
+ * @uses update_user_option() To update the user's subscriptions
+ * @uses delete_user_option() To delete the user's subscriptions meta
  * @uses do_action() Calls 'bbp_remove_user_subscription' with the user id and
  *                    topic id
  * @return bool True if the topic was removed from user's subscriptions,
@@ -769,9 +723,9 @@ function bbp_remove_user_subscription( $user_id, $topic_id ) {
 
 		if ( !empty( $subscriptions ) ) {
 			$subscriptions = implode( ',', $subscriptions );
-			update_user_meta( $user_id, bbp_get_subscriptions_key(), $subscriptions );
+			update_user_option( $user_id, '_bbp_subscriptions', $subscriptions );
 		} else {
-			delete_user_meta( $user_id, bbp_get_subscriptions_key() );
+			delete_user_option( $user_id, '_bbp_subscriptions' );
 		}
 
 		wp_cache_delete( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress' );
@@ -787,6 +741,7 @@ function bbp_remove_user_subscription( $user_id, $topic_id ) {
  *
  * @uses bbp_is_subscriptions_active() To check if the subscriptions are active
  * @uses bbp_get_user_id() To get the user id
+ * @uses bbp_verify_nonce_request() To verify the nonce and check the request
  * @uses current_user_can() To check if the current user can edit the user
  * @uses bbPress:errors:add() To log the error messages
  * @uses bbp_is_user_subscribed() To check if the topic is in user's
@@ -798,7 +753,7 @@ function bbp_remove_user_subscription( $user_id, $topic_id ) {
  * @uses bbp_is_subscription() To check if it's the subscription page
  * @uses bbp_get_subscription_link() To get the subscription page link
  * @uses bbp_get_topic_permalink() To get the topic permalink
- * @uses wp_redirect() To redirect to the url
+ * @uses wp_safe_redirect() To redirect to the url
  */
 function bbp_subscriptions_handler() {
 
@@ -823,62 +778,65 @@ function bbp_subscriptions_handler() {
 	if ( !in_array( $_GET['action'], $possible_actions ) )
 		return;
 
-	// What action is taking place?
-	$action  = $_GET['action'];
-
-	// Get user_id
-	$user_id = bbp_get_user_id( 0, true, true );
-
-	// Check current user's ability to edit the user
-	if ( !current_user_can( 'edit_user', $user_id ) )
-		bbp_add_error( 'bbp_subscription_permissions', __( '<strong>ERROR</strong>: You don\'t have the permission to edit favorites of that user!', 'bbpress' ) );
-
-	// Load subscription info
+	// Get required data
+	$action   = $_GET['action'];
+	$user_id  = bbp_get_user_id( 0, true, true );
 	$topic_id = intval( $_GET['topic_id'] );
-	if ( empty( $topic_id ) )
+
+	// Check for empty topic
+	if ( empty( $topic_id ) ) {
 		bbp_add_error( 'bbp_subscription_topic_id', __( '<strong>ERROR</strong>: No topic was found! Which topic are you subscribing/unsubscribing to?', 'bbpress' ) );
 
-	if ( !bbp_has_errors() ) {
+	// Check nonce
+	} elseif ( ! bbp_verify_nonce_request( 'toggle-subscription_' . $topic_id ) ) {
+		bbp_add_error( 'bbp_subscription_topic_id', __( '<strong>ERROR</strong>: Are you sure you wanted to do that?', 'bbpress' ) );
 
-		$is_subscription = bbp_is_user_subscribed( $user_id, $topic_id );
-		$success         = false;
+	// Check current user's ability to edit the user
+	} elseif ( !current_user_can( 'edit_user', $user_id ) ) {
+		bbp_add_error( 'bbp_subscription_permissions', __( '<strong>ERROR</strong>: You don\'t have the permission to edit favorites of that user!', 'bbpress' ) );
+	}
 
-		if ( $is_subscription && 'bbp_unsubscribe' == $action ) {
-			$success = bbp_remove_user_subscription( $user_id, $topic_id );
-		} elseif ( !$is_subscription && 'bbp_subscribe' == $action ) {
-			$success = bbp_add_user_subscription( $user_id, $topic_id );
+	// Bail if we have errors
+	if ( bbp_has_errors() )
+		return;
+
+	/** No errors *************************************************************/
+
+	$is_subscription = bbp_is_user_subscribed( $user_id, $topic_id );
+	$success         = false;
+
+	if ( true == $is_subscription && 'bbp_unsubscribe' == $action )
+		$success = bbp_remove_user_subscription( $user_id, $topic_id );
+	elseif ( false == $is_subscription && 'bbp_subscribe' == $action )
+		$success = bbp_add_user_subscription( $user_id, $topic_id );
+
+	// Do additional subscriptions actions
+	do_action( 'bbp_subscriptions_handler', $success, $user_id, $topic_id, $action );
+
+	// Success!
+	if ( true == $success ) {
+
+		// Redirect back from whence we came
+		if ( bbp_is_subscriptions() ) {
+			$redirect = bbp_get_subscriptions_permalink( $user_id );
+		} elseif ( bbp_is_single_user() ) {
+			$redirect = bbp_get_user_profile_url();
+		} elseif ( is_singular( bbp_get_topic_post_type() ) ) {
+			$redirect = bbp_get_topic_permalink( $topic_id );
+		} elseif ( is_single() || is_page() ) {
+			$redirect = get_permalink();
 		}
 
-		// Do additional subscriptions actions
-		do_action( 'bbp_subscriptions_handler', $success, $user_id, $topic_id, $action );
+		wp_safe_redirect( $redirect );
 
-		// Check for missing reply_id or error
-		if ( true == $success ) {
+		// For good measure
+		exit();
 
-			// Redirect back to new reply
-			if ( bbp_is_subscriptions() ) {
-				$redirect = bbp_get_subscriptions_permalink( $user_id );
-			} elseif( bbp_is_single_user() ) {
-				$redirect = bbp_get_user_profile_url();
-			} elseif ( is_singular( bbp_get_topic_post_type() ) ) {
-				$redirect = bbp_get_topic_permalink( $topic_id );
-			} elseif ( is_single() || is_page() ) {
-				$redirect = get_permalink();
-			}
-
-			wp_redirect( $redirect );
-
-			// For good measure
-			exit();
-
-		// Handle errors
-		} else {
-			if ( $is_subscription && 'bbp_unsubscribe' == $action ) {
-				bbp_add_error( 'bbp_unsubscribe', __( '<strong>ERROR</strong>: There was a problem unsubscribing from that topic!', 'bbpress' ) );
-			} elseif ( !$is_subscription && 'bbp_subscribe' == $action ) {
-				bbp_add_error( 'bbp_subscribe',    __( '<strong>ERROR</strong>: There was a problem subscribing to that topic!', 'bbpress' ) );
-			}
-		}
+	// Fail! Handle errors
+	} elseif ( true == $is_subscription && 'bbp_unsubscribe' == $action ) {
+		bbp_add_error( 'bbp_unsubscribe', __( '<strong>ERROR</strong>: There was a problem unsubscribing from that topic!', 'bbpress' ) );
+	} elseif ( false == $is_subscription && 'bbp_subscribe' == $action ) {
+		bbp_add_error( 'bbp_subscribe',    __( '<strong>ERROR</strong>: There was a problem subscribing to that topic!', 'bbpress' ) );
 	}
 }
 
@@ -897,8 +855,8 @@ function bbp_subscriptions_handler() {
  * @uses wp_update_user() To update the user
  * @uses delete_option() To delete the displayed user's email id option
  * @uses bbp_get_user_profile_edit_url() To get the edit profile url
- * @uses wp_redirect() To redirect to the url
- * @uses check_admin_referer() To verify the nonce and check the referer
+ * @uses wp_safe_redirect() To redirect to the url
+ * @uses bbp_verify_nonce_request() To verify the nonce and check the request
  * @uses current_user_can() To check if the current user can edit the user
  * @uses do_action() Calls 'personal_options_update' or
  *                   'edit_user_options_update' (based on if it's the user home)
@@ -929,7 +887,7 @@ function bbp_edit_user_handler() {
 	global $wpdb, $user_login, $super_admins;
 
 	// Execute confirmed email change. See send_confirmation_on_profile_email().
-	if ( is_multisite() && bbp_is_user_home() && isset( $_GET['newuseremail'] ) ) {
+	if ( is_multisite() && bbp_is_user_home_edit() && isset( $_GET['newuseremail'] ) ) {
 
 		$new_email = get_option( $user_id . '_new_email' );
 
@@ -944,25 +902,32 @@ function bbp_edit_user_handler() {
 			wp_update_user( get_object_vars( $user ) );
 			delete_option( $user_id . '_new_email' );
 
-			wp_redirect( add_query_arg( array( 'updated' => 'true' ), bbp_get_user_profile_edit_url( $user_id ) ) );
+			wp_safe_redirect( add_query_arg( array( 'updated' => 'true' ), bbp_get_user_profile_edit_url( $user_id ) ) );
 			exit;
 		}
 
-	} elseif ( is_multisite() && bbp_is_user_home() && !empty( $_GET['dismiss'] ) && ( $user_id . '_new_email' == $_GET['dismiss'] ) ) {
+	} elseif ( is_multisite() && bbp_is_user_home_edit() && !empty( $_GET['dismiss'] ) && ( $user_id . '_new_email' == $_GET['dismiss'] ) ) {
 
 		delete_option( $user_id . '_new_email' );
-		wp_redirect( add_query_arg( array( 'updated' => 'true' ), bbp_get_user_profile_edit_url( $user_id ) ) );
+		wp_safe_redirect( add_query_arg( array( 'updated' => 'true' ), bbp_get_user_profile_edit_url( $user_id ) ) );
 		exit;
 
 	}
 
-	check_admin_referer( 'update-user_' . $user_id );
+	// Nonce check
+	if ( ! bbp_verify_nonce_request( 'update-user_' . $user_id ) ) {
+		bbp_add_error( 'bbp_update_user_nonce', __( '<strong>ERROR</strong>: Are you sure you wanted to do that?', 'bbpress' ) );
+		return;
+	}
 
-	if ( !current_user_can( 'edit_user', $user_id ) )
-		wp_die( __( 'What are you doing here? You do not have the permission to edit this user.', 'bbpress' ) );
+	// Cap check
+	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+		bbp_add_error( 'bbp_update_user_capability', __( '<strong>ERROR</strong>: Are you sure you wanted to do that?', 'bbpress' ) );
+		return;
+	}
 
 	// Do action based on who's profile you're editing
-	$edit_action = bbp_is_user_home() ? 'personal_options_update' : 'edit_user_profile_update';
+	$edit_action = bbp_is_user_home_edit() ? 'personal_options_update' : 'edit_user_profile_update';
 	do_action( $edit_action, $user_id );
 
 	// Multisite handles the trouble for us ;)
@@ -993,11 +958,11 @@ function bbp_edit_user_handler() {
 		$edit_user = edit_user( $user_id );
 
 		// stops users being added to current blog when they are edited
-		if ( $delete_role ) {
+		if ( true === $delete_role ) {
 			delete_user_meta( $user_id, $blog_prefix . 'capabilities' );
 		}
 
-		if ( is_multisite() && is_network_admin() & !bbp_is_user_home() && current_user_can( 'manage_network_options' ) && !isset( $super_admins ) && empty( $_POST['super_admin'] ) == is_super_admin( $user_id ) ) {
+		if ( is_multisite() && is_network_admin() & !bbp_is_user_home_edit() && current_user_can( 'manage_network_options' ) && !isset( $super_admins ) && empty( $_POST['super_admin'] ) == is_super_admin( $user_id ) ) {
 			empty( $_POST['super_admin'] ) ? revoke_super_admin( $user_id ) : grant_super_admin( $user_id );
 		}
 	}
@@ -1010,7 +975,7 @@ function bbp_edit_user_handler() {
 	} elseif ( is_integer( $edit_user ) ) {
 		$redirect = add_query_arg( array( 'updated' => 'true' ), bbp_get_user_profile_edit_url( $edit_user ) );
 
-		wp_redirect( $redirect );
+		wp_safe_redirect( $redirect );
 		exit;
 	}
 }
@@ -1053,21 +1018,19 @@ function bbp_get_user_topics_started( $user_id = 0 ) {
  * Get the total number of users on the forums
  *
  * @since bbPress (r2769)
- *
  * @uses wp_cache_get() Check if query is in cache
- * @uses wpdb::get_var() To execute our query and get the var back
+ * @uses get_users() To execute our query and get the var back
  * @uses wp_cache_set() Set the query in the cache
  * @uses apply_filters() Calls 'bbp_get_total_users' with number of users
  * @return int Total number of users
  */
 function bbp_get_total_users() {
-	global $wpdb;
 
 	$bbp_total_users = wp_cache_get( 'bbp_total_users', 'bbpress' );
 	if ( !empty( $bbp_total_users ) )
 		return $bbp_total_users;
 
-	$bbp_total_users = $wpdb->get_var( "SELECT COUNT(ID) FROM {$wpdb->users} USE INDEX (PRIMARY);" );
+	$bbp_total_users = count( get_users() );
 
 	wp_cache_set( 'bbp_total_users', $bbp_total_users, 'bbpress' );
 
@@ -1422,7 +1385,7 @@ function bbp_get_user_role( $user_id = 0 ) {
 	$user = get_userdata( $user_id );
 
 	// Get the user's main role
-	$role = isset( $user->roles ) ? array_shift( $user->roles ) : bbp_get_anonymous_role();
+	$role = isset( $user->roles ) ? array_shift( $user->roles ) : '';
 
 	return apply_filters( 'bbp_get_user_role', $role, $user_id, $user );
 }
@@ -1430,7 +1393,12 @@ function bbp_get_user_role( $user_id = 0 ) {
 /** Premissions ***************************************************************/
 
 /**
- * Redirect if unathorized user is attempting to edit a topic
+ * Redirect if unathorized user is attempting to edit another user
+ *
+ * This is hooked to 'bbp_template_redirect' and controls the conditions under
+ * which a user can edit another user (or themselves.) If these conditions are
+ * met. We assume a user cannot perform this task, and look for ways they can
+ * earn the ability to access this template.
  * 
  * @since bbPress (r3605)
  *
@@ -1443,14 +1411,69 @@ function bbp_get_user_role( $user_id = 0 ) {
 function bbp_check_user_edit() {
 
 	// Bail if not editing a topic
-	if ( !bbp_is_single_user_edit() )
+	if ( ! bbp_is_single_user_edit() )
 		return;
 
-	// Only allow super admins on multisite to edit every user.
-	if ( !is_user_logged_in() || ( is_multisite() && !current_user_can( 'manage_network_users' ) && bbp_is_user_home() && !apply_filters( 'enable_edit_any_user_configuration', true ) ) || !current_user_can( 'edit_user', bbp_get_displayed_user_id() ) ) {
+	// Default to false
+	$redirect = true;
+
+	// Allow user to edit their own profile
+	if ( bbp_is_user_home_edit() ) {
+		$redirect = false;
+
+	// Allow if current user can edit the displayed user
+	} elseif ( current_user_can( 'edit_user', bbp_get_displayed_user_id() ) ) {
+		$redirect = false;
+
+	// Allow if user can manage network users, or edit-any is enabled
+	} elseif ( current_user_can( 'manage_network_users' ) || apply_filters( 'enable_edit_any_user_configuration', false ) ) {
+		$redirect = false;
+	}
+
+	// Maybe redirect back to profile page
+	if ( true === $redirect ) {
 		wp_safe_redirect( bbp_get_user_profile_url( bbp_get_displayed_user_id() ) );
 		exit();
 	}
 }
 
-?>
+/** Converter *****************************************************************/
+
+/**
+ * Convert passwords from previous platfrom encryption to WordPress encryption.
+ *
+ * @since bbPress (r3813)
+ * @global WPDB $wpdb
+ */
+function bbp_user_maybe_convert_pass() {
+
+	// Bail if no username
+	$username = !empty( $_POST['log'] ) ? $_POST['log'] : '';
+	if ( empty( $username ) )
+		return;
+
+	global $wpdb;
+
+	// Bail if no user password to convert
+	$row = $wpdb->get_row( "SELECT * FROM {$wpdb->users} INNER JOIN {$wpdb->usermeta} ON user_id = ID WHERE meta_key = '_bbp_class' AND user_login = '{$username}' LIMIT 1" );
+	if ( empty( $row ) || is_wp_error( $row ) )
+		return;
+
+	// Setup admin (to include converter)
+	require_once( bbpress()->plugin_dir . 'bbp-admin/bbp-admin.php' );
+
+	// Create the admin object
+	bbp_admin();
+
+	// Convert password
+	require_once( bbpress()->admin->admin_dir . 'bbp-converter.php' );
+	require_once( bbpress()->admin->admin_dir . 'converters/' . $row->meta_value . '.php' );
+
+	// Create the converter
+	$converter = bbp_new_converter( $row->meta_value );
+
+	// Try to call the conversion method
+	if ( is_a( $converter, 'BBP_Converter_Base' ) && method_exists( $converter, 'callback_pass' ) ) {
+		$converter->callback_pass( $username, $_POST['pwd'] );
+	}
+}

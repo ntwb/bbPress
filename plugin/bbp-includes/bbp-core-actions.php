@@ -52,20 +52,24 @@ add_action( 'set_current_user',       'bbp_setup_current_user',     10 );
 add_action( 'setup_theme',            'bbp_setup_theme',            10 );
 add_action( 'after_setup_theme',      'bbp_after_setup_theme',      10 );
 add_action( 'template_redirect',      'bbp_template_redirect',      10 );
+add_action( 'login_form_login',       'bbp_login_form_login',       10 );
 
 /**
  * bbp_loaded - Attached to 'plugins_loaded' above
  *
  * Attach various loader actions to the bbp_loaded action.
  * The load order helps to execute code at the correct time.
- *                                                        v---Load order
+ *                                                         v---Load order
  */
-add_action( 'bbp_loaded', 'bbp_constants',                2  );
-add_action( 'bbp_loaded', 'bbp_boot_strap_globals',       4  );
-add_action( 'bbp_loaded', 'bbp_includes',                 6  );
-add_action( 'bbp_loaded', 'bbp_setup_globals',            8  );
-add_action( 'bbp_loaded', 'bbp_register_theme_directory', 10 );
-add_action( 'bbp_loaded', 'bbp_register_theme_packages',  12 );
+add_action( 'bbp_loaded', 'bbp_constants',                 2  );
+add_action( 'bbp_loaded', 'bbp_boot_strap_globals',        4  );
+add_action( 'bbp_loaded', 'bbp_includes',                  6  );
+add_action( 'bbp_loaded', 'bbp_setup_globals',             8  );
+add_action( 'bbp_loaded', 'bbp_setup_option_filters',      10 );
+add_action( 'bbp_loaded', 'bbp_setup_user_option_filters', 12 );
+add_action( 'bbp_loaded', 'bbp_register_theme_directory',  14 );
+add_action( 'bbp_loaded', 'bbp_register_theme_packages',   16 );
+add_action( 'bbp_loaded', 'bbp_load_textdomain',           18 );
 
 /**
  * bbp_init - Attached to 'init' above
@@ -74,8 +78,6 @@ add_action( 'bbp_loaded', 'bbp_register_theme_packages',  12 );
  * The load order helps to execute code at the correct time.
  *                                                    v---Load order
  */
-add_action( 'bbp_init', 'bbp_load_textdomain',         2   );
-add_action( 'bbp_init', 'bbp_setup_option_filters',    4   );
 add_action( 'bbp_init', 'bbp_register_post_types',     10  );
 add_action( 'bbp_init', 'bbp_register_post_statuses',  12  );
 add_action( 'bbp_init', 'bbp_register_taxonomies',     14  );
@@ -217,6 +219,14 @@ add_action( 'make_spam_user', 'bbp_make_spam_user' );
 add_action( 'bbp_new_topic', 'bbp_global_access_auto_role' );
 add_action( 'bbp_new_reply', 'bbp_global_access_auto_role' );
 
+// Caches
+add_action( 'bbp_new_forum_pre_extras',  'bbp_clean_post_cache' );
+add_action( 'bbp_new_forum_post_extras', 'bbp_clean_post_cache' );
+add_action( 'bbp_new_topic_pre_extras',  'bbp_clean_post_cache' );
+add_action( 'bbp_new_topic_post_extras', 'bbp_clean_post_cache' );
+add_action( 'bbp_new_reply_pre_extras',  'bbp_clean_post_cache' );
+add_action( 'bbp_new_reply_post_extras', 'bbp_clean_post_cache' );
+
 /**
  * bbPress needs to redirect the user around in a few different circumstances:
  *
@@ -246,6 +256,9 @@ add_action( 'bbp_template_redirect', 'bbp_check_topic_edit',        10 );
 add_action( 'bbp_template_redirect', 'bbp_check_reply_edit',        10 );
 add_action( 'bbp_template_redirect', 'bbp_check_topic_tag_edit',    10 );
 
+// Maybe convert the users password
+add_action( 'bbp_login_form_login', 'bbp_user_maybe_convert_pass' );
+
 /**
  * Requires and creates the BuddyPress extension, and adds component creation
  * action to bp_init hook. @see bbp_setup_buddypress_component()
@@ -268,274 +281,3 @@ function bbp_setup_buddypress() {
 	// Add component setup to bp_init action
 	add_action( 'bp_init', 'bbp_setup_buddypress_component' );
 }
-
-/**
- * Plugin Dependency
- *
- * The purpose of the following actions is to mimic the behavior of something
- * called 'plugin dependency' which enables a plugin to have plugins of their
- * own in a safe and reliable way.
- *
- * We do this in bbPress by mirroring existing WordPress actions in many places
- * allowing dependant plugins to hook into the bbPress specific ones, thus
- * guaranteeing proper code execution only when bbPress is active.
- *
- * The following functions are wrappers for their actions, allowing them to be
- * manually called and/or piggy-backed on top of other actions if needed.
- */
-
-/** Activation Actions ********************************************************/
-
-/**
- * Runs on bbPress activation
- *
- * @since bbPress (r2509)
- * @uses register_uninstall_hook() To register our own uninstall hook
- * @uses do_action() Calls 'bbp_activation' hook
- */
-function bbp_activation() {
-	do_action( 'bbp_activation' );
-}
-
-/**
- * Runs on bbPress deactivation
- *
- * @since bbPress (r2509)
- * @uses do_action() Calls 'bbp_deactivation' hook
- */
-function bbp_deactivation() {
-	do_action( 'bbp_deactivation' );
-}
-
-/**
- * Runs when uninstalling bbPress
- *
- * @since bbPress (r2509)
- * @uses do_action() Calls 'bbp_uninstall' hook
- */
-function bbp_uninstall() {
-	do_action( 'bbp_uninstall' );
-}
-
-/** Main Actions **************************************************************/
-
-/**
- * Main action responsible for constants, globals, and includes
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_loaded'
- */
-function bbp_loaded() {
-	do_action( 'bbp_loaded' );
-}
-
-/**
- * Setup constants
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_constants'
- */
-function bbp_constants() {
-	do_action( 'bbp_constants' );
-}
-
-/**
- * Setup globals BEFORE includes
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_boot_strap_globals'
- */
-function bbp_boot_strap_globals() {
-	do_action( 'bbp_boot_strap_globals' );
-}
-
-/**
- * Include files
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_includes'
- */
-function bbp_includes() {
-	do_action( 'bbp_includes' );
-}
-
-/**
- * Setup globals AFTER includes
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_setup_globals'
- */
-function bbp_setup_globals() {
-	do_action( 'bbp_setup_globals' );
-}
-
-/**
- * Initialize any code after everything has been loaded
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_init'
- */
-function bbp_init() {
-	do_action ( 'bbp_init' );
-}
-
-/**
- * Initialize widgets
- *
- * @since bbPress (r3389)
- * @uses do_action() Calls 'bbp_widgets_init'
- */
-function bbp_widgets_init() {
-	do_action ( 'bbp_widgets_init' );
-}
-
-/**
- * Setup the currently logged-in user
- *
- * @since bbPress (r2695)
- * @uses do_action() Calls 'bbp_setup_current_user'
- */
-function bbp_setup_current_user() {
-	do_action ( 'bbp_setup_current_user' );
-}
-
-/** Supplemental Actions ******************************************************/
-
-/**
- * Load translations for current language
- *
- * @since bbPress (r2599)
- * @uses do_action() Calls 'bbp_load_textdomain'
- */
-function bbp_load_textdomain() {
-	do_action( 'bbp_load_textdomain' );
-}
-
-/**
- * Sets up the theme directory
- *
- * @since bbPress (r2507)
- * @uses do_action() Calls 'bbp_register_theme_directory'
- */
-function bbp_register_theme_directory() {
-	do_action( 'bbp_register_theme_directory' );
-}
-
-/**
- * Setup the post types
- *
- * @since bbPress (r2464)
- * @uses do_action() Calls 'bbp_register_post_type'
- */
-function bbp_register_post_types() {
-	do_action ( 'bbp_register_post_types' );
-}
-
-/**
- * Setup the post statuses
- *
- * @since bbPress (r2727)
- * @uses do_action() Calls 'bbp_register_post_statuses'
- */
-function bbp_register_post_statuses() {
-	do_action ( 'bbp_register_post_statuses' );
-}
-
-/**
- * Register the built in bbPress taxonomies
- *
- * @since bbPress (r2464)
- * @uses do_action() Calls 'bbp_register_taxonomies'
- */
-function bbp_register_taxonomies() {
-	do_action ( 'bbp_register_taxonomies' );
-}
-
-/**
- * Register the default bbPress views
- *
- * @since bbPress (r2789)
- * @uses do_action() Calls 'bbp_register_views'
- */
-function bbp_register_views() {
-	do_action ( 'bbp_register_views' );
-}
-
-/**
- * Enqueue bbPress specific CSS and JS
- *
- * @since bbPress (r3373)
- * @uses do_action() Calls 'bbp_enqueue_scripts'
- */
-function bbp_enqueue_scripts() {
-	do_action ( 'bbp_enqueue_scripts' );
-}
-
-/**
- * Add the bbPress-specific rewrite tags
- *
- * @since bbPress (r2753)
- * @uses do_action() Calls 'bbp_add_rewrite_tags'
- */
-function bbp_add_rewrite_tags() {
-	do_action ( 'bbp_add_rewrite_tags' );
-}
-
-/** Final Action **************************************************************/
-
-/**
- * bbPress has loaded and initialized everything, and is okay to go
- *
- * @since bbPress (r2618)
- * @uses do_action() Calls 'bbp_ready'
- */
-function bbp_ready() {
-	do_action( 'bbp_ready' );
-}
-
-/** Theme Permissions *********************************************************/
-
-/**
- * The main action used for redirecting bbPress theme actions that are not
- * permitted by the current_user
- *
- * @since bbPress (r3605)
- * @uses do_action()
- */
-function bbp_template_redirect() {
-	do_action( 'bbp_template_redirect' );
-}
-
-/** Theme Helpers *************************************************************/
-
-/**
- * The main action used for executing code before the theme has been setup
- *
- * @since bbPress (r3829)
- * @uses do_action()
- */
-function bbp_register_theme_packages() {
-	do_action( 'bbp_register_theme_packages' );
-}
-
-/**
- * The main action used for executing code before the theme has been setup
- *
- * @since bbPress (r3732)
- * @uses do_action()
- */
-function bbp_setup_theme() {
-	do_action( 'bbp_setup_theme' );
-}
-
-/**
- * The main action used for executing code after the theme has been setup
- *
- * @since bbPress (r3732)
- * @uses do_action()
- */
-function bbp_after_setup_theme() {
-	do_action( 'bbp_after_setup_theme' );
-}
-
-?>

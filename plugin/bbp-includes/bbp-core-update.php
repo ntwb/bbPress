@@ -73,7 +73,7 @@ function bbp_is_activation( $basename = '' ) {
 	if ( empty( $basename ) )
 		return false;
 
-	// Is bbPress being deactivated?
+	// Is bbPress being activated?
 	return in_array( $basename, $plugins );
 }
 
@@ -139,6 +139,9 @@ function bbp_setup_updater() {
 
 	// Are we running an outdated version of bbPress?
 	if ( bbp_is_update() ) {
+
+		// Call the automated updater
+		bbp_version_updater();
 
 		// Bump the version
 		bbp_version_bump();
@@ -210,4 +213,83 @@ function bbp_create_initial_content( $args = array() ) {
 	);
 }
 
-?>
+/**
+ * bbPress's version updater looks at what the current database version is, and
+ * runs whatever other code is needed.
+ *
+ * This is most-often used when the data schema changes, but should also be used
+ * to correct issues with bbPress meta-data silently on software update.
+ *
+ * @since bbPress (r4104)
+ */
+function bbp_version_updater() {
+
+	// Get the raw database version
+	$raw_db_version = (int) bbp_get_db_version_raw();
+
+	// Bail if no database version exists
+	if ( empty( $raw_db_version ) )
+		return;
+
+	/** 2.0 Branch ************************************************************/
+
+	// 2.0, 2.0.1, 2.0.2, 2.0.3
+	if ( $raw_db_version < 200 ) {
+		// Do nothing
+	}
+
+	/** 2.1 Branch ************************************************************/
+
+	// 2.1, 2.1.1
+	if ( $raw_db_version < 211 ) {
+
+		/**
+		 * Repair private and hidden forum data
+		 *
+		 * @link http://bbpress.trac.wordpress.org/ticket/1891
+		 */
+		bbp_admin_repair_forum_visibility();
+	}
+
+	/** 2.2 Branch ************************************************************/
+
+	// 2.2
+	if ( $raw_db_version < 213 ) {
+
+		/**
+		 * Remove Roles and Capabilities
+		 *
+		 * bbPress 2.2 moved roles and capabilities to a completely mapped
+		 * system, allowing any existing user in the network to have any other
+		 * set of forum capabilities, regardless of their existing role(s).
+		 */
+		global $wp_roles;
+
+		// Load roles if not set
+		if ( ! isset( $wp_roles ) )
+			$wp_roles = new WP_Roles();
+
+		// Loop through available roles
+		foreach( $wp_roles->roles as $role => $details ) {
+
+			// Load this role
+			$this_role = get_role( $role );
+
+			// Loop through caps for this role and remove them
+			foreach ( bbp_get_caps_for_role( $role ) as $cap ) {
+				$this_role->remove_cap( $cap );
+			}
+		}
+
+		// Remove old custom roles
+		remove_role( 'bbp_moderator'   );
+		remove_role( 'bbp_participant' );
+
+		// Remove bbPress 1.1 roles (BuddyPress)
+		//remove_role( 'member'    );
+		//remove_role( 'inactive'  );
+		//remove_role( 'blocked'   );
+		//remove_role( 'moderator' );
+		//remove_role( 'keymaster' );
+	}
+}

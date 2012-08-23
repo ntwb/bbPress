@@ -48,9 +48,9 @@ add_action( 'menu_order',              'bbp_admin_menu_order'              );
 add_action( 'wpmu_new_blog',           'bbp_new_site',               10, 6 );
 
 // Hook on to admin_init
-add_action( 'bbp_admin_init', 'bbp_admin_forums',             9 );
-add_action( 'bbp_admin_init', 'bbp_admin_topics',             9 );
-add_action( 'bbp_admin_init', 'bbp_admin_replies',            9 );
+add_action( 'bbp_admin_init', 'bbp_admin_forums'                );
+add_action( 'bbp_admin_init', 'bbp_admin_topics'                );
+add_action( 'bbp_admin_init', 'bbp_admin_replies'               );
 add_action( 'bbp_admin_init', 'bbp_setup_updater',          999 );
 add_action( 'bbp_admin_init', 'bbp_register_importers'          );
 add_action( 'bbp_admin_init', 'bbp_register_admin_style'        );
@@ -63,19 +63,14 @@ add_action( 'bbp_init', 'bbp_admin' );
 add_action( 'bbp_admin_menu', 'bbp_admin_separator' );
 
 // Activation
-add_action( 'bbp_activation', 'bbp_add_roles',      1 );
-add_action( 'bbp_activation', 'bbp_add_caps',       2 );
 add_action( 'bbp_activation', 'bbp_add_options',    1 );
 add_action( 'bbp_activation', 'flush_rewrite_rules'   );
 
 // Deactivation
-add_action( 'bbp_deactivation', 'bbp_remove_caps',    1 );
-add_action( 'bbp_deactivation', 'bbp_remove_roles',   2 );
 add_action( 'bbp_deactivation', 'flush_rewrite_rules'   );
+add_action( 'bbp_deactivation', 'bbp_deactivated'       );
 
-// 
-add_action( 'bbp_new_site', 'bbp_add_roles',              2 );
-add_action( 'bbp_new_site', 'bbp_add_caps',               4 );
+// New Site
 add_action( 'bbp_new_site', 'bbp_add_options',            6 );
 add_action( 'bbp_new_site', 'bbp_create_initial_content', 8 );
 add_action( 'bbp_new_site', 'flush_rewrite_rules'           );
@@ -109,7 +104,7 @@ function bbp_new_site( $blog_id, $user_id, $domain, $path, $site_id, $meta ) {
 	switch_to_blog( $blog_id );
 
 	// Do the bbPress activation routine
-	do_action( 'bbp_new_site' );
+	do_action( 'bbp_new_site', $blog_id, $user_id, $domain, $path, $site_id, $meta );
 
 	// restore original blog
 	restore_current_blog();
@@ -186,5 +181,3 @@ function bbp_register_admin_style() {
 function bbp_register_admin_settings() {
 	do_action( 'bbp_register_admin_settings' );
 }
-
-?>

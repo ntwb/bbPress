@@ -124,17 +124,19 @@ function bbp_displayed_user_field( $field = '' ) {
 	 * @param string $field Field to get
 	 * @uses sanitize_text_field() To sanitize the field
 	 * @uses esc_attr() To sanitize the field
+	 * @uses apply_filters() Calls 'bbp_get_displayed_user_field' with the value
 	 * @return string|bool Value of the field if it exists, else false
 	 */
 	function bbp_get_displayed_user_field( $field = '' ) {
-		$bbp = bbpress();
+		$bbp   = bbpress();
+		$value = false;
 
 		// Return field if exists
 		if ( isset( $bbp->displayed_user->$field ) )
-			return esc_attr( sanitize_text_field( $bbp->displayed_user->$field ) );
+			$value = esc_attr( sanitize_text_field( $bbp->displayed_user->$field ) );
 
 		// Return empty
-		return false;
+		return apply_filters( 'bbp_get_displayed_user_field', $value, $field );
 	}
 
 /**
@@ -419,9 +421,6 @@ function bbp_user_display_role( $user_id = 0 ) {
 	 *
 	 * @param int $user_id
 	 * @uses bbp_get_user_role() To get the main user role
-	 * @uses bbp_get_moderator_role() To get the moderator role
-	 * @uses bbp_get_participant_role() To get the participant role
-	 * @uses bbp_get_moderator_role() To get the moderator role
 	 * @uses apply_filters() Calls 'bbp_get_user_display_role' with the
 	 *                        display role, user id, and user role
 	 * @return string
@@ -436,31 +435,15 @@ function bbp_user_display_role( $user_id = 0 ) {
 		if ( is_super_admin( $user_id ) ) {
 			$role = __( 'Key Master', 'bbpress' );
 
+		// User is not registered
+		} elseif ( empty( $user_id ) ) {
+			$role = __( 'Guest', 'bbpress' );
+
 		// Not the keymaster of Gozer
 		} else {
 
 			// Get the user's main role for display
 			switch ( $user_role ) {
-
-				/** bbPress Roles *********************************************/
-
-				// Anonymous
-				case bbp_get_anonymous_role() :
-					$role = __( 'Guest', 'bbpress' );
-					break;
-
-				// Multisite Participant Role
-				case bbp_get_participant_role() :
-					$role = __( 'Member', 'bbpress' );
-					break;
-
-				// Moderator
-				case bbp_get_moderator_role() :
-					$role = __( 'Moderator', 'bbpress' );
-					break;
-
-				/** WordPress Core Roles **************************************/
-
 				case 'administrator' :
 				case 'editor'        :
 				case 'author'        :
@@ -621,10 +604,11 @@ function bbp_favorites_permalink( $user_id = 0 ) {
  * @param array $add Optional. Add to favorites args
  * @param array $rem Optional. Remove from favorites args
  * @param int $user_id Optional. User id
+ * @param int $topic_id Optional. Topic id
  * @uses bbp_get_user_favorites_link() To get the user favorites link
  */
-function bbp_user_favorites_link( $add = array(), $rem = array(), $user_id = 0 ) {
-	echo bbp_get_user_favorites_link( $add, $rem, $user_id );
+function bbp_user_favorites_link( $add = array(), $rem = array(), $user_id = 0, $topic_id = 0 ) {
+	echo bbp_get_user_favorites_link( $add, $rem, $user_id, $topic_id );
 }
 	/**
 	 * User favorites link
@@ -637,6 +621,7 @@ function bbp_user_favorites_link( $add = array(), $rem = array(), $user_id = 0 )
 	 * @param array $add Optional. Add to favorites args
 	 * @param array $rem Optional. Remove from favorites args
 	 * @param int $user_id Optional. User id
+	 * @param int $topic_id Optional. Topic id
 	 * @uses bbp_get_user_id() To get the user id
 	 * @uses current_user_can() If the current user can edit the user
 	 * @uses bbp_get_topic_id() To get the topic id
@@ -648,13 +633,13 @@ function bbp_user_favorites_link( $add = array(), $rem = array(), $user_id = 0 )
 	 *                        html, add args, remove args, user & topic id
 	 * @return string User favorites link
 	 */
-	function bbp_get_user_favorites_link( $add = array(), $rem = array(), $user_id = 0 ) {
+	function bbp_get_user_favorites_link( $add = array(), $rem = array(), $user_id = 0, $topic_id = 0 ) {
 		if ( !bbp_is_favorites_active() )
 			return false;
 
 		// Validate user and topic ID's
 		$user_id  = bbp_get_user_id( $user_id, true, true );
-		$topic_id = bbp_get_topic_id();
+		$topic_id = bbp_get_topic_id( $topic_id );
 		if ( empty( $user_id ) || empty( $topic_id ) )
 			return false;
 
@@ -698,6 +683,8 @@ function bbp_user_favorites_link( $add = array(), $rem = array(), $user_id = 0 )
 		if ( bbp_is_favorites() ) {
 			$permalink = bbp_get_favorites_permalink( $user_id );
 		} elseif ( is_singular( bbp_get_topic_post_type() ) ) {
+			$permalink = bbp_get_topic_permalink( $topic_id );
+		} elseif ( is_singular( bbp_get_reply_post_type() ) ) {
 			$permalink = bbp_get_topic_permalink( $topic_id );
 		} elseif ( bbp_is_query_name( 'bbp_single_topic' ) ) {
 			$permalink = get_permalink();
@@ -817,6 +804,8 @@ function bbp_user_subscribe_link( $args = '' ) {
 			$permalink = bbp_get_subscriptions_permalink( $user_id );
 		} elseif ( is_singular( bbp_get_topic_post_type() ) ) {
 			$permalink = bbp_get_topic_permalink( $topic_id );
+		} elseif ( is_singular( bbp_get_reply_post_type() ) ) {
+			$permalink = bbp_get_topic_permalink( $topic_id );
 		} elseif ( bbp_is_query_name( 'bbp_single_topic' ) ) {
 			$permalink = get_permalink();
 		}
@@ -863,12 +852,13 @@ function bbp_notice_edit_user_success() {
  * @uses bbp_get_displayed_user_id() To get the displayed user id
  * @uses is_super_admin() To check if the user is super admin
  * @uses bbp_is_user_home() To check if it's the user home
+ * @uses bbp_is_user_home_edit() To check if it's the user home edit
  */
 function bbp_notice_edit_user_is_super_admin() {
 	if ( is_multisite() && ( bbp_is_single_user() || bbp_is_single_user_edit() ) && current_user_can( 'manage_network_options' ) && is_super_admin( bbp_get_displayed_user_id() ) ) : ?>
 
 	<div class="bbp-template-notice important">
-		<p><?php bbp_is_user_home() ? _e( 'You have super admin privileges.', 'bbpress' ) : _e( 'This user has super admin privileges.', 'bbpress' ); ?></p>
+		<p><?php bbp_is_user_home() || bbp_is_user_home_edit() ? _e( 'You have super admin privileges.', 'bbpress' ) : _e( 'This user has super admin privileges.', 'bbpress' ); ?></p>
 	</div>
 
 <?php endif;
@@ -1528,114 +1518,3 @@ function bbp_current_user_can_access_create_reply_form() {
 	// Allow access to be filtered
 	return (bool) apply_filters( 'bbp_current_user_can_access_create_reply_form', (bool) $retval );
 }
-
-/** Post Counts ***************************************************************/
-
-/**
- * Output a users topic count
- *
- * @since bbPress (r3632)
- *
- * @param int $user_id
- * @uses bbp_get_user_topic_count()
- * @return string
- */
-function bbp_user_topic_count( $user_id = 0 ) {
-	echo bbp_get_user_topic_count( $user_id );
-}
-	/**
-	 * Return a users reply count
-	 *
-	 * @since bbPress (r3632)
-	 *
-	 * @param int $user_id
-	 * @uses bbp_get_user_id()
-	 * @uses get_user_meta()
-	 * @uses apply_filters()
-	 * @return string
-	 */
-	function bbp_get_user_topic_count( $user_id = 0 ) {
-
-		// Validate user id
-		$user_id = bbp_get_user_id( $user_id );
-		if ( empty( $user_id ) )
-			return false;
-
-		$count = get_user_meta( $user_id, '_bbp_topic_count', true );
-
-		return apply_filters( 'bbp_get_user_topic_count', (int) $count, $user_id );
-	}
-
-/**
- * Output a users reply count
- *
- * @since bbPress (r3632)
- *
- * @param int $user_id
- * @uses bbp_get_user_reply_count()
- * @return string
- */
-function bbp_user_reply_count( $user_id = 0 ) {
-	echo bbp_get_user_reply_count( $user_id );
-}
-	/**
-	 * Return a users reply count
-	 *
-	 * @since bbPress (r3632)
-	 *
-	 * @param int $user_id
-	 * @uses bbp_get_user_id()
-	 * @uses get_user_meta()
-	 * @uses apply_filters()
-	 * @return string
-	 */
-	function bbp_get_user_reply_count( $user_id = 0 ) {
-
-		// Validate user id
-		$user_id = bbp_get_user_id( $user_id );
-		if ( empty( $user_id ) )
-			return false;
-
-		$count = get_user_meta( $user_id, '_bbp_reply_count', true );
-
-		return apply_filters( 'bbp_get_user_reply_count', (int) $count, $user_id );
-	}
-
-/**
- * Output a users total post count
- *
- * @since bbPress (r3632)
- *
- * @param int $user_id
- * @uses bbp_get_user_post_count()
- * @return string
- */
-function bbp_user_post_count( $user_id = 0 ) {
-	echo bbp_get_user_post_count( $user_id );
-}
-	/**
-	 * Return a users total post count
-	 *
-	 * @since bbPress (r3632)
-	 *
-	 * @param int $user_id
-	 * @uses bbp_get_user_id()
-	 * @uses get_user_meta()
-	 * @uses apply_filters()
-	 * @return string
-	 */
-	function bbp_get_user_post_count( $user_id = 0 ) {
-
-		// Validate user id
-		$user_id = bbp_get_user_id( $user_id );
-		if ( empty( $user_id ) )
-			return false;
-
-		$topics  = get_user_meta( $user_id, '_bbp_topic_count', true );
-		$replies = get_user_meta( $user_id, '_bbp_reply_count', true );
-		$count   = (int) $topics + (int) $replies;
-
-		return apply_filters( 'bbp_get_user_post_count', (int) $count, $user_id );
-	}
-
-?>

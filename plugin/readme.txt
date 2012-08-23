@@ -1,13 +1,13 @@
 === bbPress ===
 Contributors: matt, johnjamesjacoby
-Tags: bbpress, forums, discussion, support, theme, buddypress, akismet, multisite
-Requires at least: 3.2.1
-Tested up to: 3.2.1
-Stable tag: 2.0
+Tags: forums, discussion, support, theme, akismet, multisite
+Requires at least: 3.4
+Tested up to: 3.4
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-bbPress is forum software with a twist from the creators of WordPress
+bbPress is forum software, made the WordPress way
 
 == Description ==
 
@@ -25,6 +25,49 @@ We're keeping things as small and light as possible while still allowing for gre
 6. Adjust the CSS of your theme as needed, to make everything pretty.
 
 == Changelog ==
+
+= 2.1.2 =
+* Fixed admin-side help verbiage
+* Fixed reply height CSS
+* Fixed password converter
+* Fixed child post trash and delete functions
+
+= 2.1.1 =
+* Fixed Invision, phpBB, and vBulletin importers
+* Fixed private/hidden forum bugs
+* Fixed topic split meta values
+* Fixed theme compatibility logic error
+* Fixed role mask issues for shared user installs
+* Fixed missing function cruft
+* Fixed missing filter on displayed user fields
+
+= 2.1 =
+* WordPress 3.4 compatibility
+* Deprecate $bbp global, use bbpress() singleton
+* Private forums now visible to registered users
+* Updated forum converter
+* Topic and reply edits now ran through Akismet
+* Fixed Akismet edit bug
+* Fixed Widgets nooping globals
+* Fixed translation load order
+* Fixed user-edit bugs
+* Fixed settings screen regressions
+* Improved post cache invalidation
+* Improved admin-side nonce checks
+* Improved admin settings API
+* Improved bbPress 1.1 converter
+* Improved BuddyPress integration
+* Improved Theme-Compatibility
+* Improved template coverage
+* Improved query performance
+* Improved breadcrumb behavior
+* Improved multisite integration
+* Improved code clarity
+* Improved RTL styling
+* Added 2x menu icons for HiDPI displays
+* Added fancy editor support
+* Added fallback theme picker
+* Added tools for importing, resetting, and removing
 
 = 2.0 =
 * Released on September 21, 2011
@@ -51,7 +94,7 @@ We're keeping things as small and light as possible while still allowing for gre
 * Added Forum Participant role for multisite use
 
 = 2.0-rc-2 =
-* BuddyPress activity actionin tegration
+* BuddyPress activity action integration
 * Multisite integration
 * Fixed a bushel of bugs
 * Fixed tag pagination again

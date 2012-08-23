@@ -104,7 +104,7 @@ class BBP_Shortcodes {
 			// Register
 			'bbp-register'    => array( $this, 'display_register'     ),
 
-			// LOst Password
+			// Lost Password
 			'bbp-lost-pass'   => array( $this, 'display_lost_pass'    ),
 
 		) );
@@ -172,6 +172,9 @@ class BBP_Shortcodes {
 		// Set query name
 		bbp_set_query_name( $query_name );
 
+		// Remove 'bbp_replace_the_content' filter to prevent infinite loops
+		remove_filter( 'the_content', 'bbp_replace_the_content' );
+
 		// Start output buffer
 		ob_start();
 	}
@@ -197,6 +200,9 @@ class BBP_Shortcodes {
 
 		// Reset the query name
 		bbp_reset_query_name();
+
+		// Add 'bbp_replace_the_content' filter back (@see $this::start())
+		add_filter( 'the_content', 'bbp_replace_the_content' );
 
 		return $output;
 	}
@@ -237,7 +243,6 @@ class BBP_Shortcodes {
 	 *
 	 * @param array $attr
 	 * @param string $content
-	 * @uses bbp_has_topics()
 	 * @uses get_template_part()
 	 * @uses bbp_single_forum_description()
 	 * @return string
@@ -302,7 +307,6 @@ class BBP_Shortcodes {
 	 * @param array $attr
 	 * @param string $content
 	 * @uses bbp_get_hidden_forum_ids()
-	 * @uses bbp_has_topics()
 	 * @uses get_template_part()
 	 * @return string
 	 */
@@ -311,11 +315,13 @@ class BBP_Shortcodes {
 		// Unset globals
 		$this->unset_globals();
 
+		// Filter the query
+		if ( ! bbp_is_topic_archive() ) {
+			add_filter( 'bbp_before_has_topics_parse_args', array( $this, 'display_topic_index_query' ) );
+		}
+
 		// Start output buffer
 		$this->start( 'bbp_topic_archive' );
-
-		// Filter the query
-		add_filter( 'bbp_pre_has_topics_query', array( $this, 'display_topic_index_query' ) );
 
 		// Output template
 		bbp_get_template_part( 'content', 'archive-topic' );
@@ -373,11 +379,6 @@ class BBP_Shortcodes {
 
 		// Check forum caps
 		if ( bbp_user_can_view_forum( array( 'forum_id' => $forum_id ) ) ) {
-
-			// Filter the query
-			add_filter( 'bbp_pre_has_replies_query', array( $this, 'display_topic_query' ) );
-
-			// Output template
 			bbp_get_template_part( 'content', 'single-topic' );
 
 		// Forum is private and user does not have caps
@@ -541,14 +542,16 @@ class BBP_Shortcodes {
 		// Unset globals
 		$this->unset_globals();
 
+		// Filter the query
+		if ( ! bbp_is_topic_tag() ) {
+			add_filter( 'bbp_before_has_topics_parse_args', array( $this, 'display_topics_of_tag_query' ) );
+		}
+
 		// Start output buffer
-		$this->start( 'bbp_topics_of_tag' );
+		$this->start( 'bbp_topic_tag' );
 
 		// Set passed attribute to $ag_id for clarity
 		bbpress()->current_topic_tag_id = $tag_id = $attr['id'];
-
-		// Filter the query
-		add_filter( 'bbp_pre_has_topics_query', array( $this, 'display_topics_of_tag_query' ) );
 
 		// Output template
 		bbp_get_template_part( 'content', 'archive-topic' );
@@ -593,7 +596,6 @@ class BBP_Shortcodes {
 	 *
 	 * @param array $attr
 	 * @param string $content
-	 * @uses bbp_has_topics()
 	 * @uses get_template_part()
 	 * @uses bbp_single_forum_description()
 	 * @return string
@@ -613,7 +615,7 @@ class BBP_Shortcodes {
 		// Unset globals
 		$this->unset_globals();
 
-		// Load the topic index
+		// Load the view
 		bbp_view_query( $view_id );
 
 		// Output template
@@ -729,7 +731,7 @@ class BBP_Shortcodes {
 	/**
 	 * Filter the query for the topic index
 	 *
-	 * @since bbPress (rxxxx)
+	 * @since bbPress (r3637)
 	 *
 	 * @param array $args
 	 * @return array
@@ -742,25 +744,6 @@ class BBP_Shortcodes {
 	}
 
 	/**
-	 * Filter the query for the topic index
-	 *
-	 * @since bbPress (rxxxx)
-	 *
-	 * @param array $args
-	 * @return array
-	 */
-	public function display_topic_query( $args = array() ) {
-
-		$args['meta_query'] = array( array(
-			'key'     => '_bbp_topic_id',
-			'value'   => bbpress()->current_topic_id,
-			'compare' => '='
-		) );
-
-		return $args;
-	}
-
-	/**
 	 * Filter the query for topic tags
 	 *
 	 * @since bbPress (r3637)
@@ -769,7 +752,6 @@ class BBP_Shortcodes {
 	 * @return array
 	 */
 	public function display_topics_of_tag_query( $args = array() ) {
-
 		$args['tax_query'] = array( array(
 			'taxonomy' => bbp_get_topic_tag_tax_id(),
 			'field'    => 'id',
@@ -791,5 +773,3 @@ endif;
 function bbp_register_shortcodes() {
 	bbpress()->shortcodes = new BBP_Shortcodes();
 }
-
-?>

@@ -159,16 +159,17 @@ function bbp_admin_repair_list() {
 	$repair_list = array(
 		0  => array( 'bbp-sync-topic-meta',        __( 'Recalculate the parent topic for each post',          'bbpress' ), 'bbp_admin_repair_topic_meta'               ),
 		5  => array( 'bbp-sync-forum-meta',        __( 'Recalculate the parent forum for each post',          'bbpress' ), 'bbp_admin_repair_forum_meta'               ),
-		10 => array( 'bbp-forum-topics',           __( 'Count topics in each forum',                          'bbpress' ), 'bbp_admin_repair_forum_topic_count'        ),
-		15 => array( 'bbp-forum-replies',          __( 'Count replies in each forum',                         'bbpress' ), 'bbp_admin_repair_forum_reply_count'        ),
-		20 => array( 'bbp-topic-replies',          __( 'Count replies in each topic',                         'bbpress' ), 'bbp_admin_repair_topic_reply_count'        ),
-		25 => array( 'bbp-topic-voices',           __( 'Count voices in each topic',                          'bbpress' ), 'bbp_admin_repair_topic_voice_count'        ),
-		30 => array( 'bbp-topic-hidden-replies',   __( 'Count spammed & trashed replies in each topic',       'bbpress' ), 'bbp_admin_repair_topic_hidden_reply_count' ),
-		35 => array( 'bbp-user-replies',           __( 'Count topics for each user',                          'bbpress' ), 'bbp_admin_repair_user_topic_count'         ),
-		35 => array( 'bbp-user-topics',            __( 'Count replies for each user',                         'bbpress' ), 'bbp_admin_repair_user_reply_count'         ),
-		40 => array( 'bbp-user-favorites',         __( 'Remove trashed topics from user favorites',           'bbpress' ), 'bbp_admin_repair_user_favorites'           ),
-		45 => array( 'bbp-user-subscriptions',     __( 'Remove trashed topics from user subscriptions',       'bbpress' ), 'bbp_admin_repair_user_subscriptions'       ),
-		50 => array( 'bbp-sync-all-topics-forums', __( 'Recalculate last activity in each topic and forum',   'bbpress' ), 'bbp_admin_repair_freshness'                )
+		10 => array( 'bbp-sync-forum-visibility',  __( 'Recalculate private and hidden forums',               'bbpress' ), 'bbp_admin_repair_forum_visibility'         ),
+		15 => array( 'bbp-forum-topics',           __( 'Count topics in each forum',                          'bbpress' ), 'bbp_admin_repair_forum_topic_count'        ),
+		20 => array( 'bbp-forum-replies',          __( 'Count replies in each forum',                         'bbpress' ), 'bbp_admin_repair_forum_reply_count'        ),
+		25 => array( 'bbp-topic-replies',          __( 'Count replies in each topic',                         'bbpress' ), 'bbp_admin_repair_topic_reply_count'        ),
+		30 => array( 'bbp-topic-voices',           __( 'Count voices in each topic',                          'bbpress' ), 'bbp_admin_repair_topic_voice_count'        ),
+		35 => array( 'bbp-topic-hidden-replies',   __( 'Count spammed & trashed replies in each topic',       'bbpress' ), 'bbp_admin_repair_topic_hidden_reply_count' ),
+		40 => array( 'bbp-user-replies',           __( 'Count topics for each user',                          'bbpress' ), 'bbp_admin_repair_user_topic_count'         ),
+		45 => array( 'bbp-user-topics',            __( 'Count replies for each user',                         'bbpress' ), 'bbp_admin_repair_user_reply_count'         ),
+		50 => array( 'bbp-user-favorites',         __( 'Remove trashed topics from user favorites',           'bbpress' ), 'bbp_admin_repair_user_favorites'           ),
+		55 => array( 'bbp-user-subscriptions',     __( 'Remove trashed topics from user subscriptions',       'bbpress' ), 'bbp_admin_repair_user_subscriptions'       ),
+		60 => array( 'bbp-sync-all-topics-forums', __( 'Recalculate last activity in each topic and forum',   'bbpress' ), 'bbp_admin_repair_freshness'                )
 	);
 	ksort( $repair_list );
 
@@ -384,14 +385,15 @@ function bbp_admin_repair_user_topic_count() {
 	if ( is_wp_error( $insert_rows ) )
 		return array( 1, sprintf( $statement, $result ) );
 
+	$key           = $wpdb->prefix . '_bbp_topic_count';
 	$insert_values = array();
 	foreach ( $insert_rows as $insert_row )
-		$insert_values[] = "('{$insert_row->post_author}', '_bbp_topic_count', '{$insert_row->_count}')";
+		$insert_values[] = "('{$insert_row->post_author}', '{$key}', '{$insert_row->_count}')";
 
 	if ( !count( $insert_values ) )
 		return array( 2, sprintf( $statement, $result ) );
 
-	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '_bbp_topic_count';";
+	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';";
 	if ( is_wp_error( $wpdb->query( $sql_delete ) ) )
 		return array( 3, sprintf( $statement, $result ) );
 
@@ -430,14 +432,15 @@ function bbp_admin_repair_user_reply_count() {
 	if ( is_wp_error( $insert_rows ) )
 		return array( 1, sprintf( $statement, $result ) );
 
+	$key           = $wpdb->prefix . '_bbp_reply_count';
 	$insert_values = array();
 	foreach ( $insert_rows as $insert_row )
-		$insert_values[] = "('{$insert_row->post_author}', '_bbp_reply_count', '{$insert_row->_count}')";
+		$insert_values[] = "('{$insert_row->post_author}', '{$key}', '{$insert_row->_count}')";
 
 	if ( !count( $insert_values ) )
 		return array( 2, sprintf( $statement, $result ) );
 
-	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '_bbp_reply_count';";
+	$sql_delete = "DELETE FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';";
 	if ( is_wp_error( $wpdb->query( $sql_delete ) ) )
 		return array( 3, sprintf( $statement, $result ) );
 
@@ -470,7 +473,7 @@ function bbp_admin_repair_user_favorites() {
 
 	$statement = __( 'Removing trashed topics from user favorites&hellip; %s', 'bbpress' );
 	$result    = __( 'Failed!', 'bbpress' );
-	$key       = bbp_get_favorites_key();
+	$key       = $wpdb->prefix . '_bbp_favorites';
 	$users     = $wpdb->get_results( "SELECT `user_id`, `meta_value` AS `favorites` FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';" );
 
 	if ( is_wp_error( $users ) )
@@ -530,7 +533,7 @@ function bbp_admin_repair_user_subscriptions() {
 
 	$statement = __( 'Removing trashed topics from user subscriptions&hellip; %s', 'bbpress' );
 	$result    = __( 'Failed!', 'bbpress' );
-	$key       = bbp_get_subscriptions_key();
+	$key       = $wpdb->prefix . '_bbp_subscriptions';
 	$users     = $wpdb->get_results( "SELECT `user_id`, `meta_value` AS `subscriptions` FROM `{$wpdb->usermeta}` WHERE `meta_key` = '{$key}';" );
 
 	if ( is_wp_error( $users ) )
@@ -676,6 +679,57 @@ function bbp_admin_repair_freshness() {
 		}
 	}
 	
+	// Complete results
+	$result = __( 'Complete!', 'bbpress' );
+	return array( 0, sprintf( $statement, $result ) );
+}
+
+/**
+ * Recaches the private and hidden forums
+ *
+ * @since bbPress (r4104)
+ *
+ * @uses delete_option() to delete private and hidden forum pointers
+ * @uses WP_Query() To query post IDs
+ * @uses is_wp_error() To return if error occurred
+ * @uses update_option() To update the private and hidden post ID pointers
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_repair_forum_visibility() {
+
+	$statement = __( 'Recalculating forum visibility &hellip; %s', 'bbpress' );
+	$result    = __( 'Failed!', 'bbpress' );
+
+	// First, delete everything.
+	delete_option( '_bbp_private_forums' );
+	delete_option( '_bbp_hidden_forums'  );
+
+	// Next, get all the private and hidden forums
+	$private_forums = new WP_Query( array(
+		'suppress_filters' => true,
+		'nopaging'         => true,
+		'post_type'        => bbp_get_forum_post_type(),
+		'post_status'      => bbp_get_private_status_id(),
+		'fields'           => 'ids'
+	) );
+	$hidden_forums = new WP_Query( array(
+		'suppress_filters' => true,
+		'nopaging'         => true,
+		'post_type'        => bbp_get_forum_post_type(),
+		'post_status'      => bbp_get_hidden_status_id(),
+		'fields'           => 'ids'
+	) );
+
+	// Bail if queries returned errors
+	if ( is_wp_error( $private_forums ) || is_wp_error( $hidden_forums ) )
+		return array( 2, sprintf( $statement, $result ) );
+
+	update_option( '_bbp_private_forums', $private_forums->posts ); // Private forums
+	update_option( '_bbp_hidden_forums',  $hidden_forums->posts  ); // Hidden forums
+
+	// Reset the $post global
+	wp_reset_postdata();
+
 	// Complete results
 	$result = __( 'Complete!', 'bbpress' );
 	return array( 0, sprintf( $statement, $result ) );
@@ -932,5 +986,3 @@ function bbp_admin_reset_handler() {
 		}
 	}
 }
-
-?>

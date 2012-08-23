@@ -78,7 +78,7 @@ function bbp_insert_forum( $forum_data = array(), $forum_meta = array() ) {
  * Handles the front end forum submission
  *
  * @uses bbPress:errors::add() To log various error messages
- * @uses check_admin_referer() To verify the nonce and check the referer
+ * @uses bbp_verify_nonce_request() To verify the nonce and check the request
  * @uses bbp_is_anonymous() To check if an anonymous post is being made
  * @uses current_user_can() To check if the current user can publish forum
  * @uses bbp_get_current_user_id() To get the current user id
@@ -117,7 +117,10 @@ function bbp_new_forum_handler() {
 		return;
 
 	// Nonce check
-	check_admin_referer( 'bbp-new-forum' );
+	if ( ! bbp_verify_nonce_request( 'bbp-new-forum' ) ) {
+		bbp_add_error( 'bbp_new_forum_nonce', __( '<strong>ERROR</strong>: Are you sure you wanted to do that?', 'bbpress' ) );
+		return;
+	}
 
 	// Define local variable(s)
 	$view_all = $anonymous_data = false;
@@ -129,6 +132,7 @@ function bbp_new_forum_handler() {
 	// User cannot create forums
 	if ( !current_user_can( 'publish_forums' ) ) {
 		bbp_add_error( 'bbp_forum_permissions', __( '<strong>ERROR</strong>: You do not have permission to create new forums.', 'bbpress' ) );
+		return;
 	}
 
 	// Forum author is current user
@@ -224,113 +228,110 @@ function bbp_new_forum_handler() {
 
 	/** Additional Actions (Before Save) **************************************/
 
-	do_action( 'bbp_new_forum_pre_extras' );
+	do_action( 'bbp_new_forum_pre_extras', $forum_parent_id );
+
+	// Bail if errors
+	if ( bbp_has_errors() )
+		return;
 
 	/** No Errors *************************************************************/
 
-	if ( !bbp_has_errors() ) {
+	// Add the content of the form to $forum_data as an array
+	// Just in time manipulation of forum data before being created
+	$forum_data = apply_filters( 'bbp_new_forum_pre_insert', array(
+		'post_author'    => $forum_author,
+		'post_title'     => $forum_title,
+		'post_content'   => $forum_content,
+		'post_parent'    => $forum_parent_id,
+		'post_status'    => $post_status,
+		'post_type'      => bbp_get_forum_post_type(),
+		'comment_status' => 'closed'
+	) );
 
-		/** Create new forum **************************************************/
+	// Insert forum
+	$forum_id = wp_insert_post( $forum_data );
 
-		// Add the content of the form to $forum_data as an array
-		$forum_data = array(
-			'post_author'    => $forum_author,
-			'post_title'     => $forum_title,
-			'post_content'   => $forum_content,
-			'post_parent'    => $forum_parent_id,
-			'post_status'    => $post_status,
-			'post_type'      => bbp_get_forum_post_type(),
-			'comment_status' => 'closed'
-		);
+	/** No Errors *************************************************************/
 
-		// Just in time manipulation of forum data before being created
-		$forum_data = apply_filters( 'bbp_new_forum_pre_insert', $forum_data );
+	if ( !empty( $forum_id ) && !is_wp_error( $forum_id ) ) {
 
-		// Insert forum
-		$forum_id = wp_insert_post( $forum_data );
+		/** Trash Check *******************************************************/
 
-		/** No Errors *********************************************************/
+		// If the forum is trash, or the forum_status is switched to
+		// trash, trash it properly
+		if ( ( get_post_field( 'post_status', $forum_id ) == bbp_get_trash_status_id() ) || ( $forum_data['post_status'] == bbp_get_trash_status_id() ) ) {
 
-		if ( !empty( $forum_id ) && !is_wp_error( $forum_id ) ) {
+			// Trash the reply
+			wp_trash_post( $forum_id );
 
-			/** Trash Check ***************************************************/
-
-			// If the forum is trash, or the forum_status is switched to
-			// trash, trash it properly
-			if ( ( get_post_field( 'post_status', $forum_id ) == bbp_get_trash_status_id() ) || ( $forum_data['post_status'] == bbp_get_trash_status_id() ) ) {
-
-				// Trash the reply
-				wp_trash_post( $forum_id );
-
-				// Force view=all
-				$view_all = true;
-			}
-
-			/** Spam Check ****************************************************/
-
-			// If reply or forum are spam, officially spam this reply
-			if ( $forum_data['post_status'] == bbp_get_spam_status_id() ) {
-				add_post_meta( $forum_id, '_bbp_spam_meta_status', bbp_get_public_status_id() );
-
-				// Force view=all
-				$view_all = true;
-			}
-
-			/** Update counts, etc... *****************************************/
-
-			$forum_args = array(
-				'forum_id'           => $forum_id,
-				'post_parent'        => $forum_parent_id,
-				'forum_author'       => $forum_author,
-				'last_topic_id'      => 0,
-				'last_reply_id'      => 0,
-				'last_active_id'     => 0,
-				'last_active_time'   => 0,
-				'last_active_status' => bbp_get_public_status_id()
-			);
-			do_action( 'bbp_new_forum', $forum_args );
-
-			/** Additional Actions (After Save) *******************************/
-
-			do_action( 'bbp_new_forum_post_extras', $forum_id );
-
-			/** Redirect ******************************************************/
-
-			// Redirect to
-			$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '';
-
-			// Get the forum URL
-			$redirect_url = bbp_get_forum_permalink( $forum_id, $redirect_to );
-
-			// Add view all?
-			if ( bbp_get_view_all() || !empty( $view_all ) ) {
-
-				// User can moderate, so redirect to forum with view all set
-				if ( current_user_can( 'moderate' ) ) {
-					$redirect_url = bbp_add_view_all( $redirect_url );
-
-				// User cannot moderate, so redirect to forum
-				} else {
-					$redirect_url = bbp_get_forum_permalink( $forum_id );
-				}
-			}
-
-			// Allow to be filtered
-			$redirect_url = apply_filters( 'bbp_new_forum_redirect_to', $redirect_url, $redirect_to );
-
-			/** Successful Save ***********************************************/
-
-			// Redirect back to new forum
-			wp_safe_redirect( $redirect_url );
-
-			// For good measure
-			exit();
-
-		// Errors
-		} else {
-			$append_error = ( is_wp_error( $forum_id ) && $forum_id->get_error_message() ) ? $forum_id->get_error_message() . ' ' : '';
-			bbp_add_error( 'bbp_forum_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your forum:' . $append_error, 'bbpress' ) );
+			// Force view=all
+			$view_all = true;
 		}
+
+		/** Spam Check ********************************************************/
+
+		// If reply or forum are spam, officially spam this reply
+		if ( $forum_data['post_status'] == bbp_get_spam_status_id() ) {
+			add_post_meta( $forum_id, '_bbp_spam_meta_status', bbp_get_public_status_id() );
+
+			// Force view=all
+			$view_all = true;
+		}
+
+		/** Update counts, etc... *********************************************/
+
+		$forum_args = array(
+			'forum_id'           => $forum_id,
+			'post_parent'        => $forum_parent_id,
+			'forum_author'       => $forum_author,
+			'last_topic_id'      => 0,
+			'last_reply_id'      => 0,
+			'last_active_id'     => 0,
+			'last_active_time'   => 0,
+			'last_active_status' => bbp_get_public_status_id()
+		);
+		do_action( 'bbp_new_forum', $forum_args );
+
+		/** Additional Actions (After Save) ***********************************/
+
+		do_action( 'bbp_new_forum_post_extras', $forum_id );
+
+		/** Redirect **********************************************************/
+
+		// Redirect to
+		$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '';
+
+		// Get the forum URL
+		$redirect_url = bbp_get_forum_permalink( $forum_id, $redirect_to );
+
+		// Add view all?
+		if ( bbp_get_view_all() || !empty( $view_all ) ) {
+
+			// User can moderate, so redirect to forum with view all set
+			if ( current_user_can( 'moderate' ) ) {
+				$redirect_url = bbp_add_view_all( $redirect_url );
+
+			// User cannot moderate, so redirect to forum
+			} else {
+				$redirect_url = bbp_get_forum_permalink( $forum_id );
+			}
+		}
+
+		// Allow to be filtered
+		$redirect_url = apply_filters( 'bbp_new_forum_redirect_to', $redirect_url, $redirect_to );
+
+		/** Successful Save ***************************************************/
+
+		// Redirect back to new forum
+		wp_safe_redirect( $redirect_url );
+
+		// For good measure
+		exit();
+
+	// Errors
+	} else {
+		$append_error = ( is_wp_error( $forum_id ) && $forum_id->get_error_message() ) ? $forum_id->get_error_message() . ' ' : '';
+		bbp_add_error( 'bbp_forum_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your forum:' . $append_error, 'bbpress' ) );
 	}
 }
 
@@ -339,7 +340,7 @@ function bbp_new_forum_handler() {
  *
  * @uses bbPress:errors::add() To log various error messages
  * @uses bbp_get_forum() To get the forum
- * @uses check_admin_referer() To verify the nonce and check the referer
+ * @uses bbp_verify_nonce_request() To verify the nonce and check the request
  * @uses bbp_is_forum_anonymous() To check if forum is by an anonymous user
  * @uses current_user_can() To check if the current user can edit the forum
  * @uses bbp_filter_anonymous_post_data() To filter anonymous data
@@ -386,6 +387,7 @@ function bbp_edit_forum_handler() {
 	// Forum id was not passed
 	if ( empty( $_POST['bbp_forum_id'] ) ) {
 		bbp_add_error( 'bbp_edit_forum_id', __( '<strong>ERROR</strong>: Forum ID not found.', 'bbpress' ) );
+		return;
 
 	// Forum id was passed
 	} elseif ( is_numeric( $_POST['bbp_forum_id'] ) ) {
@@ -393,20 +395,20 @@ function bbp_edit_forum_handler() {
 		$forum    = bbp_get_forum( $forum_id );
 	}
 
+	// Nonce check
+	if ( ! bbp_verify_nonce_request( 'bbp-edit-forum_' . $forum_id ) ) {
+		bbp_add_error( 'bbp_edit_forum_nonce', __( '<strong>ERROR</strong>: Are you sure you wanted to do that?', 'bbpress' ) );
+		return;
+
 	// Forum does not exist
-	if ( empty( $forum ) ) {
+	} elseif ( empty( $forum ) ) {
 		bbp_add_error( 'bbp_edit_forum_not_found', __( '<strong>ERROR</strong>: The forum you want to edit was not found.', 'bbpress' ) );
+		return;
 
-	// Forum exists
-	} else {
-
-		// Nonce check
-		check_admin_referer( 'bbp-edit-forum_' . $forum_id );
-
-		// User cannot edit this forum
-		if ( !current_user_can( 'edit_forum', $forum_id ) ) {
-			bbp_add_error( 'bbp_edit_forum_permissions', __( '<strong>ERROR</strong>: You do not have permission to edit that forum.', 'bbpress' ) );
-		}
+	// User cannot edit this forum
+	} elseif ( !current_user_can( 'edit_forum', $forum_id ) ) {
+		bbp_add_error( 'bbp_edit_forum_permissions', __( '<strong>ERROR</strong>: You do not have permission to edit that forum.', 'bbpress' ) );
+		return;
 	}
 
 	// Remove wp_filter_kses filters from title and content for capable users and if the nonce is verified
@@ -483,107 +485,103 @@ function bbp_edit_forum_handler() {
 
 	do_action( 'bbp_edit_forum_pre_extras', $forum_id );
 
+	// Bail if errors
+	if ( bbp_has_errors() )
+		return;
+
 	/** No Errors *************************************************************/
 
-	if ( !bbp_has_errors() ) {
+	// Add the content of the form to $forum_data as an array
+	// Just in time manipulation of forum data before being edited
+	$forum_data = apply_filters( 'bbp_edit_forum_pre_insert', array(
+		'ID'           => $forum_id,
+		'post_title'   => $forum_title,
+		'post_content' => $forum_content,
+		'post_status'  => $post_status,
+		'post_parent'  => $forum_parent_id
+	) );
 
-		/** Update the forum **************************************************/
+	// Insert forum
+	$forum_id = wp_update_post( $forum_data );
 
-		// Add the content of the form to $forum_data as an array
-		$forum_data = array(
-			'ID'           => $forum_id,
-			'post_title'   => $forum_title,
-			'post_content' => $forum_content,
-			'post_status'  => $post_status,
-			'post_parent'  => $forum_parent_id
+	/** Revisions *************************************************************/
+
+	/**
+	 * @todo omitted for 2.1
+	// Revision Reason
+	if ( !empty( $_POST['bbp_forum_edit_reason'] ) )
+		$forum_edit_reason = esc_attr( strip_tags( $_POST['bbp_forum_edit_reason'] ) );
+
+	// Update revision log
+	if ( !empty( $_POST['bbp_log_forum_edit'] ) && ( 1 == $_POST['bbp_log_forum_edit'] ) && ( $revision_id = wp_save_post_revision( $forum_id ) ) ) {
+		bbp_update_forum_revision_log( array(
+			'forum_id'    => $forum_id,
+			'revision_id' => $revision_id,
+			'author_id'   => bbp_get_current_user_id(),
+			'reason'      => $forum_edit_reason
+		) );
+	}
+	 */
+
+	/** No Errors *************************************************************/
+
+	if ( !empty( $forum_id ) && !is_wp_error( $forum_id ) ) {
+
+		// Update counts, etc...
+		$forum_args = array(
+			'forum_id'           => $forum_id,
+			'post_parent'        => $forum_parent_id,
+			'forum_author'       => $forum->post_author,
+			'last_topic_id'      => 0,
+			'last_reply_id'      => 0,
+			'last_active_id'     => 0,
+			'last_active_time'   => 0,
+			'last_active_status' => bbp_get_public_status_id()
 		);
+		do_action( 'bbp_edit_forum', $forum_args );
 
-		// Just in time manipulation of forum data before being edited
-		$forum_data = apply_filters( 'bbp_edit_forum_pre_insert', $forum_data );
+		// If the new forum parent id is not equal to the old forum parent
+		// id, run the bbp_move_forum action and pass the forum's parent id
+		// as the first arg and new forum parent id as the second.
+		// @todo implement
+		//if ( $forum_id != $forum->post_parent )
+		//	bbp_move_forum_handler( $forum_parent_id, $forum->post_parent, $forum_id );
 
-		// Insert forum
-		$forum_id = wp_update_post( $forum_data );
+		/** Additional Actions (After Save) ***********************************/
 
-		/** Revisions *********************************************************/
+		do_action( 'bbp_edit_forum_post_extras', $forum_id );
 
-		/**
-		 * @todo omitted for 2.1
-		// Revision Reason
-		if ( !empty( $_POST['bbp_forum_edit_reason'] ) )
-			$forum_edit_reason = esc_attr( strip_tags( $_POST['bbp_forum_edit_reason'] ) );
+		/** Redirect **********************************************************/
 
-		// Update revision log
-		if ( !empty( $_POST['bbp_log_forum_edit'] ) && ( 1 == $_POST['bbp_log_forum_edit'] ) && ( $revision_id = wp_save_post_revision( $forum_id ) ) ) {
-			bbp_update_forum_revision_log( array(
-				'forum_id'    => $forum_id,
-				'revision_id' => $revision_id,
-				'author_id'   => bbp_get_current_user_id(),
-				'reason'      => $forum_edit_reason
-			) );
-		}
-		 *
-		 */
+		// Redirect to
+		$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '';
 
-		/** No Errors *********************************************************/
+		// View all?
+		$view_all = bbp_get_view_all();
 
-		if ( !empty( $forum_id ) && !is_wp_error( $forum_id ) ) {
+		// Get the forum URL
+		$forum_url = bbp_get_forum_permalink( $forum_id, $redirect_to );
 
-			// Update counts, etc...
-			$forum_args = array(
-				'forum_id'           => $forum_id,
-				'post_parent'        => $forum_parent_id,
-				'forum_author'       => $forum->post_author,
-				'last_topic_id'      => 0,
-				'last_reply_id'      => 0,
-				'last_active_id'     => 0,
-				'last_active_time'   => 0,
-				'last_active_status' => bbp_get_public_status_id()
-			);
-			do_action( 'bbp_edit_forum', $forum_args );
+		// Add view all?
+		if ( !empty( $view_all ) )
+			$forum_url = bbp_add_view_all( $forum_url );
 
-			// If the new forum parent id is not equal to the old forum parent
-			// id, run the bbp_move_forum action and pass the forum's parent id
-			// as the first arg and new forum parent id as the second.
-			// @todo implement
-			//if ( $forum_id != $forum->post_parent )
-			//	bbp_move_forum_handler( $forum_parent_id, $forum->post_parent, $forum_id );
+		// Allow to be filtered
+		$forum_url = apply_filters( 'bbp_edit_forum_redirect_to', $forum_url, $view_all, $redirect_to );
 
-			/** Additional Actions (After Save) *******************************/
+		/** Successful Edit ***************************************************/
 
-			do_action( 'bbp_edit_forum_post_extras', $forum_id );
+		// Redirect back to new forum
+		wp_safe_redirect( $forum_url );
 
-			/** Redirect ******************************************************/
+		// For good measure
+		exit();
 
-			// Redirect to
-			$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '';
+	/** Errors ****************************************************************/
 
-			// View all?
-			$view_all = bbp_get_view_all();
-
-			// Get the forum URL
-			$forum_url = bbp_get_forum_permalink( $forum_id, $redirect_to );
-
-			// Add view all?
-			if ( !empty( $view_all ) )
-				$forum_url = bbp_add_view_all( $forum_url );
-
-			// Allow to be filtered
-			$forum_url = apply_filters( 'bbp_edit_forum_redirect_to', $forum_url, $view_all, $redirect_to );
-
-			/** Successful Edit ***********************************************/
-
-			// Redirect back to new forum
-			wp_safe_redirect( $forum_url );
-
-			// For good measure
-			exit();
-
-		/** Errors ************************************************************/
-
-		} else {
-			$append_error = ( is_wp_error( $forum_id ) && $forum_id->get_error_message() ) ? $forum_id->get_error_message() . ' ' : '';
-			bbp_add_error( 'bbp_forum_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your forum:' . $append_error . 'Please try again.', 'bbpress' ) );
-		}
+	} else {
+		$append_error = ( is_wp_error( $forum_id ) && $forum_id->get_error_message() ) ? $forum_id->get_error_message() . ' ' : '';
+		bbp_add_error( 'bbp_forum_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your forum:' . $append_error . 'Please try again.', 'bbpress' ) );
 	}
 }
 
@@ -613,7 +611,7 @@ function bbp_save_forum_extras( $forum_id = 0 ) {
 	$forum_id = bbp_get_forum_id( $forum_id );
 
 	// Bail if forum ID is empty
-	if ( empty( $forum_id ) )
+	if ( empty( $forum_id ) || ! bbp_is_forum( $forum_id ) )
 		return;
 
 	/** Forum Status ******************************************************/
@@ -1563,7 +1561,6 @@ function bbp_get_private_forum_ids() {
  * @param string Optional. The type of value to return. (string|array|meta_query)
  *
  * @uses is_super_admin()
- * @uses bbp_is_user_home()
  * @uses bbp_get_hidden_forum_ids()
  * @uses bbp_get_private_forum_ids()
  * @uses apply_filters()
@@ -1571,8 +1568,23 @@ function bbp_get_private_forum_ids() {
 function bbp_exclude_forum_ids( $type = 'string' ) {
 
 	// Setup arrays
-	$retval = $private = $hidden = $meta_query = $forum_ids = array();
+	$private = $hidden = $meta_query = $forum_ids = array();
 
+	// Default return value
+	switch ( $type ) {
+		case 'string' :
+			$retval = '';
+			break;
+
+		case 'array'  :
+			$retval = array();
+			break;
+
+		case 'meta_query' :
+			$retval = array( array() ) ;
+			break;
+	}
+	
 	// Exclude for everyone but super admins
 	if ( !is_super_admin() ) {
 
@@ -1607,6 +1619,7 @@ function bbp_exclude_forum_ids( $type = 'string' ) {
 					$retval = array(
 						'key'     => '_bbp_forum_id',
 						'value'   => implode( ',', $forum_ids ),
+						'type'    => 'numeric',
 						'compare' => ( 1 < count( $forum_ids ) ) ? 'NOT IN' : '!='
 					);
 					break;
@@ -1631,7 +1644,6 @@ function bbp_exclude_forum_ids( $type = 'string' ) {
  * @uses bbp_exclude_forum_ids()
  * @uses bbp_get_topic_post_type()
  * @uses bbp_get_reply_post_type()
-
  * @return WP_Query
  */
 function bbp_pre_get_posts_exclude_forums( $posts_query ) {
@@ -1684,9 +1696,6 @@ function bbp_pre_get_posts_exclude_forums( $posts_query ) {
 
 		// Replies
 		case bbp_get_reply_post_type() :
-
-		// Topics and replies
-		case array( bbp_get_topic_post_type(), bbp_get_reply_post_type() ) :
 
 			// Get forums to exclude
 			$forum_ids = bbp_exclude_forum_ids( 'meta_query' );
@@ -1941,7 +1950,6 @@ function bbp_check_forum_edit() {
  * @uses bbp_get_forum_id() To validate the forum ID
  * @uses bbp_is_forum() To make sure it's a forum
  * @uses bbp_get_topic_post_type() To get the topic post type
- * @uses bbp_has_topics() To get the topics
  * @uses bbp_topics() To make sure there are topics to loop through
  * @uses wp_trash_post() To trash the post
  * @uses update_post_meta() To update the forum meta of trashed topics
@@ -1951,25 +1959,25 @@ function bbp_delete_forum_topics( $forum_id = 0 ) {
 
 	// Validate forum ID
 	$forum_id = bbp_get_forum_id( $forum_id );
-
 	if ( empty( $forum_id ) )
 		return;
 
 	// Forum is being permanently deleted, so its topics gotta go too
-	if ( bbp_has_topics( array(
-		'post_type'      => bbp_get_topic_post_type(),
-		'post_status'    => 'any',
-		'posts_per_page' => -1,
-		'meta_query'     => array( array(
-			'key'        => '_bbp_forum_id',
-			'value'      => $forum_id,
-			'compare'    => '='
-		) )
+	if ( $topics = new WP_Query( array(
+		'suppress_filters' => true,
+		'post_type'        => bbp_get_topic_post_type(),
+		'post_parent'      => $forum_id,
+		'post_status'      => 'any',
+		'posts_per_page'   => -1,
+		'nopaging'         => true,
+		'fields'           => 'id=>parent'
 	) ) ) {
-		while ( bbp_topics() ) {
-			bbp_the_topic();
-			wp_delete_post( bbpress()->topic_query->post->ID, true );
+		foreach ( $topics->posts as $topic ) {
+			wp_delete_post( $topic->ID, true );
 		}
+
+		// Reset the $post global
+		wp_reset_postdata();
 	}
 }
 
@@ -1985,8 +1993,6 @@ function bbp_delete_forum_topics( $forum_id = 0 ) {
  * @uses bbp_get_closed_status_id() To return closed post status
  * @uses bbp_get_pending_status_id() To return pending post status
  * @uses bbp_get_topic_post_type() To get the topic post type
- * @uses bbp_has_topics() To get the topics
- * @uses bbp_topics() To make sure there are topics to loop through
  * @uses wp_trash_post() To trash the post
  * @uses update_post_meta() To update the forum meta of trashed topics
  * @return If forum is not valid
@@ -1995,7 +2001,6 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
 
 	// Validate forum ID
 	$forum_id = bbp_get_forum_id( $forum_id );
-
 	if ( empty( $forum_id ) )
 		return;
 
@@ -2007,32 +2012,32 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
 	) );
 
 	// Forum is being trashed, so its topics are trashed too
-	if ( bbp_has_topics( array(
-		'post_type'      => bbp_get_topic_post_type(),
-		'post_status'    => $post_stati,
-		'posts_per_page' => -1,
-		'meta_query'     => array( array(
-			'key'        => '_bbp_forum_id',
-			'value'      => $forum_id,
-			'compare'    => '='
-		) )
+	if ( $topics = new WP_Query( array(
+		'suppress_filters' => true,
+		'post_type'        => bbp_get_topic_post_type(),
+		'post_parent'      => $forum_id,
+		'post_status'      => $post_stati,
+		'posts_per_page'   => -1,
+		'nopaging'         => true,
+		'fields'           => 'id=>parent'
 	) ) ) {
 
 		// Prevent debug notices
 		$pre_trashed_topics = array();
-		$bbp                = bbpress();
 
 		// Loop through topics, trash them, and add them to array
-		while ( bbp_topics() ) {
-			bbp_the_topic();
-			wp_trash_post( $bbp->topic_query->post->ID );
-			$pre_trashed_topics[] = $bbp->topic_query->post->ID;
+		foreach ( $topics->posts as $topic ) {
+			wp_trash_post( $topic->ID, true );
+			$pre_trashed_topics[] = $topic->ID;
 		}
 
 		// Set a post_meta entry of the topics that were trashed by this action.
 		// This is so we can possibly untrash them, without untrashing topics
 		// that were purposefully trashed before.
 		update_post_meta( $forum_id, '_bbp_pre_trashed_topics', $pre_trashed_topics );
+
+		// Reset the $post global
+		wp_reset_postdata();
 	}
 }
 
@@ -2086,11 +2091,6 @@ function bbp_untrash_forum_topics( $forum_id = 0 ) {
  * @uses bbp_get_forum_id() To get the forum id
  * @uses bbp_is_forum() To check if the passed id is a forum
  * @uses do_action() Calls 'bbp_delete_forum' with the forum id
- * @uses bbp_has_topics() To check if the forum has topics
- * @uses bbp_topics() To loop through the topics
- * @uses bbp_the_topic() To set a topic as the current topic in the loop
- * @uses bbp_get_topic_id() To get the topic id
- * @uses wp_delete_post() To delete the topic
  */
 function bbp_delete_forum( $forum_id = 0 ) {
 	$forum_id = bbp_get_forum_id( $forum_id );
@@ -2112,12 +2112,6 @@ function bbp_delete_forum( $forum_id = 0 ) {
  * @uses bbp_get_forum_id() To get the forum id
  * @uses bbp_is_forum() To check if the passed id is a forum
  * @uses do_action() Calls 'bbp_trash_forum' with the forum id
- * @uses bbp_has_topics() To check if the forum has topics
- * @uses bbp_topics() To loop through the topics
- * @uses bbp_the_topic() To set a topic as the current topic in the loop
- * @uses bbp_get_topic_id() To get the topic id
- * @uses wp_trash_post() To trash the topic
- * @uses update_post_meta() To save a list of just trashed topics for future use
  */
 function bbp_trash_forum( $forum_id = 0 ) {
 	$forum_id = bbp_get_forum_id( $forum_id );
@@ -2135,9 +2129,6 @@ function bbp_trash_forum( $forum_id = 0 ) {
  * @uses bbp_get_forum_id() To get the forum id
  * @uses bbp_is_forum() To check if the passed id is a forum
  * @uses do_action() Calls 'bbp_untrash_forum' with the forum id
- * @uses get_post_meta() To get the list of topics which were trashed with the
- *                        forum
- * @uses wp_untrash_post() To untrash the topic
  */
 function bbp_untrash_forum( $forum_id = 0 ) {
 	$forum_id = bbp_get_forum_id( $forum_id );
@@ -2200,5 +2191,3 @@ function bbp_untrashed_forum( $forum_id = 0 ) {
 
 	do_action( 'bbp_untrashed_forum', $forum_id );
 }
-
-?>

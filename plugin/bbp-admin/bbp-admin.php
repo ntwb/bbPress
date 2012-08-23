@@ -44,33 +44,12 @@ class BBP_Admin {
 	 */
 	public $styles_url = '';
 
-	/** Tools *****************************************************************/
-
-	/**
-	 * @var bool Enable screens in Tools area
-	 */
-	public $enable_tools = false;
-
-	/** Settings **************************************************************/
-
-	/**
-	 * @var bool Enable screens in Settings area
-	 */
-	public $enable_settings = false;
-
 	/** Capability ************************************************************/
 
 	/**
 	 * @var bool Minimum capability to access Tools and Settings
 	 */
 	public $minimum_capability = 'manage_options';
-
-	/** Admin Scheme **********************************************************/
-
-	/**
-	 * @var int Depth of custom WP_CONTENT_DIR difference
-	 */
-	public $content_depth = 0;
 
 	/** Functions *************************************************************/
 
@@ -90,53 +69,17 @@ class BBP_Admin {
 	}
 
 	/**
-	 * Setup the admin hooks, actions and filters
+	 * Admin globals
 	 *
 	 * @since bbPress (r2646)
 	 * @access private
-	 *
-	 * @uses add_action() To add various actions
-	 * @uses add_filter() To add various filters
 	 */
-	private function setup_actions() {
-
-		/** General Actions ***************************************************/
-
-		// Add menu item to settings menu
-		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             ) );
-
-		// Add some general styling to the admin area
-		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) );
-
-		// Add notice if not using a bbPress theme
-		add_action( 'bbp_admin_notices',           array( $this, 'activation_notice'       ) );
-
-		// Add green admin style
-		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'    ) );
-
-		// Add settings
-		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' ) );
-
-		// Add menu item to settings menu
-		add_action( 'bbp_activation',              array( $this, 'new_install'             ) );
-
-		// Forums 'Right now' Dashboard widget
-		add_action( 'wp_dashboard_setup',  array( $this, 'dashboard_widget_right_now' ) );
-
-		/** Filters ***********************************************************/
-
-		// Add link to settings page
-		add_filter( 'plugin_action_links', array( $this, 'add_settings_link' ), 10, 2 );
-
-		/** Network Admin *****************************************************/
-
-		// Add menu item to settings menu
-		add_action( 'network_admin_menu',  array( $this, 'network_admin_menus' ) );
-
-		/** Dependencies ******************************************************/
-
-		// Allow plugins to modify these actions
-		do_action_ref_array( 'bbp_admin_loaded', array( &$this ) );
+	private function setup_globals() {
+		$bbp = bbpress();
+		$this->admin_dir  = trailingslashit( $bbp->plugin_dir . 'bbp-admin' ); // Admin path
+		$this->admin_url  = trailingslashit( $bbp->plugin_url . 'bbp-admin' ); // Admin url
+		$this->images_url = trailingslashit( $this->admin_url . 'images'    ); // Admin images URL
+		$this->styles_url = trailingslashit( $this->admin_url . 'styles'    ); // Admin styles URL
 	}
 
 	/**
@@ -154,20 +97,44 @@ class BBP_Admin {
 		require( $this->admin_dir . 'bbp-forums.php'    );
 		require( $this->admin_dir . 'bbp-topics.php'    );
 		require( $this->admin_dir . 'bbp-replies.php'   );
+		require( $this->admin_dir . 'bbp-users.php'     );
 	}
 
 	/**
-	 * Admin globals
+	 * Setup the admin hooks, actions and filters
 	 *
 	 * @since bbPress (r2646)
 	 * @access private
+	 *
+	 * @uses add_action() To add various actions
+	 * @uses add_filter() To add various filters
 	 */
-	private function setup_globals() {
-		$bbp = bbpress();
-		$this->admin_dir  = trailingslashit( $bbp->plugin_dir . 'bbp-admin' ); // Admin url
-		$this->admin_url  = trailingslashit( $bbp->plugin_url . 'bbp-admin' ); // Admin url
-		$this->images_url = trailingslashit( $this->admin_url . 'images'    ); // Admin images URL
-		$this->styles_url = trailingslashit( $this->admin_url . 'styles'    ); // Admin styles URL
+	private function setup_actions() {
+
+		/** General Actions ***************************************************/
+
+		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'                ) ); // Add menu item to settings menu
+		add_action( 'bbp_admin_head',              array( $this, 'admin_head'                 ) ); // Add some general styling to the admin area
+		add_action( 'bbp_admin_notices',           array( $this, 'activation_notice'          ) ); // Add notice if not using a bbPress theme
+		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'       ) ); // Add green admin style
+		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings'    ) ); // Add settings
+		add_action( 'bbp_activation',              array( $this, 'new_install'                ) ); // Add menu item to settings menu
+		add_action( 'wp_dashboard_setup',          array( $this, 'dashboard_widget_right_now' ) ); // Forums 'Right now' Dashboard widget
+
+		/** Filters ***********************************************************/
+
+		// Modify bbPress's admin links
+		add_filter( 'plugin_action_links', array( $this, 'modify_plugin_action_links' ), 10, 2 );
+
+		/** Network Admin *****************************************************/
+
+		// Add menu item to settings menu
+		add_action( 'network_admin_menu',  array( $this, 'network_admin_menus' ) );
+
+		/** Dependencies ******************************************************/
+
+		// Allow plugins to modify these actions
+		do_action_ref_array( 'bbp_admin_loaded', array( &$this ) );
 	}
 
 	/**
@@ -181,33 +148,39 @@ class BBP_Admin {
 	 */
 	public function admin_menus() {
 
-		// Are tools enabled?
-		if ( is_super_admin() || ! empty( $this->enable_tools ) ) {
+		$hooks = array();
 
-			$hooks = array();
+		// These are later removed in admin_head
+		if ( bbp_current_user_can_see( 'bbp_tools_page' ) ) {
+			if ( bbp_current_user_can_see( 'bbp_tools_repair_page' ) ) {
+				$hooks[] = add_management_page(
+					__( 'Repair Forums', 'bbpress' ),
+					__( 'Forum Repair',  'bbpress' ),
+					$this->minimum_capability,
+					'bbp-repair',
+					'bbp_admin_repair'
+				);
+			}
 
-			// These are later removed in admin_head
-			$hooks[] = add_management_page(
-				__( 'Repair Forums', 'bbpress' ),
-				__( 'Forum Repair',  'bbpress' ),
-				$this->minimum_capability,
-				'bbp-repair',
-				'bbp_admin_repair'
-			);
-			$hooks[] = add_management_page(
-				__( 'Import Forums', 'bbpress' ),
-				__( 'Forum Import',  'bbpress' ),
-				$this->minimum_capability,
-				'bbp-converter',
-				'bbp_converter_settings'
-			);
-			$hooks[] = add_management_page(
-				__( 'Reset Forums', 'bbpress' ),
-				__( 'Forum Reset',  'bbpress' ),
-				$this->minimum_capability,
-				'bbp-reset',
-				'bbp_admin_reset'
-			);
+			if ( bbp_current_user_can_see( 'bbp_tools_import_page' ) ) {
+				$hooks[] = add_management_page(
+					__( 'Import Forums', 'bbpress' ),
+					__( 'Forum Import',  'bbpress' ),
+					$this->minimum_capability,
+					'bbp-converter',
+					'bbp_converter_settings'
+				);
+			}
+
+			if ( bbp_current_user_can_see( 'bbp_tools_reset_page' ) ) {
+				$hooks[] = add_management_page(
+					__( 'Reset Forums', 'bbpress' ),
+					__( 'Forum Reset',  'bbpress' ),
+					$this->minimum_capability,
+					'bbp-reset',
+					'bbp_admin_reset'
+				);
+			}
 
 			// Fudge the highlighted subnav item when on a bbPress admin page
 			foreach( $hooks as $hook ) {
@@ -225,13 +198,35 @@ class BBP_Admin {
 		}
 
 		// Are settings enabled?
-		if ( is_super_admin() || ! empty( $this->enable_settings ) ) {
+		if ( bbp_current_user_can_see( 'bbp_settings_page' ) ) {
 			add_options_page(
 				__( 'Forums',  'bbpress' ),
 				__( 'Forums',  'bbpress' ),
 				$this->minimum_capability,
 				'bbpress',
 				'bbp_admin_settings'
+			);
+		}
+
+		// These are later removed in admin_head
+		if ( bbp_current_user_can_see( 'bbp_about_page' ) ) {
+
+			// About
+			add_dashboard_page(
+				__( 'Welcome to bbPress',  'bbpress' ),
+				__( 'Welcome to bbPress',  'bbpress' ),
+				$this->minimum_capability,
+				'bbp-about',
+				array( $this, 'about_screen' )
+			);
+
+			// Credits
+			add_dashboard_page(
+				__( 'Welcome to bbPress',  'bbpress' ),
+				__( 'Welcome to bbPress',  'bbpress' ),
+				$this->minimum_capability,
+				'bbp-credits',
+				array( $this, 'credits_screen' )
 			);
 		}
 	}
@@ -257,9 +252,9 @@ class BBP_Admin {
 	 * If this is a new installation, create some initial forum content.
 	 *
 	 * @since bbPress (r3767)
-	 * @return type 
+	 * @return type
 	 */
-	public function new_install() {
+	public static function new_install() {
 		if ( !bbp_is_install() )
 			return;
 
@@ -274,161 +269,37 @@ class BBP_Admin {
 	 * @uses add_settings_section() To add our own settings section
 	 * @uses add_settings_field() To add various settings fields
 	 * @uses register_setting() To register various settings
+	 * @todo Put fields into multidimensional array
 	 */
-	public function register_admin_settings() {
+	public static function register_admin_settings() {
 
-		/** Main Section ******************************************************/
+		// Bail if no sections available
+		if ( ! $sections = bbp_admin_get_settings_sections() )
+			return false;
 
-		// Add the main section
-		add_settings_section( 'bbp_main',                __( 'Main Settings',           'bbpress' ), 'bbp_admin_setting_callback_main_section',  'bbpress'             );
+		// Loop through sections
+		foreach ( $sections as $section_id => $section ) {
 
-		// Edit lock setting
-		add_settings_field( '_bbp_edit_lock',            __( 'Lock post editing after', 'bbpress' ), 'bbp_admin_setting_callback_editlock',      'bbpress', 'bbp_main' );
-	 	register_setting  ( 'bbpress',                   '_bbp_edit_lock',                           'intval'                                                          );
+			// Only proceed if current user can see this section
+			if ( ! bbp_current_user_can_see( $section_id ) )
+				continue;
 
-		// Throttle setting
-		add_settings_field( '_bbp_throttle_time',        __( 'Throttle time',           'bbpress' ), 'bbp_admin_setting_callback_throttle',      'bbpress', 'bbp_main' );
-	 	register_setting  ( 'bbpress',                   '_bbp_throttle_time',                       'intval'                                                          );
+			// Only add section and fields if section has fields
+			if ( $fields = bbp_admin_get_settings_fields_for_section( $section_id ) ) {
 
-		// Allow topic and reply revisions
-		add_settings_field( '_bbp_allow_revisions',      __( 'Allow Revisions',         'bbpress' ), 'bbp_admin_setting_callback_revisions',     'bbpress', 'bbp_main' );
-	 	register_setting  ( 'bbpress',                   '_bbp_allow_revisions',                     'intval'                                                          );
+				// Add the section
+				add_settings_section( $section_id, $section['title'], $section['callback'], $section['page'] );
 
-		// Allow favorites setting
-		add_settings_field( '_bbp_enable_favorites',     __( 'Allow Favorites',         'bbpress' ), 'bbp_admin_setting_callback_favorites',     'bbpress', 'bbp_main' );
-	 	register_setting  ( 'bbpress',                   '_bbp_enable_favorites',                    'intval'                                                          );
+				// Loop through fields for this section
+				foreach ( $fields as $field_id => $field ) {
 
-		// Allow subscriptions setting
-		add_settings_field( '_bbp_enable_subscriptions', __( 'Allow Subscriptions',     'bbpress' ), 'bbp_admin_setting_callback_subscriptions', 'bbpress', 'bbp_main' );
-	 	register_setting  ( 'bbpress',                   '_bbp_enable_subscriptions',                'intval'                                                          );
+					// Add the field
+					add_settings_field( $field_id, $field['title'], $field['callback'], $section['page'], $section_id, $field['args'] );
 
-		// Allow anonymous posting setting
-		add_settings_field( '_bbp_allow_anonymous',      __( 'Allow Anonymous Posting', 'bbpress' ), 'bbp_admin_setting_callback_anonymous',     'bbpress', 'bbp_main' );
-	 	register_setting  ( 'bbpress',                   '_bbp_allow_anonymous',                     'intval'                                                          );
-
-		// Allow global access setting
-		if ( is_multisite() ) {
-			add_settings_field( '_bbp_allow_global_access', __( 'Allow Global Access',  'bbpress' ), 'bbp_admin_setting_callback_global_access', 'bbpress', 'bbp_main' );
-		 	register_setting  ( 'bbpress',                  '_bbp_allow_global_access',              'intval'                                                          );
-		}
-
-		// Allow fancy editor setting
-		add_settings_field( '_bbp_use_wp_editor', __( 'Fancy Editor',     'bbpress' ), 'bbp_admin_setting_callback_use_wp_editor', 'bbpress', 'bbp_main' );
-		register_setting  ( 'bbpress',            '_bbp_use_wp_editor',                'intval'                                                          );
-		
-		// Allow auto embedding setting
-		add_settings_field( '_bbp_use_autoembed', __( 'Auto-embed Links', 'bbpress' ), 'bbp_admin_setting_callback_use_autoembed', 'bbpress', 'bbp_main' );
-		register_setting  ( 'bbpress',           '_bbp_use_autoembed',                 'intval'                                                          );
-
-		/** Theme Packages ****************************************************/
-
-		// Add the per page section
-		add_settings_section( 'bbp_theme_compat',    __( 'Theme Packages',  'bbpress' ), 'bbp_admin_setting_callback_subtheme_section', 'bbpress'                     );
-
-		// Replies per page setting
-		add_settings_field( '_bbp_theme_package_id', __( 'Current Package', 'bbpress' ), 'bbp_admin_setting_callback_subtheme_id',      'bbpress', 'bbp_theme_compat' );
-		register_setting  ( 'bbpress',               '_bbp_theme_package_id',            ''                                                                           );
-
-		/** Per Page Section **************************************************/
-
-		// Add the per page section
-		add_settings_section( 'bbp_per_page',        __( 'Per Page', 'bbpress' ),          'bbp_admin_setting_callback_per_page_section', 'bbpress'                 );
-
-		// Topics per page setting
-		add_settings_field( '_bbp_topics_per_page',  __( 'Topics',   'bbpress' ),          'bbp_admin_setting_callback_topics_per_page',  'bbpress', 'bbp_per_page' );
-	 	register_setting  ( 'bbpress',               '_bbp_topics_per_page',               'intval'                                                                 );
-
-		// Replies per page setting
-		add_settings_field( '_bbp_replies_per_page', __( 'Replies',  'bbpress' ),          'bbp_admin_setting_callback_replies_per_page', 'bbpress', 'bbp_per_page' );
-	 	register_setting  ( 'bbpress',               '_bbp_replies_per_page',              'intval'                                                                 );
-
-		/** Per RSS Page Section **********************************************/
-
-		// Add the per page section
-		add_settings_section( 'bbp_per_rss_page',    __( 'Per RSS Page', 'bbpress' ),      'bbp_admin_setting_callback_per_rss_page_section', 'bbpress'                     );
-
-		// Topics per page setting
-		add_settings_field( '_bbp_topics_per_page',  __( 'Topics',       'bbpress' ),      'bbp_admin_setting_callback_topics_per_rss_page',  'bbpress', 'bbp_per_rss_page' );
-	 	register_setting  ( 'bbpress',               '_bbp_topics_per_rss_page',           'intval'                                                                         );
-
-		// Replies per page setting
-		add_settings_field( '_bbp_replies_per_page', __( 'Replies',      'bbpress' ),      'bbp_admin_setting_callback_replies_per_rss_page', 'bbpress', 'bbp_per_rss_page' );
-	 	register_setting  ( 'bbpress',               '_bbp_replies_per_rss_page',          'intval'                                                                         );
-
-		/** Front Slugs *******************************************************/
-
-		// Add the per page section
-		add_settings_section( 'bbp_root_slug',           __( 'Archive Slugs', 'bbpress' ), 'bbp_admin_setting_callback_root_slug_section',   'bbpress'                  );
-
-		// Root slug setting
-		add_settings_field  ( '_bbp_root_slug',          __( 'Forums base',   'bbpress' ), 'bbp_admin_setting_callback_root_slug',           'bbpress', 'bbp_root_slug' );
-	 	register_setting    ( 'bbpress',                '_bbp_root_slug',                  'esc_sql'                                                                    );
-
-		// Topic archive setting
-		add_settings_field  ( '_bbp_topic_archive_slug', __( 'Topics base',   'bbpress' ), 'bbp_admin_setting_callback_topic_archive_slug',  'bbpress', 'bbp_root_slug' );
-	 	register_setting    ( 'bbpress',                 '_bbp_topic_archive_slug',        'esc_sql'                                                                    );
-
-		/** Single slugs ******************************************************/
-
-		// Add the per page section
-		add_settings_section( 'bbp_single_slugs',   __( 'Single Slugs',  'bbpress' ), 'bbp_admin_setting_callback_single_slug_section', 'bbpress'                     );
-
-		// Include root setting
-		add_settings_field( '_bbp_include_root',    __( 'Forum Prefix', 'bbpress' ),  'bbp_admin_setting_callback_include_root',        'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',              '_bbp_include_root',              'intval'                                                                        );
-
-		// Forum slug setting
-		add_settings_field( '_bbp_forum_slug',      __( 'Forum slug',    'bbpress' ), 'bbp_admin_setting_callback_forum_slug',          'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',             '_bbp_forum_slug',                 'sanitize_title'                                                                );
-
-		// Topic slug setting
-		add_settings_field( '_bbp_topic_slug',      __( 'Topic slug',    'bbpress' ), 'bbp_admin_setting_callback_topic_slug',          'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',             '_bbp_topic_slug',                 'sanitize_title'                                                                );
-
-		// Topic tag slug setting
-		add_settings_field( '_bbp_topic_tag_slug', __( 'Topic tag slug', 'bbpress' ), 'bbp_admin_setting_callback_topic_tag_slug',      'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',             '_bbp_topic_tag_slug',             'sanitize_title'                                                                );
-
-		// Reply slug setting
-		add_settings_field( '_bbp_reply_slug',      __( 'Reply slug',    'bbpress' ), 'bbp_admin_setting_callback_reply_slug',          'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',             '_bbp_reply_slug',                 'sanitize_title'                                                                );
-
-		/** Other slugs *******************************************************/
-
-		// User slug setting
-		add_settings_field( '_bbp_user_slug',       __( 'User base',     'bbpress' ), 'bbp_admin_setting_callback_user_slug',           'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',              '_bbp_user_slug',                 'sanitize_title'                                                                );
-
-		// View slug setting
-		add_settings_field( '_bbp_view_slug',       __( 'View base',     'bbpress' ), 'bbp_admin_setting_callback_view_slug',           'bbpress', 'bbp_single_slugs' );
-	 	register_setting  ( 'bbpress',              '_bbp_view_slug',                 'sanitize_title'                                                                );
-
-		/** BuddyPress ********************************************************/
-
-		if ( is_plugin_active( 'buddypress/bp-loader.php' ) && defined( 'BP_VERSION' ) ) {
-
-			// Add the per page section
-			add_settings_section( 'bbp_buddypress',          __( 'BuddyPress', 'bbpress' ),          'bbp_admin_setting_callback_buddypress_section',   'bbpress'                   );
-
-			// Topics per page setting
-			add_settings_field( '_bbp_enable_group_forums',  __( 'Enable Group Forums', 'bbpress' ), 'bbp_admin_setting_callback_group_forums',         'bbpress', 'bbp_buddypress' );
-			register_setting  ( 'bbpress',                  '_bbp_enable_group_forums',              'intval'                                                                       );
-
-			// Topics per page setting
-			add_settings_field( '_bbp_group_forums_root_id', __( 'Group Forums Parent', 'bbpress' ), 'bbp_admin_setting_callback_group_forums_root_id', 'bbpress', 'bbp_buddypress' );
-			register_setting  ( 'bbpress',                  '_bbp_group_forums_root_id',             'intval'                                                                       );
-		}
-
-		/** Akismet ***********************************************************/
-
-		if ( is_plugin_active( 'akismet/akismet.php' ) && defined( 'AKISMET_VERSION' ) ) {
-
-			// Add the per page section
-			add_settings_section( 'bbp_akismet',       __( 'Akismet', 'bbpress' ),      'bbp_admin_setting_callback_akismet_section', 'bbpress'                );
-
-			// Replies per page setting
-			add_settings_field( '_bbp_enable_akismet', __( 'Use Akismet',  'bbpress' ), 'bbp_admin_setting_callback_akismet',         'bbpress', 'bbp_akismet' );
-			register_setting  ( 'bbpress',            '_bbp_enable_akismet',            'intval'                                                               );
+					// Register the setting
+					register_setting( $section['page'], $field_id, $field['sanitize_callback'] );
+				}
+			}
 		}
 	}
 
@@ -490,14 +361,17 @@ class BBP_Admin {
 	 * @param string $file Current plugin basename
 	 * @return array Processed links
 	 */
-	public function add_settings_link( $links, $file ) {
+	public static function modify_plugin_action_links( $links, $file ) {
 
-		if ( plugin_basename( bbpress()->file ) == $file ) {
-			$settings_link = '<a href="' . add_query_arg( array( 'page' => 'bbpress' ), admin_url( 'options-general.php' ) ) . '">' . __( 'Settings', 'bbpress' ) . '</a>';
-			array_unshift( $links, $settings_link );
-		}
+		// Return normal links if not bbPress
+		if ( plugin_basename( bbpress()->file ) != $file )
+			return $links;
 
-		return $links;
+		// Add a few links to the existing links array
+		return array_merge( $links, array(
+			'settings' => '<a href="' . add_query_arg( array( 'page' => 'bbpress'   ), admin_url( 'options-general.php' ) ) . '">' . __( 'Settings', 'bbpress' ) . '</a>',
+			'about'    => '<a href="' . add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php'           ) ) . '">' . __( 'About',    'bbpress' ) . '</a>'
+		) );
 	}
 
 	/**
@@ -507,7 +381,7 @@ class BBP_Admin {
 	 *
 	 * @uses wp_add_dashboard_widget() To add the dashboard widget
 	 */
-	public function dashboard_widget_right_now() {
+	public static function dashboard_widget_right_now() {
 		wp_add_dashboard_widget( 'bbp-dashboard-right-now', __( 'Right Now in Forums', 'bbpress' ), 'bbp_dashboard_widget_right_now' );
 	}
 
@@ -528,10 +402,20 @@ class BBP_Admin {
 		remove_submenu_page( 'tools.php', 'bbp-repair'    );
 		remove_submenu_page( 'tools.php', 'bbp-converter' );
 		remove_submenu_page( 'tools.php', 'bbp-reset'     );
+		remove_submenu_page( 'index.php', 'bbp-about'     );
+		remove_submenu_page( 'index.php', 'bbp-credits'   );
+
+		// The /wp-admin/images/ folder
+		$wp_admin_url     = admin_url( 'images/' );
 
 		// Icons for top level admin menus
-		$menu_icon_url = $this->images_url . 'menu.png';
-		$icon32_url    = $this->images_url . 'icons32.png';
+		$version          = bbp_get_version();
+		$menu_icon_url    = $this->images_url . 'menu.png?ver='       . $version;
+		$icon32_url       = $this->images_url . 'icons32.png?ver='    . $version;
+		$menu_icon_url_2x = $this->images_url . 'menu-2x.png?ver='    . $version;
+		$icon32_url_2x    = $this->images_url . 'icons32-2x.png?ver=' . $version;
+		$badge_url        = $this->images_url . 'badge.png?ver='      . $version;
+		$badge_url_2x     = $this->images_url . 'badge-2x.png?ver='   . $version;
 
 		// Top level menu classes
 		$forum_class = sanitize_html_class( bbp_get_forum_post_type() );
@@ -540,6 +424,26 @@ class BBP_Admin {
 
 		<style type="text/css" media="screen">
 		/*<![CDATA[*/
+
+			/* Version Badge */
+
+			.bbp-badge {
+				padding-top: 142px;
+				height: 50px;
+				width: 173px;
+				color: #fafafa;
+				font-weight: bold;
+				font-size: 14px;
+				text-align: center;
+				margin: 0 -5px;
+				background: url('<?php echo $badge_url; ?>') no-repeat;
+			}
+
+			.about-wrap .bbp-badge {
+				position: absolute;
+				top: 0;
+				right: 0;
+			}
 
 			#bbp-dashboard-right-now p.sub,
 			#bbp-dashboard-right-now .table,
@@ -666,38 +570,509 @@ class BBP_Admin {
 					clear: left;
 				}
 
+			/* Icon 32 */
+			#icon-edit.icon32-posts-<?php echo $forum_class; ?>,
+			#icon-edit.icon32-posts-<?php echo $topic_class; ?>,
+			#icon-edit.icon32-posts-<?php echo $reply_class; ?> {
+				background: url('<?php echo $icon32_url; ?>');
+				background-repeat: no-repeat;
+			}
+
+			/* Icon Positions */
+			#icon-edit.icon32-posts-<?php echo $forum_class; ?> {
+				background-position: -4px 0px;
+			}
+
+			#icon-edit.icon32-posts-<?php echo $topic_class; ?> {
+				background-position: -4px -90px;
+			}
+
+			#icon-edit.icon32-posts-<?php echo $reply_class; ?> {
+				background-position: -4px -180px;
+			}
+
+			/* Icon 32 2x */
+			@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+				#icon-edit.icon32-posts-<?php echo $forum_class; ?>,
+				#icon-edit.icon32-posts-<?php echo $topic_class; ?>,
+				#icon-edit.icon32-posts-<?php echo $reply_class; ?> {
+					background-image: url('<?php echo $icon32_url_2x; ?>');
+					background-size: 45px 255px;
+				}
+			}
+
+			/* Menu */
+			#menu-posts-<?php echo $forum_class; ?> .wp-menu-image,
+			#menu-posts-<?php echo $topic_class; ?> .wp-menu-image,
+			#menu-posts-<?php echo $reply_class; ?> .wp-menu-image,
+
+			#menu-posts-<?php echo $forum_class; ?>:hover .wp-menu-image,
+			#menu-posts-<?php echo $topic_class; ?>:hover .wp-menu-image,
+			#menu-posts-<?php echo $reply_class; ?>:hover .wp-menu-image,
+
+			#menu-posts-<?php echo $forum_class; ?>.wp-has-current-submenu .wp-menu-image,
+			#menu-posts-<?php echo $topic_class; ?>.wp-has-current-submenu .wp-menu-image,
+			#menu-posts-<?php echo $reply_class; ?>.wp-has-current-submenu .wp-menu-image {
+				background: url('<?php echo $menu_icon_url; ?>');
+				background-repeat: no-repeat;
+			}
+
+			/* Menu Positions */
 			#menu-posts-<?php echo $forum_class; ?> .wp-menu-image {
-				background: url(<?php echo $menu_icon_url; ?>) no-repeat 0px -32px;
+				background-position: 0px -32px;
 			}
 			#menu-posts-<?php echo $forum_class; ?>:hover .wp-menu-image,
 			#menu-posts-<?php echo $forum_class; ?>.wp-has-current-submenu .wp-menu-image {
-				background: url(<?php echo $menu_icon_url; ?>) no-repeat 0px 0px;
+				background-position: 0px 0px;
 			}
-			#icon-edit.icon32-posts-<?php echo $forum_class; ?> {
-				background: url(<?php echo $icon32_url; ?>) no-repeat -4px 0px;
-			}
-
 			#menu-posts-<?php echo $topic_class; ?> .wp-menu-image {
-				background: url(<?php echo $menu_icon_url; ?>) no-repeat -70px -32px;
+				background-position: -70px -32px;
 			}
 			#menu-posts-<?php echo $topic_class; ?>:hover .wp-menu-image,
 			#menu-posts-<?php echo $topic_class; ?>.wp-has-current-submenu .wp-menu-image {
-				background: url(<?php echo $menu_icon_url; ?>) no-repeat -70px 0px;
+				background-position: -70px 0px;
 			}
-			#icon-edit.icon32-posts-<?php echo $topic_class; ?> {
-				background: url(<?php echo $icon32_url; ?>) no-repeat -4px -90px;
-			}
-
 			#menu-posts-<?php echo $reply_class; ?> .wp-menu-image {
-				background: url(<?php echo $menu_icon_url; ?>) no-repeat -35px -32px;
+				background-position: -35px -32px;
 			}
 			#menu-posts-<?php echo $reply_class; ?>:hover .wp-menu-image,
 			#menu-posts-<?php echo $reply_class; ?>.wp-has-current-submenu .wp-menu-image {
-				background: url(<?php echo $menu_icon_url; ?>) no-repeat -35px 0px;
+				background-position:  -35px 0px;
 			}
-			#icon-edit.icon32-posts-<?php echo $reply_class; ?> {
-				background: url(<?php echo $icon32_url; ?>) no-repeat -4px -180px;
+
+			/* Menu 2x */
+			@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+				#menu-posts-<?php echo $forum_class; ?> .wp-menu-image,
+				#menu-posts-<?php echo $topic_class; ?> .wp-menu-image,
+				#menu-posts-<?php echo $reply_class; ?> .wp-menu-image,
+
+				#menu-posts-<?php echo $forum_class; ?>:hover .wp-menu-image,
+				#menu-posts-<?php echo $topic_class; ?>:hover .wp-menu-image,
+				#menu-posts-<?php echo $reply_class; ?>:hover .wp-menu-image,
+
+				#menu-posts-<?php echo $forum_class; ?>.wp-has-current-submenu .wp-menu-image,
+				#menu-posts-<?php echo $topic_class; ?>.wp-has-current-submenu .wp-menu-image,
+				#menu-posts-<?php echo $reply_class; ?>.wp-has-current-submenu .wp-menu-image {
+					background-image: url('<?php echo $menu_icon_url_2x; ?>');
+					background-size: 100px 64px;
+				}
+
+				.bbp-badge {
+					background-image: url('<?php echo $badge_url_2x; ?>');
+					background-size: 173px 194px;
+				}
 			}
+
+			<?php if ( 'bbpress' == get_user_option( 'admin_color' ) ) : ?>
+
+				/* Green Scheme Images */
+
+				.post-com-count {
+					background-image: url('<?php echo $wp_admin_url; ?>bubble_bg.gif');
+				}
+
+				.button,
+				.submit input,
+				.button-secondary {
+					background-image: url('<?php echo $wp_admin_url; ?>white-grad.png');
+				}
+
+				.button:active,
+				.submit input:active,
+				.button-secondary:active {
+					background-image: url('<?php echo $wp_admin_url; ?>white-grad-active.png');
+				}
+
+				.curtime #timestamp {
+					background-image: url('<?php echo $wp_admin_url; ?>date-button.gif');
+				}
+
+				.tagchecklist span a,
+				#bulk-titles div a {
+					background-image: url('<?php echo $wp_admin_url; ?>xit.gif');
+				}
+
+				.tagchecklist span a:hover,
+				#bulk-titles div a:hover {
+					background-image: url('<?php echo $wp_admin_url; ?>xit.gif');
+				}
+				#screen-meta-links a.show-settings {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				#screen-meta-links a.show-settings.screen-meta-active {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				#adminmenushadow,
+				#adminmenuback {
+					background-image: url('<?php echo $wp_admin_url; ?>menu-shadow.png');
+				}
+
+				#adminmenu li.wp-has-current-submenu.wp-menu-open .wp-menu-toggle,
+				#adminmenu li.wp-has-current-submenu:hover .wp-menu-toggle {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows-dark.png');
+				}
+
+				#adminmenu .wp-has-submenu:hover .wp-menu-toggle,
+				#adminmenu .wp-menu-open .wp-menu-toggle {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				#collapse-button div {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				/* menu and screen icons */
+				.icon16.icon-dashboard,
+				#adminmenu .menu-icon-dashboard div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-dashboard:hover div.wp-menu-image,
+				#adminmenu .menu-icon-dashboard.wp-has-current-submenu div.wp-menu-image,
+				#adminmenu .menu-icon-dashboard.current div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-post,
+				#adminmenu .menu-icon-post div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-post:hover div.wp-menu-image,
+				#adminmenu .menu-icon-post.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-media,
+				#adminmenu .menu-icon-media div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-media:hover div.wp-menu-image,
+				#adminmenu .menu-icon-media.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-links,
+				#adminmenu .menu-icon-links div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-links:hover div.wp-menu-image,
+				#adminmenu .menu-icon-links.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-page,
+				#adminmenu .menu-icon-page div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-page:hover div.wp-menu-image,
+				#adminmenu .menu-icon-page.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-comments,
+				#adminmenu .menu-icon-comments div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-comments:hover div.wp-menu-image,
+				#adminmenu .menu-icon-comments.wp-has-current-submenu div.wp-menu-image,
+				#adminmenu .menu-icon-comments.current div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-appearance,
+				#adminmenu .menu-icon-appearance div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-appearance:hover div.wp-menu-image,
+				#adminmenu .menu-icon-appearance.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-plugins,
+				#adminmenu .menu-icon-plugins div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-plugins:hover div.wp-menu-image,
+				#adminmenu .menu-icon-plugins.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-users,
+				#adminmenu .menu-icon-users div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-users:hover div.wp-menu-image,
+				#adminmenu .menu-icon-users.wp-has-current-submenu div.wp-menu-image,
+				#adminmenu .menu-icon-users.current div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-tools,
+				#adminmenu .menu-icon-tools div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-tools:hover div.wp-menu-image,
+				#adminmenu .menu-icon-tools.wp-has-current-submenu div.wp-menu-image,
+				#adminmenu .menu-icon-tools.current div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-settings,
+				#adminmenu .menu-icon-settings div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-settings:hover div.wp-menu-image,
+				#adminmenu .menu-icon-settings.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				.icon16.icon-site,
+				#adminmenu .menu-icon-site div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+
+				#adminmenu .menu-icon-site:hover div.wp-menu-image,
+				#adminmenu .menu-icon-site.wp-has-current-submenu div.wp-menu-image {
+					background-image: url('<?php echo $wp_admin_url; ?>menu.png?ver=20100531');
+				}
+				/* end menu and screen icons */
+
+				/* Screen Icons */
+				.icon32.icon-post,
+				#icon-edit,
+				#icon-post {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-dashboard,
+				#icon-index {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-media,
+				#icon-upload {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-links,
+				#icon-link-manager,
+				#icon-link,
+				#icon-link-category {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-page,
+				#icon-edit-pages,
+				#icon-page {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-comments,
+				#icon-edit-comments {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-appearance,
+				#icon-themes {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-plugins,
+				#icon-plugins {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-users,
+				#icon-users,
+				#icon-profile,
+				#icon-user-edit {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-tools,
+				#icon-tools,
+				#icon-admin {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-settings,
+				#icon-options-general {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+
+				.icon32.icon-site,
+				#icon-ms-admin {
+					background-image: url('<?php echo $wp_admin_url; ?>icons32.png?ver=20100531');
+				}
+				/* end screen icons */
+
+				.meta-box-sortables .postbox:hover .handlediv {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				.tablenav .tablenav-pages a {
+					background-image: url('<?php echo $wp_admin_url; ?>menu-bits.gif?ver=20100610');
+				}
+
+				.view-switch #view-switch-list {
+					background-image: url('<?php echo $wp_admin_url; ?>list.png');
+				}
+
+				.view-switch .current #view-switch-list {
+					background-image: url('<?php echo $wp_admin_url; ?>list.png');
+				}
+
+				.view-switch #view-switch-excerpt {
+					background-image: url('<?php echo $wp_admin_url; ?>list.png');
+				}
+
+				.view-switch .current #view-switch-excerpt {
+					background-image: url('<?php echo $wp_admin_url; ?>list.png');
+				}
+
+				#header-logo {
+					background-image: url('<?php echo $wp_admin_url; ?>wp-logo.png?ver=20110504');
+				}
+
+				.sidebar-name-arrow {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				.sidebar-name:hover .sidebar-name-arrow {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows-dark.png');
+				}
+
+				.item-edit {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				.item-edit:hover {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows-dark.png');
+				}
+
+				.wp-badge {
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png');
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png'), -ms-linear-gradient(top, #378aac, #165d84); /* IE10 */
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png'), -moz-linear-gradient(top, #378aac, #165d84); /* Firefox */
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png'), -o-linear-gradient(top, #378aac, #165d84); /* Opera */
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png'), -webkit-gradient(linear, left top, left bottom, from(#378aac), to(#165d84)); /* old Webkit */
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png'), -webkit-linear-gradient(top, #378aac, #165d84); /* new Webkit */
+					background-image: url('<?php echo $wp_admin_url; ?>wp-badge.png'), linear-gradient(top, #378aac, #165d84); /* proposed W3C Markup */
+				}
+
+				.rtl .post-com-count {
+					background-image: url('<?php echo $wp_admin_url; ?>bubble_bg-rtl.gif');
+				}
+
+				/* Menu */
+				.rtl #adminmenushadow,
+				.rtl #adminmenuback {
+					background-image: url('<?php echo $wp_admin_url; ?>menu-shadow-rtl.png');
+				}
+
+				.rtl #adminmenu li.wp-has-current-submenu.wp-menu-open .wp-menu-toggle,
+				.rtl #adminmenu li.wp-has-current-submenu:hover .wp-menu-toggle {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows-dark.png');
+				}
+
+				.rtl #adminmenu .wp-has-submenu:hover .wp-menu-toggle,
+				.rtl #adminmenu .wp-menu-open .wp-menu-toggle {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				.rtl .meta-box-sortables .postbox:hover .handlediv {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				.rtl .tablenav .tablenav-pages a {
+					background-image: url('<?php echo $wp_admin_url; ?>menu-bits-rtl.gif?ver=20100610');
+				}
+
+				.rtl .sidebar-name-arrow {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows.png');
+				}
+
+				.rtl .sidebar-name:hover .sidebar-name-arrow {
+					background-image: url('<?php echo $wp_admin_url; ?>arrows-dark.png');
+				}
+
+				@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+					.icon32.icon-post,
+					#icon-edit,
+					#icon-post,
+					.icon32.icon-dashboard,
+					#icon-index,
+					.icon32.icon-media,
+					#icon-upload,
+					.icon32.icon-links,
+					#icon-link-manager,
+					#icon-link,
+					#icon-link-category,
+					.icon32.icon-page,
+					#icon-edit-pages,
+					#icon-page,
+					.icon32.icon-comments,
+					#icon-edit-comments,
+					.icon32.icon-appearance,
+					#icon-themes,
+					.icon32.icon-plugins,
+					#icon-plugins,
+					.icon32.icon-users,
+					#icon-users,
+					#icon-profile,
+					#icon-user-edit,
+					.icon32.icon-tools,
+					#icon-tools,
+					#icon-admin,
+					.icon32.icon-settings,
+					#icon-options-general,
+					.icon32.icon-site,
+					#icon-ms-admin {
+						background-image: url('<?php echo $wp_admin_url; ?>icons32-2x.png?ver=20120412') !important;
+						background-size: 708px 45px;
+					}
+
+					.icon16.icon-dashboard,
+					.menu-icon-dashboard div.wp-menu-image,
+					.icon16.icon-post,
+					.menu-icon-post div.wp-menu-image,
+					.icon16.icon-media,
+					.menu-icon-media div.wp-menu-image,
+					.icon16.icon-links,
+					.menu-icon-links div.wp-menu-image,
+					.icon16.icon-page,
+					.menu-icon-page div.wp-menu-image,
+					.icon16.icon-comments,
+					.menu-icon-comments div.wp-menu-image,
+					.icon16.icon-appearance,
+					.menu-icon-appearance div.wp-menu-image,
+					.icon16.icon-plugins,
+					.menu-icon-plugins div.wp-menu-image,
+					.icon16.icon-users,
+					.menu-icon-users div.wp-menu-image,
+					.icon16.icon-tools,
+					.menu-icon-tools div.wp-menu-image,
+					.icon16.icon-settings,
+					.menu-icon-settings div.wp-menu-image,
+					.icon16.icon-site,
+					.menu-icon-site div.wp-menu-image {
+						background-image: url('<?php echo $wp_admin_url; ?>menu-2x.png?ver=20120412') !important;
+						background-size: 390px 64px;
+					}
+				}
+			<?php endif; ?>
 
 		/*]]>*/
 		</style>
@@ -717,22 +1092,74 @@ class BBP_Admin {
 	 * @uses wp_admin_css_color() To register the color scheme
 	 */
 	public function register_admin_style () {
-
-		// Normal wp-content dir
-		if ( 0 === $this->content_depth )
-			$css_file = $this->styles_url . 'admin.css';
-
-		// Custom wp-content dir is 1 level away
-		elseif ( 1 === $this->content_depth )
-			$css_file = $this->styles_url . 'admin-1.css';
-
-		// Custom wp-content dir is 1 level away
-		elseif ( 2 === $this->content_depth )
-			$css_file = $this->styles_url . 'admin-2.css';
-
-		// Load the admin CSS styling
-		wp_admin_css_color( 'bbpress', __( 'Green', 'bbpress' ), $css_file, array( '#222222', '#006600', '#deece1', '#6eb469' ) );
+		wp_admin_css_color( 'bbpress', __( 'Green', 'bbpress' ), $this->styles_url . 'admin.css', array( '#222222', '#006600', '#deece1', '#6eb469' ) );
 	}
+
+	/** About *****************************************************************/
+
+	/**
+	 * Output the about screen
+	 *
+	 * @since bbPress (r4159)
+	 */
+	public function about_screen() {
+
+		$display_version = bbp_get_version(); ?>
+
+		<div class="wrap about-wrap">
+			<h1><?php printf( __( 'Welcome to bbPress %s' ), $display_version ); ?></h1>
+			<div class="about-text"><?php printf( __( 'Thank you for updating to the latest version! bbPress %s is ready to make your community a safer, faster, and better looking place to hang out!' ), $display_version ); ?></div>
+			<div class="bbp-badge"><?php printf( __( 'Version %s' ), $display_version ); ?></div>
+
+			<h2 class="nav-tab-wrapper">
+				<a class="nav-tab nav-tab-active" href="<?php echo esc_url( admin_url( add_query_arg( array( 'page' => 'bbp-about' ), 'index.php' ) ) ); ?>">
+					<?php _e( 'What&#8217;s New' ); ?>
+				</a><a class="nav-tab" href="<?php echo esc_url( admin_url( add_query_arg( array( 'page' => 'bbp-credits' ), 'index.php' ) ) ); ?>">
+					<?php _e( 'Credits' ); ?>
+				</a>
+			</h2>
+
+			<div class="return-to-dashboard">
+				<a href="<?php echo esc_url( admin_url( add_query_arg( array( 'page' => 'bbp-settings' ), 'index.php' ) ) ); ?>"><?php _e( 'Go to Forum Settings' ); ?></a>
+			</div>
+
+		</div>
+
+		<?php
+	}
+
+	/**
+	 * Output the credits screen
+	 *
+	 * @since bbPress (r4159)
+	 */
+	public function credits_screen() {
+
+		$display_version = bbp_get_version(); ?>
+
+		<div class="wrap about-wrap">
+			<h1><?php printf( __( 'Welcome to bbPress %s' ), $display_version ); ?></h1>
+			<div class="about-text"><?php printf( __( 'Thank you for updating to the latest version! bbPress %s is ready to make your community a safer, faster, and better looking place to hang out!' ), $display_version ); ?></div>
+			<div class="bbp-badge"><?php printf( __( 'Version %s' ), $display_version ); ?></div>
+
+			<h2 class="nav-tab-wrapper">
+				<a href="<?php echo esc_url( admin_url( add_query_arg( array( 'page' => 'bbp-about' ), 'index.php' ) ) ); ?>" class="nav-tab">
+					<?php _e( 'What&#8217;s New' ); ?>
+				</a><a href="<?php echo esc_url( admin_url( add_query_arg( array( 'page' => 'bbp-credits' ), 'index.php' ) ) ); ?>" class="nav-tab nav-tab-active">
+					<?php _e( 'Credits' ); ?>
+				</a>
+			</h2>
+
+			<div class="return-to-dashboard">
+				<a href="<?php echo esc_url( admin_url( add_query_arg( array( 'page' => 'bbp-settings' ), 'index.php' ) ) ); ?>"><?php _e( 'Go to Forum Settings' ); ?></a>
+			</div>
+
+		</div>
+
+		<?php
+	}
+
+	/** Updaters **************************************************************/
 
 	/**
 	 * Update all bbPress forums across all sites
@@ -758,25 +1185,11 @@ class BBP_Admin {
 		switch ( $action ) {
 			case 'bbpress-update' :
 
-				// @todo more update stuff here, evaluate performance
-
-				// Remove roles and caps
-				bbp_remove_roles();
-				bbp_remove_caps();
-
-				// Make sure roles, capabilities, and options exist
-				bbp_add_roles();
-				bbp_add_caps();
-				bbp_add_options();
-
-				// Ensure any new permalinks are created
-				flush_rewrite_rules();
-
 				// Ensure proper version in the DB
 				bbp_version_bump();
 
 				?>
-			
+
 				<p><?php _e( 'All done!', 'bbpress' ); ?></p>
 				<a class="button" href="index.php?page=bbpress-update"><?php _e( 'Go Back', 'bbpress' ); ?></a>
 
@@ -890,7 +1303,7 @@ class BBP_Admin {
 			default : ?>
 
 				<p><?php _e( 'You can update all the forums on your network through this page. It works by calling the update script of each site automatically. Hit the link below to update.', 'bbpress' ); ?></p>
-				<p><a class="button" href="update-core.php-update&amp;action=bbpress-update"><?php _e( 'Update Forums', 'bbpress' ); ?></a></p>
+				<p><a class="button" href="update-core.php?page=bbpress-update&amp;action=bbpress-update"><?php _e( 'Update Forums', 'bbpress' ); ?></a></p>
 
 			<?php break;
 
@@ -913,5 +1326,3 @@ function bbp_admin() {
 
 	bbpress()->admin->converter = new BBP_Converter();
 }
-
-?>

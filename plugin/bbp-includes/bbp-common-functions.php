@@ -3,6 +3,9 @@
 /**
  * bbPress Common Functions
  *
+ * Common functions are ones that are used by more than one component, like
+ * forums, topics, replies, users, topic tags, etc...
+ *
  * @package bbPress
  * @subpackage Functions
  */
@@ -288,23 +291,18 @@ function bbp_get_view_all( $cap = 'moderate' ) {
 function bbp_get_paged() {
 	global $wp_query;
 
-	// Make sure to not paginate widget queries
-	if ( !bbp_is_query_name( 'bbp_widget' ) ) {
+	// Check the query var
+	if ( get_query_var( 'paged' ) ) {
+		$paged = get_query_var( 'paged' );
 
-		// Check the query var
-		if ( get_query_var( 'paged' ) ) {
-			$paged = get_query_var( 'paged' );
-
-		// Check query paged
-		} elseif ( !empty( $wp_query->query['paged'] ) ) {
-			$paged = $wp_query->query['paged'];
-		}
-
-		// Paged found
-		if ( !empty( $paged ) ) {
-			return (int) $paged;
-		}
+	// Check query paged
+	} elseif ( !empty( $wp_query->query['paged'] ) ) {
+		$paged = $wp_query->query['paged'];
 	}
+
+	// Paged found
+	if ( !empty( $paged ) )
+		return (int) $paged;
 
 	// Default to first page
 	return 1;
@@ -530,7 +528,7 @@ function bbp_get_statistics( $args = '' ) {
 	}
 
 	// Topic Tags
-	if ( !empty( $count_tags ) ) {
+	if ( !empty( $count_tags ) && bbp_allow_topic_tags() ) {
 
 		// Get the count
 		$topic_tag_count = wp_count_terms( bbp_get_topic_tag_tax_id(), array( 'hide_empty' => true ) );
@@ -689,7 +687,7 @@ function bbp_check_for_duplicate( $post_data ) {
  *                        Do not supply if supplying $anonymous_data.
  * @uses get_option() To get the throttle time
  * @uses get_transient() To get the last posted transient of the ip
- * @uses get_user_meta() To get the last posted meta of the user
+ * @uses bbp_get_user_last_posted() To get the last posted time of the user
  * @uses current_user_can() To check if the current user can throttle
  * @return bool True if there is no flooding, false if there is
  */
@@ -711,7 +709,7 @@ function bbp_check_for_flood( $anonymous_data = false, $author_id = 0 ) {
 	// User is logged in, so check their last posted time
 	} elseif ( !empty( $author_id ) ) {
 		$author_id   = (int) $author_id;
-		$last_posted = get_user_meta( $author_id, '_bbp_last_posted', true );
+		$last_posted = bbp_get_user_last_posted( $author_id );
 
 		if ( isset( $last_posted ) && time() < $last_posted + $throttle_time && !current_user_can( 'throttle' ) ) {
 			return false;
@@ -1031,7 +1029,7 @@ Post Link: %3$s
 
 -----------
 
-You are recieving this email because you subscribed to a forum topic.
+You are receiving this email because you subscribed to a forum topic.
 
 Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 				
@@ -1390,6 +1388,41 @@ function bbp_get_global_post_field( $field = 'ID', $context = 'edit' ) {
 	return apply_filters( 'bbp_get_global_post_field', $retval, $post );
 }
 
+/** Nonces ********************************************************************/
+
+/**
+ * Makes sure the user requested an action from another page on this site.
+ *
+ * To avoid security exploits within the theme.
+ *
+ * @since bbPress (r4022)
+ *
+ * @uses do_action() Calls 'bbp_check_referer' on $action.
+ * @param string $action Action nonce
+ * @param string $query_arg where to look for nonce in $_REQUEST
+ */
+function bbp_verify_nonce_request( $action = '', $query_arg = '_wpnonce' ) {
+
+	// Get the home URL
+	$home_url = strtolower( home_url() );
+
+	// Build the currently requested URL
+	$scheme        = is_ssl() ? 'https://' : 'http://';
+	$requested_url = strtolower( $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+
+	// Check the nonce
+	$result = isset( $_REQUEST[$query_arg] ) ? wp_verify_nonce( $_REQUEST[$query_arg], $action ) : false;
+
+	// Nonce check failed
+	if ( empty( $result ) || empty( $action ) || ( strpos( $requested_url, $home_url ) !== 0 ) )
+		$result = false;
+
+	// Do extra things
+	do_action( 'bbp_verify_nonce_request', $action, $result );
+
+	return $result;
+}
+
 /** Feeds *********************************************************************/
 
 /**
@@ -1399,12 +1432,10 @@ function bbp_get_global_post_field( $field = 'ID', $context = 'edit' ) {
  *
  * @since bbPress (r3171)
  *
- * @global WP_Query $wp_query
  * @param array $query_vars
  * @return array
  */
 function bbp_request_feed_trap( $query_vars = array() ) {
-	global $wp_query;
 
 	// Looking at a feed
 	if ( isset( $query_vars['feed'] ) ) {
@@ -1429,15 +1460,17 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 						$forum_id = $forum->ID;
 
 						// Load up our own query
-						$wp_query = new WP_Query( array(
+						query_posts( array(
 							'post_type' => bbp_get_forum_post_type(),
-							'ID'        => $forum_id
+							'ID'        => $forum_id,
+							'feed'      => true
 						) );
 
 						// Restrict to specific forum ID
 						$meta_query = array( array(
 							'key'     => '_bbp_forum_id',
 							'value'   => $forum_id,
+							'type'    => 'numeric',
 							'compare' => '='
 						) );
 					}
@@ -1448,6 +1481,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 						// The query
 						$the_query = array(
 							'author'         => 0,
+							'feed'           => true,
 							'post_type'      => bbp_get_reply_post_type(),
 							'post_parent'    => 'any',
 							'post_status'    => join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) ),
@@ -1465,12 +1499,12 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 						// The query
 						$the_query = array(
 							'author'         => 0,
+							'feed'           => true,
 							'post_type'      => bbp_get_topic_post_type(),
-							'post_parent'    => 'any',
+							'post_parent'    => $forum_id,
 							'post_status'    => join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) ),
 							'posts_per_page' => bbp_get_topics_per_rss_page(),
-							'order'          => 'DESC',
-							'meta_query'     => $meta_query
+							'order'          => 'DESC'
 						);
 
 						// Output the feed
@@ -1486,6 +1520,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 						// The query
 						$the_query = array(
 							'author'         => 0,
+							'feed'           => true,
 							'post_type'      => array( bbp_get_reply_post_type(), bbp_get_topic_post_type() ),
 							'post_parent'    => 'any',
 							'post_status'    => join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) ),
@@ -1507,13 +1542,14 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 					if ( isset( $query_vars[bbp_get_topic_post_type()] ) ) {
 
 						// Load up our own query
-						$wp_query = new WP_Query( array(
+						query_posts( array(
 							'post_type' => bbp_get_topic_post_type(),
-							'name'      => $query_vars[bbp_get_topic_post_type()]
+							'name'      => $query_vars[bbp_get_topic_post_type()],
+							'feed'      => true
 						) );
 
 						// Output the feed
-						bbp_display_replies_feed_rss2();
+						bbp_display_replies_feed_rss2( array( 'feed' => true ) );
 
 					// All topics
 					} else {
@@ -1521,9 +1557,10 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 						// The query
 						$the_query = array(
 							'author'         => 0,
+							'feed'           => true,
 							'post_parent'    => 'any',
 							'posts_per_page' => bbp_get_topics_per_rss_page(),
-							'show_stickies'  => false,
+							'show_stickies'  => false
 						);
 
 						// Output the feed
@@ -1538,7 +1575,8 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 					// The query
 					$the_query = array(
 						'posts_per_page' => bbp_get_replies_per_rss_page(),
-						'meta_query'     => array( array( ) )
+						'meta_query'     => array( array( ) ),
+						'feed'           => true
 					);
 
 					// All replies
@@ -1617,11 +1655,9 @@ function bbp_set_404() {
 	global $wp_query;
 
 	if ( ! isset( $wp_query ) ) {
-		_doing_it_wrong( __FUNCTION__, __( 'Conditional query tags do not work before the query is run. Before then, they always return false.' ), '3.1' );
+		_doing_it_wrong( __FUNCTION__, __( 'Conditional query tags do not work before the query is run. Before then, they always return false.', 'bbpress' ), '3.1' );
 		return false;
 	}
 
 	$wp_query->set_404();
 }
-
-?>

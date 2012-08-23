@@ -41,8 +41,8 @@ class BBP_Default extends BBP_Theme_Compat {
 	 *
 	 * @since bbPress (r3732)
 	 *
-	 * @uses BBP_Twenty_Ten::setup_globals()
-	 * @uses BBP_Twenty_Ten::setup_actions()
+	 * @uses BBP_Default::setup_globals()
+	 * @uses BBP_Default::setup_actions()
 	 */
 	public function __construct() {
 		$this->setup_globals();
@@ -51,11 +51,11 @@ class BBP_Default extends BBP_Theme_Compat {
 
 	/**
 	 * Component global variables
-	 * 
+	 *
 	 * Note that this function is currently commented out in the constructor.
 	 * It will only be used if you copy this file into your current theme and
 	 * uncomment the line above.
-	 * 
+	 *
 	 * You'll want to customize the values in here, so they match whatever your
 	 * needs are.
 	 *
@@ -63,29 +63,12 @@ class BBP_Default extends BBP_Theme_Compat {
 	 * @access private
 	 */
 	private function setup_globals() {
-
-		// Use the default theme compat if current theme has not added support
-		if ( !current_theme_supports( 'bbpress' ) ) {
-			$this->id      = bbp_get_theme_compat_id();
-			$this->name    = bbp_get_theme_compat_name();
-			$this->version = bbp_get_theme_compat_version();
-			$this->dir     = bbp_get_theme_compat_dir();
-			$this->url     = bbp_get_theme_compat_url();
-
-		// Theme supports bbPress, so set some smart defaults
-		} else {
-			$theme         = wp_get_theme();
-			$this->id      = $theme->stylesheet;
-			$this->name    = sprintf( __( '%s (bbPress)', 'bbpress' ), $theme->name ) ;
-			$this->version = bbp_get_version();
-			$this->dir     = trailingslashit( get_stylesheet_directory() );
-			$this->url     = trailingslashit( get_stylesheet_directory_uri() );
-		}
-
-		// Conditionally add theme support if needed
-		if ( in_array( $this->id, array( get_template(), get_stylesheet() ) ) ) {
-			add_theme_support( 'bbpress' );
-		}
+		$bbp           = bbpress();
+		$this->id      = 'default';
+		$this->name    = __( 'bbPress Default', 'bbpress' );
+		$this->version = bbp_get_version();
+		$this->dir     = trailingslashit( $bbp->plugin_dir . 'bbp-theme-compat' );
+		$this->url     = trailingslashit( $bbp->plugin_url . 'bbp-theme-compat' );
 	}
 
 	/**
@@ -157,18 +140,27 @@ class BBP_Default extends BBP_Theme_Compat {
 	 */
 	public function enqueue_styles() {
 
-		// Right to left
-		if ( is_rtl() ) {
+		// LTR or RTL
+		$file = is_rtl() ? 'css/bbpress-rtl.css' : 'css/bbpress.css';
 
-			// bbPress specific
-			wp_enqueue_style( 'bbp-default-bbpress', $this->url . 'css/bbpress-rtl.css', array(), $this->version, 'screen' );
+		// Check child theme
+		if ( file_exists( trailingslashit( get_stylesheet_directory() ) . $file ) ) {
+			$location = trailingslashit( get_stylesheet_directory_uri() );
+			$handle   = 'bbp-child-bbpress';
 
-		// Left to right
+		// Check parent theme
+		} elseif ( file_exists( trailingslashit( get_template_directory() ) . $file ) ) {
+			$location = trailingslashit( get_template_directory_uri() );
+			$handle   = 'bbp-parent-bbpress';
+
+		// bbPress Theme Compatibility
 		} else {
-
-			// bbPress specific
-			wp_enqueue_style( 'bbp-default-bbpress', $this->url . 'css/bbpress.css', array(), $this->version, 'screen' );
+			$location = trailingslashit( $this->url );
+			$handle   = 'bbp-default-bbpress';
 		}
+
+		// Enqueue the bbPress styling
+		wp_enqueue_style( $handle, $location . $file, array(), $this->version, 'screen' );
 	}
 
 	/**
@@ -177,7 +169,6 @@ class BBP_Default extends BBP_Theme_Compat {
 	 * @since bbPress (r3732)
 	 *
 	 * @uses bbp_is_single_topic() To check if it's the topic page
-	 * @uses get_stylesheet_directory_uri() To get the stylesheet directory uri
 	 * @uses bbp_is_single_user_edit() To check if it's the profile edit page
 	 * @uses wp_enqueue_script() To enqueue the scripts
 	 */
@@ -186,7 +177,7 @@ class BBP_Default extends BBP_Theme_Compat {
 		if ( bbp_is_single_topic() )
 			wp_enqueue_script( 'bbpress-topic', $this->url . 'js/topic.js', array( 'wp-lists' ), $this->version, true );
 
-		if ( bbp_is_single_user_edit() )
+		elseif ( bbp_is_single_user_edit() )
 			wp_enqueue_script( 'user-profile' );
 	}
 
@@ -200,24 +191,21 @@ class BBP_Default extends BBP_Theme_Compat {
 	 * @uses bbp_is_single_user_edit() To check if it's the profile edit page
 	 */
 	public function head_scripts() {
-		if ( bbp_is_single_topic() ) : ?>
-
-		<script type='text/javascript'>
-			/* <![CDATA[ */
-			var ajaxurl = '<?php echo admin_url( 'admin-ajax.php' ); ?>';
-			/* ]]> */
-		</script>
-
-		<?php elseif ( bbp_is_single_user_edit() ) : ?>
+	?>
 
 		<script type="text/javascript" charset="utf-8">
+			/* <![CDATA[ */
+			var ajaxurl = '<?php echo admin_url( 'admin-ajax.php' ); ?>';
+
+			<?php if ( bbp_is_single_user_edit() ) : ?>
 			if ( window.location.hash == '#password' ) {
 				document.getElementById('pass1').focus();
 			}
+			<?php endif; ?>
+			/* ]]> */
 		</script>
 
-		<?php
-		endif;
+	<?php
 	}
 
 	/**
@@ -372,5 +360,3 @@ class BBP_Default extends BBP_Theme_Compat {
 }
 new BBP_Default();
 endif;
-
-?>

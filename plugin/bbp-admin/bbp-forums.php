@@ -25,7 +25,7 @@ class BBP_Forums_Admin {
 	/**
 	 * @var The post type of this admin component
 	 */
-	var $post_type = '';
+	private $post_type = '';
 
 	/** Functions *************************************************************/
 
@@ -38,7 +38,7 @@ class BBP_Forums_Admin {
 	 * @uses BBP_Forums_Admin::setup_actions() Setup the hooks and actions
 	 * @uses BBP_Forums_Admin::setup_help() Setup the help text
 	 */
-	function __construct() {
+	public function __construct() {
 		$this->setup_globals();
 		$this->setup_actions();
 	}
@@ -55,7 +55,7 @@ class BBP_Forums_Admin {
 	 * @uses bbp_get_topic_post_type() To get the topic post type
 	 * @uses bbp_get_reply_post_type() To get the reply post type
 	 */
-	function setup_actions() {
+	private function setup_actions() {
 
 		// Add some general styling to the admin area
 		add_action( 'bbp_admin_head',        array( $this, 'admin_head'       ) );
@@ -80,14 +80,25 @@ class BBP_Forums_Admin {
 	}
 
 	/**
+	 * Should we bail out of this method?
+	 *
+	 * @since bbPress (r4067)
+	 * @return boolean
+	 */
+	private function bail() {
+		if ( !isset( get_current_screen()->post_type ) || ( $this->post_type != get_current_screen()->post_type ) )
+			return true;
+
+		return false;
+	}
+		
+	/**
 	 * Admin globals
 	 *
 	 * @since bbPress (r2646)
 	 * @access private
 	 */
-	function setup_globals() {
-
-		// Setup the post type for this admin component
+	private function setup_globals() {
 		$this->post_type = bbp_get_forum_post_type();
 	}
 
@@ -101,68 +112,56 @@ class BBP_Forums_Admin {
 	 */
 	public function edit_help() {
 
-		$current_screen = get_current_screen();
-		$post_type      = !empty( $_REQUEST['post_type'] ) ? $_REQUEST['post_type'] : '';
-
-		// Bail if current screen could not be found
-		if ( empty( $current_screen ) )
-			return;
-
-		// Bail if not the forum post type
-		if ( $post_type != $this->post_type )
-			return;
+		if ( $this->bail() ) return;
 
 		// Overview
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'		=> 'overview',
 			'title'		=> __( 'Overview', 'bbpress' ),
 			'content'	=>
-				'<p>' . __( 'This screen provides access to all of your replies. You can customize the display of this screen to suit your workflow.', 'bbpress' ) . '</p>'
+				'<p>' . __( 'This screen displays the individual forums on your site. You can customize the display of this screen to suit your workflow.', 'bbpress' ) . '</p>'
 		) );
 
 		// Screen Content
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'		=> 'screen-content',
 			'title'		=> __( 'Screen Content', 'bbpress' ),
 			'content'	=>
-				'<p>' . __( 'You can customize the display of this screen&#8217;s contents in a number of ways:' ) . '</p>' .
+				'<p>' . __( 'You can customize the display of this screen&#8217;s contents in a number of ways:', 'bbpress' ) . '</p>' .
 				'<ul>' .
-					'<li>' . __( 'You can hide/display columns based on your needs and decide how many replies to list per screen using the Screen Options tab.',                                                                                                                                                                          'bbpress' ) . '</li>' .
-					'<li>' . __( 'You can filter the list of replies by forum status using the text links in the upper left to show All, Published, Draft, or Trashed replies. The default view is to show all replies.',                                                                                                                   'bbpress' ) . '</li>' .
-					'<li>' . __( 'You can view replies in a simple title list or with an excerpt. Choose the view you prefer by clicking on the icons at the top of the list on the right.',                                                                                                                                             'bbpress' ) . '</li>' .
-					'<li>' . __( 'You can refine the list to show only replies in a specific category or from a specific month by using the dropdown menus above the replies list. Click the Filter button after making your selection. You also can refine the list by clicking on the forum author, category or tag in the replies list.', 'bbpress' ) . '</li>' .
+					'<li>' . __( 'You can hide/display columns based on your needs and decide how many forums to list per screen using the Screen Options tab.',                                                                                                                                'bbpress' ) . '</li>' .
+					'<li>' . __( 'You can filter the list of forums by forum status using the text links in the upper left to show All, Published, or Trashed forums. The default view is to show all forums.',                                                                                 'bbpress' ) . '</li>' .
+					'<li>' . __( 'You can refine the list to show only forums from a specific month by using the dropdown menus above the forums list. Click the Filter button after making your selection. You also can refine the list by clicking on the forum creator in the forums list.', 'bbpress' ) . '</li>' .
 				'</ul>'
 		) );
 
 		// Available Actions
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'		=> 'action-links',
 			'title'		=> __( 'Available Actions', 'bbpress' ),
 			'content'	=>
-				'<p>' . __( 'Hovering over a row in the replies list will display action links that allow you to manage your forum. You can perform the following actions:', 'bbpress' ) . '</p>' .
+				'<p>' . __( 'Hovering over a row in the forums list will display action links that allow you to manage your forum. You can perform the following actions:', 'bbpress' ) . '</p>' .
 				'<ul>' .
-					'<li>' . __( '<strong>Edit</strong> takes you to the editing screen for that forum. You can also reach that screen by clicking on the forum title.',                                                                                 'bbpress' ) . '</li>' .
-					//'<li>' . __( '<strong>Quick Edit</strong> provides inline access to the metadata of your forum, allowing you to update forum details without leaving this screen.',                                                                  'bbpress' ) . '</li>' .
-					'<li>' . __( '<strong>Trash</strong> removes your forum from this list and places it in the trash, from which you can permanently delete it.',                                                                                       'bbpress' ) . '</li>' .
-					'<li>' . __( '<strong>Spam</strong> removes your forum from this list and places it in the spam queue, from which you can permanently delete it.',                                                                                   'bbpress' ) . '</li>' .
-					'<li>' . __( '<strong>Preview</strong> will show you what your draft forum will look like if you publish it. View will take you to your live site to view the forum. Which link is available depends on your forum&#8217;s status.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Edit</strong> takes you to the editing screen for that forum. You can also reach that screen by clicking on the forum title.',                                                                              'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Trash</strong> removes your forum from this list and places it in the trash, from which you can permanently delete it.',                                                                                    'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>View</strong> will show you what your draft forum will look like if you publish it. View will take you to your live site to view the forum. Which link is available depends on your forum&#8217;s status.', 'bbpress' ) . '</li>' .
 				'</ul>'
 		) );
 
 		// Bulk Actions
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'		=> 'bulk-actions',
 			'title'		=> __( 'Bulk Actions', 'bbpress' ),
 			'content'	=>
-				'<p>' . __( 'You can also edit or move multiple replies to the trash at once. Select the replies you want to act on using the checkboxes, then select the action you want to take from the Bulk Actions menu and click Apply.',           'bbpress' ) . '</p>' .
-				'<p>' . __( 'When using Bulk Edit, you can change the metadata (categories, author, etc.) for all selected replies at once. To remove a forum from the grouping, just click the x next to its name in the Bulk Edit area that appears.', 'bbpress' ) . '</p>'
+				'<p>' . __( 'You can also edit or move multiple forums to the trash at once. Select the forums you want to act on using the checkboxes, then select the action you want to take from the Bulk Actions menu and click Apply.',           'bbpress' ) . '</p>' .
+				'<p>' . __( 'When using Bulk Edit, you can change the metadata (categories, author, etc.) for all selected forums at once. To remove a forum from the grouping, just click the x next to its name in the Bulk Edit area that appears.', 'bbpress' ) . '</p>'
 		) );
 
 		// Help Sidebar
-		$current_screen->set_help_sidebar(
-			'<p><strong>' . __( 'For more information:' ) . '</strong></p>' .
-			'<p>' . __( '<a href="http://bbpress.org/documentation/" target="_blank">bbPress Documentation</a>', 'bbpress' ) . '</p>' .
-			'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>',       'bbpress' ) . '</p>'
+		get_current_screen()->set_help_sidebar(
+			'<p><strong>' . __( 'For more information:', 'bbpress' ) . '</strong></p>' .
+			'<p>' . __( '<a href="http://codex.bbpress.org" target="_blank">bbPress Documentation</a>',    'bbpress' ) . '</p>' .
+			'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>', 'bbpress' ) . '</p>'
 		);
 	}
 
@@ -174,26 +173,17 @@ class BBP_Forums_Admin {
 	 */
 	public function new_help() {
 
-		$current_screen = get_current_screen();
-		$post_type      = !empty( $_REQUEST['post_type'] ) ? $_REQUEST['post_type'] : '';
-
-		// Bail if current screen could not be found
-		if ( empty( $current_screen ) )
-			return;
-
-		// Bail if not the forum post type
-		if ( $post_type != $this->post_type )
-			return;
+		if ( $this->bail() ) return;
 
 		$customize_display = '<p>' . __( 'The title field and the big forum editing Area are fixed in place, but you can reposition all the other boxes using drag and drop, and can minimize or expand them by clicking the title bar of each box. Use the Screen Options tab to unhide more boxes (Excerpt, Send Trackbacks, Custom Fields, Discussion, Slug, Author) or to choose a 1- or 2-column layout for this screen.', 'bbpress' ) . '</p>';
 
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'      => 'customize-display',
 			'title'   => __( 'Customizing This Display', 'bbpress' ),
 			'content' => $customize_display,
 		) );
 
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'      => 'title-forum-editor',
 			'title'   => __( 'Title and Forum Editor', 'bbpress' ),
 			'content' =>
@@ -211,27 +201,27 @@ class BBP_Forums_Admin {
 			$publish_box .= '<p>' . __( '<strong>Featured Image</strong> - This allows you to associate an image with your forum without inserting it. This is usually useful only if your theme makes use of the featured image as a forum thumbnail on the home page, a custom header, etc.', 'bbpress' ) . '</p>';
 		}
 
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'      => 'forum-attributes',
 			'title'   => __( 'Forum Attributes', 'bbpress' ),
 			'content' =>
 				'<p>' . __( 'Select the attributes that your forum should have:', 'bbpress' ) . '</p>' .
 				'<ul>' .
-					'<li>' . __( '<strong>Type</strong> indicates if the forum is a category or forum. Categories generally contain other forums.', 'bbpress' ) . '</li>' .
-					'<li>' . __( '<strong>Status</strong> allows you to close a forum to new topics and replies.', 'bbpress' ) . '</li>' .
-					'<li>' . __( '<strong>Visibility</strong> lets you pick the scope of each forum and what users are allowed to access it.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Type</strong> indicates if the forum is a category or forum. Categories generally contain other forums.',                                                                                'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Status</strong> allows you to close a forum to new topics and forums.',                                                                                                                  'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Visibility</strong> lets you pick the scope of each forum and what users are allowed to access it.',                                                                                     'bbpress' ) . '</li>' .
 					'<li>' . __( '<strong>Parent</strong> dropdown determines the parent forum. Select the forum or category from the dropdown, or leave the default (No Parent) to create the forum at the root of your forums.', 'bbpress' ) . '</li>' .
-					'<li>' . __( '<strong>Order</strong> allows you to order your forums numerically.', 'bbpress' ) . '</li>' .
+					'<li>' . __( '<strong>Order</strong> allows you to order your forums numerically.',                                                                                                                            'bbpress' ) . '</li>' .
 				'</ul>'
 		) );
 
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'      => 'publish-box',
 			'title'   => __( 'Publish Box', 'bbpress' ),
 			'content' => $publish_box,
 		) );
 
-		$current_screen->add_help_tab( array(
+		get_current_screen()->add_help_tab( array(
 			'id'      => 'discussion-settings',
 			'title'   => __( 'Discussion Settings', 'bbpress' ),
 			'content' =>
@@ -239,10 +229,10 @@ class BBP_Forums_Admin {
 				'<p>' . __( '<strong>Discussion</strong> - You can turn comments and pings on or off, and if there are comments on the forum, you can see them here and moderate them.', 'bbpress' ) . '</p>'
 		) );
 
-		$current_screen->set_help_sidebar(
+		get_current_screen()->set_help_sidebar(
 			'<p><strong>' . __( 'For more information:', 'bbpress' ) . '</strong></p>' .
-			'<p>' . __( '<a href="http://bbpress.org/documentation/" target="_blank">bbPress Documentation</a>', 'bbpress' ) . '</p>' .
-			'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>',       'bbpress' ) . '</p>'
+			'<p>' . __( '<a href="http://codex.bbpress.org" target="_blank">bbPress Documentation</a>',    'bbpress' ) . '</p>' .
+			'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>', 'bbpress' ) . '</p>'
 		);
 	}
 
@@ -255,7 +245,10 @@ class BBP_Forums_Admin {
 	 * @uses add_meta_box() To add the metabox
 	 * @uses do_action() Calls 'bbp_forum_attributes_metabox'
 	 */
-	function attributes_metabox() {
+	public function attributes_metabox() {
+		
+		if ( $this->bail() ) return;
+
 		add_meta_box (
 			'bbp_forum_attributes',
 			__( 'Forum Attributes', 'bbpress' ),
@@ -290,7 +283,9 @@ class BBP_Forums_Admin {
 	 *                    forum id
 	 * @return int Forum id
 	 */
-	function attributes_metabox_save( $forum_id ) {
+	public function attributes_metabox_save( $forum_id ) {
+
+		if ( $this->bail() ) return $forum_id;
 
 		// Bail if doing an autosave
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
@@ -304,12 +299,12 @@ class BBP_Forums_Admin {
 		if ( empty( $_POST['bbp_forum_metabox'] ) || !wp_verify_nonce( $_POST['bbp_forum_metabox'], 'bbp_forum_metabox_save' ) )
 			return $forum_id;
 
-		// Bail if current user cannot edit this forum
-		if ( !current_user_can( 'edit_forum', $forum_id ) )
+		// Only save for forum post-types
+		if ( ! bbp_is_forum( $forum_id ) )
 			return $forum_id;
 
-		// Bail if post_type is not a topic or reply
-		if ( get_post_type( $forum_id ) != $this->post_type )
+		// Bail if current user cannot edit this forum
+		if ( !current_user_can( 'edit_forum', $forum_id ) )
 			return $forum_id;
 
 		// Parent ID
@@ -337,71 +332,71 @@ class BBP_Forums_Admin {
 	 * @uses sanitize_html_class() To sanitize the classes
 	 * @uses do_action() Calls 'bbp_admin_head'
 	 */
-	function admin_head() {
+	public function admin_head() {
+		
+		if ( $this->bail() ) return;
 
-		if ( get_post_type() == $this->post_type ) : ?>
+		?>
 
-			<style type="text/css" media="screen">
-			/*<![CDATA[*/
+		<style type="text/css" media="screen">
+		/*<![CDATA[*/
 
-				#misc-publishing-actions,
-				#save-post {
-					display: none;
-				}
+			#misc-publishing-actions,
+			#save-post {
+				display: none;
+			}
 
-				strong.label {
-					display: inline-block;
-					width: 60px;
-				}
+			strong.label {
+				display: inline-block;
+				width: 60px;
+			}
 
-				#bbp_forum_attributes hr {
-					border-style: solid;
-					border-width: 1px;
-					border-color: #ccc #fff #fff #ccc;
-				}
+			#bbp_forum_attributes hr {
+				border-style: solid;
+				border-width: 1px;
+				border-color: #ccc #fff #fff #ccc;
+			}
 
-				.column-bbp_forum_topic_count,
-				.column-bbp_forum_reply_count,
-				.column-bbp_topic_reply_count,
-				.column-bbp_topic_voice_count {
-					width: 8% !important;
-				}
+			.column-bbp_forum_topic_count,
+			.column-bbp_forum_reply_count,
+			.column-bbp_topic_reply_count,
+			.column-bbp_topic_voice_count {
+				width: 8% !important;
+			}
 
-				.column-author,
-				.column-bbp_reply_author,
-				.column-bbp_topic_author {
-					width: 10% !important;
-				}
+			.column-author,
+			.column-bbp_reply_author,
+			.column-bbp_topic_author {
+				width: 10% !important;
+			}
 
-				.column-bbp_topic_forum,
-				.column-bbp_reply_forum,
-				.column-bbp_reply_topic {
-					width: 10% !important;
-				}
+			.column-bbp_topic_forum,
+			.column-bbp_reply_forum,
+			.column-bbp_reply_topic {
+				width: 10% !important;
+			}
 
-				.column-bbp_forum_freshness,
-				.column-bbp_topic_freshness {
-					width: 10% !important;
-				}
+			.column-bbp_forum_freshness,
+			.column-bbp_topic_freshness {
+				width: 10% !important;
+			}
 
-				.column-bbp_forum_created,
-				.column-bbp_topic_created,
-				.column-bbp_reply_created {
-					width: 15% !important;
-				}
+			.column-bbp_forum_created,
+			.column-bbp_topic_created,
+			.column-bbp_reply_created {
+				width: 15% !important;
+			}
 
-				.status-closed {
-					background-color: #eaeaea;
-				}
+			.status-closed {
+				background-color: #eaeaea;
+			}
 
-				.status-spam {
-					background-color: #faeaea;
-				}
+			.status-spam {
+				background-color: #faeaea;
+			}
 
-			/*]]>*/
-			</style>
-
-		<?php endif; ?>
+		/*]]>*/
+		</style>
 
 		<?php
 	}
@@ -416,7 +411,10 @@ class BBP_Forums_Admin {
 	 *                        the columns
 	 * @return array $columns bbPress forum columns
 	 */
-	function column_headers( $columns ) {
+	public function column_headers( $columns ) {
+		
+		if ( $this->bail() ) return $columns;
+
 		$columns = array (
 			'cb'                    => '<input type="checkbox" />',
 			'title'                 => __( 'Forum',     'bbpress' ),
@@ -447,7 +445,10 @@ class BBP_Forums_Admin {
 	 * @uses do_action() Calls 'bbp_admin_forums_column_data' with the
 	 *                    column and forum id
 	 */
-	function column_data( $column, $forum_id ) {
+	public function column_data( $column, $forum_id ) {
+		
+		if ( $this->bail() ) return;
+
 		switch ( $column ) {
 			case 'bbp_forum_topic_count' :
 				bbp_forum_topic_count( $forum_id );
@@ -493,13 +494,14 @@ class BBP_Forums_Admin {
 	 * @uses the_content() To output forum description
 	 * @return array $actions Actions
 	 */
-	function row_actions( $actions, $forum ) {
-		if ( $forum->post_type == $this->post_type ) {
-			unset( $actions['inline hide-if-no-js'] );
+	public function row_actions( $actions, $forum ) {
+		
+		if ( $this->bail() ) return $actions;
 
-			// simple hack to show the forum description under the title
-			bbp_forum_content( $forum->ID );
-		}
+		unset( $actions['inline hide-if-no-js'] );
+
+		// simple hack to show the forum description under the title
+		bbp_forum_content( $forum->ID );
 
 		return $actions;
 	}
@@ -510,7 +512,6 @@ class BBP_Forums_Admin {
 	 * @since bbPress (r3080)
 	 *
 	 * @global int $post_ID
-	 * @uses get_post_type()
 	 * @uses bbp_get_forum_permalink()
 	 * @uses wp_post_revision_title()
 	 * @uses esc_url()
@@ -520,11 +521,10 @@ class BBP_Forums_Admin {
 	 *
 	 * @return array
 	 */
-	function updated_messages( $messages ) {
+	public function updated_messages( $messages ) {
 		global $post_ID;
 
-		if ( get_post_type( $post_ID ) != $this->post_type )
-			return $messages;
+		if ( $this->bail() ) return $messages;
 
 		// URL for the current forum
 		$forum_url = bbp_get_forum_permalink( $post_ID );
@@ -537,7 +537,7 @@ class BBP_Forums_Admin {
 			0 =>  '', // Left empty on purpose
 
 			// Updated
-			1 =>  sprintf( __( 'Forum updated. <a href="%s">View forum</a>' ), $forum_url ),
+			1 =>  sprintf( __( 'Forum updated. <a href="%s">View forum</a>', 'bbpress' ), $forum_url ),
 
 			// Custom field updated
 			2 => __( 'Custom field updated.', 'bbpress' ),
@@ -566,7 +566,7 @@ class BBP_Forums_Admin {
 			// Forum scheduled
 			9 => sprintf( __( 'Forum scheduled for: <strong>%1$s</strong>. <a target="_blank" href="%2$s">Preview forum</a>', 'bbpress' ),
 					// translators: Publish box date format, see http://php.net/date
-					date_i18n( __( 'M j, Y @ G:i' ),
+					date_i18n( __( 'M j, Y @ G:i', 'bbpress' ),
 					strtotime( $post_date ) ),
 					$forum_url ),
 
@@ -582,6 +582,9 @@ endif; // class_exists check
 /**
  * Setup bbPress Forums Admin
  *
+ * This is currently here to make hooking and unhooking of the admin UI easy.
+ * It could use dependency injection in the future, but for now this is easier.
+ *
  * @since bbPress (r2596)
  *
  * @uses BBP_Forums_Admin
@@ -589,5 +592,3 @@ endif; // class_exists check
 function bbp_admin_forums() {
 	bbpress()->admin->forums = new BBP_Forums_Admin();
 }
-
-?>

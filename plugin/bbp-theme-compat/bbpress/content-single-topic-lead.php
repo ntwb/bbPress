@@ -35,7 +35,7 @@
 
 			<div class="bbp-meta">
 
-				<?php printf( __( '%1$s at %2$s', 'bbpress' ), get_the_date(), esc_attr( get_the_time() ) ); ?>
+				<span class="bbp-topic-post-date"><?php bbp_topic_post_date(); ?></span>
 
 				<a href="<?php bbp_topic_permalink(); ?>" title="<?php bbp_topic_title(); ?>" class="bbp-topic-permalink">#<?php bbp_topic_id(); ?></a>
 
@@ -73,11 +73,11 @@
 
 			<div class="bbp-topic-content">
 
-				<?php do_action( 'bbp_theme_after_topic_content' ); ?>
+				<?php do_action( 'bbp_theme_before_topic_content' ); ?>
 
 				<?php bbp_topic_content(); ?>
 
-				<?php do_action( 'bbp_theme_before_topic_content' ); ?>
+				<?php do_action( 'bbp_theme_after_topic_content' ); ?>
 
 			</div><!-- .bbp-topic-content -->
 
@@ -91,16 +91,8 @@
 
 		<div class="bbp-topic-content">
 
-			<?php if ( !bbp_show_lead_topic() ) : ?>
-
-				<?php _e( 'Posts', 'bbpress' ); ?>
-
-			<?php else : ?>
-
-				<?php _e( 'Replies', 'bbpress' ); ?>
-
-			<?php endif; ?>
-
+			<?php _e( 'Topic', 'bbpress' ); ?>
+			
 		</div><!-- .bbp-topic-content -->
 
 	</li>

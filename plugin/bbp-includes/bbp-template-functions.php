@@ -70,19 +70,22 @@ function bbp_locate_template( $template_names, $load = false, $require_once = tr
 		if ( empty( $template_name ) )
 			continue;
 
+		// Trim off any slashes from the template name
+		$template_name = ltrim( $template_name, '/' );
+
 		// Check child theme first
-		if ( file_exists( STYLESHEETPATH . '/' . $template_name ) ) {
-			$located = STYLESHEETPATH . '/' . $template_name;
+		if ( file_exists( trailingslashit( STYLESHEETPATH ) . $template_name ) ) {
+			$located = trailingslashit( STYLESHEETPATH ) . $template_name;
 			break;
 
 		// Check parent theme next
-		} else if ( file_exists( TEMPLATEPATH . '/' . $template_name ) ) {
-			$located = TEMPLATEPATH . '/' . $template_name;
+		} elseif ( file_exists( trailingslashit( TEMPLATEPATH ) . $template_name ) ) {
+			$located = trailingslashit( TEMPLATEPATH ) . $template_name;
 			break;
 
 		// Check theme compatibility last
-		} else if ( file_exists( bbp_get_theme_compat_dir() . '/' . $template_name ) ) {
-			$located = bbp_get_theme_compat_dir() . '/' . $template_name;
+		} elseif ( file_exists( trailingslashit( bbp_get_theme_compat_dir() ) . $template_name ) ) {
+			$located = trailingslashit( bbp_get_theme_compat_dir() ) . $template_name;
 			break;
 		}
 	}
@@ -116,6 +119,8 @@ function bbp_get_query_template( $type, $templates = array() ) {
 	if ( empty( $templates ) )
 		$templates = array( "{$type}.php" );
 
+	// Filter possible templates, try to match one, and set any bbPress theme
+	// compat properties so they can be cross-checked later.
 	$templates = apply_filters( "bbp_get_{$type}_template", $templates );
 	$templates = bbp_set_theme_compat_templates( $templates );
 	$template  = bbp_locate_template( $templates );
@@ -189,7 +194,6 @@ function bbp_add_template_locations( $templates = array() ) {
  * @uses WP_Query::set_404() To set a 404 status
  * @uses current_user_can() To check if the current user can edit the user
  * @uses apply_filters() Calls 'enable_edit_any_user_configuration' with true
- * @uses bbp_is_query_name() Check if query name is 'bbp_widget'
  * @uses bbp_get_view_query_args() To get the view query args
  * @uses bbp_get_forum_post_type() To get the forum post type
  * @uses bbp_get_topic_post_type() To get the topic post type
@@ -281,9 +285,7 @@ function bbp_parse_query( $posts_query ) {
 		$posts_query->set( 'bbp_user_id', $user->ID );
 
 		// Set author_name as current user's nicename to get correct posts
-		if ( !bbp_is_query_name( 'bbp_widget' ) ) {
-			$posts_query->set( 'author_name', $user->user_nicename );
-		}
+		$posts_query->set( 'author_name', $user->user_nicename );
 
 		// Set the displayed user global to this user
 		bbpress()->displayed_user = $user;
@@ -351,5 +353,3 @@ function bbp_parse_query( $posts_query ) {
 		$posts_query->set( 'posts_per_page', bbp_get_topics_per_page() );
 	}
 }
-
-?>

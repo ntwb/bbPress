@@ -17,7 +17,7 @@
  *                bbp-includes/bbp-classes.php
  *  - Admin: More in {@link BBP_Admin::setup_actions()} in
  *            bbp-admin/bbp-admin.php
- * 
+ *
  * @see bbp-core-actions.php
  */
 
@@ -200,51 +200,52 @@ add_filter( 'bbp_pre_anonymous_post_author_website', 'wp_strip_all_tags',   10 )
 add_filter( 'bbp_pre_anonymous_post_author_website', 'esc_url_raw',         10 );
 add_filter( 'bbp_pre_anonymous_post_author_website', 'wp_filter_kses',      10 );
 
-/** Functions *****************************************************************/
+// Queries
+add_filter( 'posts_request', '_bbp_has_replies_where', 10, 2 );
+
+/** Deprecated ****************************************************************/
 
 /**
- * Piggy back filter for WordPress's 'request' filter
+ * The following filters are deprecated.
  *
- * @since bbPress (r3758)
- * @param array $query_vars
- * @return array 
+ * These filters were most likely replaced by bbp_parse_args(), which includes
+ * both passive and aggressive filters anywhere parse_args is used to compare
+ * default arguments to passed arguments, without needing to litter the
+ * codebase with _before_ and _after_ filters everywhere.
  */
-function bbp_request( $query_vars = array() ) {
-	return apply_filters( 'bbp_request', $query_vars );
-}
 
 /**
- * The main filter used for theme compatibility and displaying custom bbPress
- * theme files.
+ * Deprecated forums query filter
  *
- * @since bbPress (r3311)
- * @uses apply_filters()
- * @param string $template
- * @return string Template file to use
+ * @since bbPress (r3961)
+ * @param type $args
+ * @return type
  */
-function bbp_template_include( $template = '' ) {
-	return apply_filters( 'bbp_template_include', $template );
+function _bbp_has_forums_query( $args = array() ) {
+	return apply_filters( 'bbp_has_forums_query', $args );
 }
+add_filter( 'bbp_after_has_forums_parse_args', '_bbp_has_forums_query' );
 
 /**
- * Generate bbPress-specific rewrite rules
+ * Deprecated topics query filter
  *
- * @since bbPress (r2688)
- * @param WP_Rewrite $wp_rewrite
- * @uses do_action() Calls 'bbp_generate_rewrite_rules' with {@link WP_Rewrite}
+ * @since bbPress (r3961)
+ * @param type $args
+ * @return type
  */
-function bbp_generate_rewrite_rules( $wp_rewrite ) {
-	do_action_ref_array( 'bbp_generate_rewrite_rules', array( &$wp_rewrite ) );
+function _bbp_has_topics_query( $args = array() ) {
+	return apply_filters( 'bbp_has_topics_query', $args );
 }
+add_filter( 'bbp_after_has_topics_parse_args', '_bbp_has_topics_query' );
 
 /**
- * Filter the allowed themes list for bbPress specific themes
+ * Deprecated replies query filter
  *
- * @since bbPress (r2944)
- * @uses apply_filters() Calls 'bbp_allowed_themes' with the allowed themes list
+ * @since bbPress (r3961)
+ * @param type $args
+ * @return type
  */
-function bbp_allowed_themes( $themes ) {
-	return apply_filters( 'bbp_allowed_themes', $themes );
+function _bbp_has_replies_query( $args = array() ) {
+	return apply_filters( 'bbp_has_replies_query', $args );
 }
-
-?>
+add_filter( 'bbp_after_has_replies_parse_args', '_bbp_has_replies_query' );

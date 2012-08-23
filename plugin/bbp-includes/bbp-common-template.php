@@ -3,12 +3,66 @@
 /**
  * bbPress Common Template Tags
  *
+ * Common template tags are ones that are used by more than one component, like
+ * forums, topics, replies, users, topic tags, etc...
+ *
  * @package bbPress
  * @subpackage TemplateTags
  */
 
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
+
+/** URLs **********************************************************************/
+
+/**
+ * Ouput the forum URL
+ * 
+ * @since bbPress (r3979)
+ *
+ * @uses bbp_get_forums_url() To get the forums URL
+ * @param string $path Additional path with leading slash
+ */
+function bbp_forums_url( $path = '/' ) {
+	echo bbp_get_forums_url( $path );
+}
+	/**
+	 * Return the forum URL
+	 * 
+	 * @since bbPress (r3979)
+	 *
+	 * @uses home_url() To get the home URL
+	 * @uses bbp_get_root_slug() To get the forum root location
+	 * @param string $path Additional path with leading slash
+	 */
+	function bbp_get_forums_url( $path = '/' ) {
+		return home_url( bbp_get_root_slug() . $path );
+	}
+
+/**
+ * Ouput the forum URL
+ *
+ * @since bbPress (r3979)
+ *
+ * @uses bbp_get_topics_url() To get the topics URL
+ * @param string $path Additional path with leading slash
+ */
+function bbp_topics_url( $path = '/' ) {
+	echo bbp_get_topics_url( $path );
+}
+	/**
+	 * Return the forum URL
+	 *
+	 * @since bbPress (r3979)
+	 *
+	 * @uses home_url() To get the home URL
+	 * @uses bbp_get_topic_archive_slug() To get the topics archive location
+	 * @param string $path Additional path with leading slash
+	 * @return The URL to the topics archive
+	 */
+	function bbp_get_topics_url( $path = '/' ) {
+		return home_url( bbp_get_topic_archive_slug() . $path );
+	}
 
 /** Add-on Actions ************************************************************/
 
@@ -292,7 +346,10 @@ function bbp_is_topic_split() {
  * @return bool True if it's a topic tag, false if not
  */
 function bbp_is_topic_tag() {
-	$bbp = bbpress();
+
+	// Bail if topic-tags are off
+	if ( ! bbp_allow_topic_tags() )
+		return false;
 
 	// Return false if editing a topic tag
 	if ( bbp_is_topic_tag_edit() )
@@ -319,12 +376,16 @@ function bbp_is_topic_tag() {
 function bbp_is_topic_tag_edit() {
 	global $wp_query, $pagenow, $taxnow;
 
+	// Bail if topic-tags are off
+	if ( ! bbp_allow_topic_tags() )
+		return false;
+
 	// Assume false
 	$retval = false;
 
 	// Check query
 	if ( !empty( $wp_query->bbp_is_topic_tag_edit ) && ( true == $wp_query->bbp_is_topic_tag_edit ) )
-		return true;
+		$retval = true;
 
 	// Editing in admin
 	elseif ( is_admin() && ( 'edit-tags.php' == $pagenow ) && ( bbp_get_topic_tag_tax_id() == $taxnow ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
@@ -338,6 +399,7 @@ function bbp_is_topic_tag_edit() {
  *
  * @since bbPress (r3311)
  *
+ * @param mixed $the_post Optional. Post object or post ID.
  * @uses get_post_type()
  * @uses bbp_get_forum_post_type()
  * @uses bbp_get_topic_post_type()
@@ -345,23 +407,20 @@ function bbp_is_topic_tag_edit() {
  *
  * @return bool
  */
-function bbp_is_custom_post_type() {
+function bbp_is_custom_post_type( $the_post = false ) {
 
-	// Current post type
-	$post_type = get_post_type();
+	// Assume false
+	$retval = false;
 
-	// bbPress post types
-	$bbp_post_types = array(
+	// Viewing one of the bbPress post types
+	if ( in_array( get_post_type( $the_post ), array(
 		bbp_get_forum_post_type(),
 		bbp_get_topic_post_type(),
 		bbp_get_reply_post_type()
-	);
+	) ) )
+		$retval = true;
 
-	// Viewing one of the bbPress post types
-	if ( in_array( $post_type, $bbp_post_types ) )
-		return true;
-
-	return false;
+	return (bool) apply_filters( 'bbp_is_custom_post_type', $retval, $the_post );
 }
 
 /**
@@ -402,7 +461,7 @@ function bbp_is_reply_edit() {
 
 	// Check query
 	if ( !empty( $wp_query->bbp_is_reply_edit ) && ( true == $wp_query->bbp_is_reply_edit ) )
-		return true;
+		$retval = true;
 
 	// Editing in admin
 	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_reply_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
@@ -440,7 +499,7 @@ function bbp_is_single_reply() {
  *
  * @since bbPress (r2652)
  *
- * @uses bbp_get_query_name() To get the query name
+ * @uses bbp_is_query_name() To get the query name
  * @return bool True if it's the favorites page, false if not
  */
 function bbp_is_favorites() {
@@ -455,7 +514,7 @@ function bbp_is_favorites() {
  *
  * @since bbPress (r2652)
  *
- * @uses bbp_get_query_name() To get the query name
+ * @uses bbp_is_query_name() To get the query name
  * @return bool True if it's the subscriptions page, false if not
  */
 function bbp_is_subscriptions() {
@@ -471,7 +530,7 @@ function bbp_is_subscriptions() {
  *
  * @since bbPress (r2688)
  *
- * @uses bbp_get_query_name() To get the query name
+ * @uses bbp_is_query_name() To get the query name
  * @return bool True if it's the topics created page, false if not
  */
 function bbp_is_topics_created() {
@@ -485,11 +544,10 @@ function bbp_is_topics_created() {
  * Check if current page is the currently logged in users author page
  *
  * @since bbPress (r2688)
- *
- * @uses bbPres Checks if bbPress::displayed_user is set and if
- *               bbPress::displayed_user::ID equals bbPress::current_user::ID
- *               or not
+ * @uses bbp_is_single_user() Check query variable
  * @uses is_user_logged_in() Must be logged in to be home
+ * @uses bbp_get_displayed_user_id()
+ * @uses bbp_get_current_user_id()
  * @return bool True if it's the user's home, false if not
  */
 function bbp_is_user_home() {
@@ -501,6 +559,27 @@ function bbp_is_user_home() {
 		$retval = (bool) ( bbp_get_displayed_user_id() == bbp_get_current_user_id() );
 
 	return (bool) apply_filters( 'bbp_is_user_home', $retval );
+}
+
+/**
+ * Check if current page is the currently logged in users author edit page
+ *
+ * @since bbPress (r3918)
+ * @uses bbp_is_single_user_edit() Check query variable
+ * @uses is_user_logged_in() Must be logged in to be home
+ * @uses bbp_get_displayed_user_id()
+ * @uses bbp_get_current_user_id()
+ * @return bool True if it's the user's home, false if not
+ */
+function bbp_is_user_home_edit() {
+
+	// Assume false
+	$retval = false;
+
+	if ( bbp_is_single_user_edit() && is_user_logged_in() )
+		$retval = (bool) ( bbp_get_displayed_user_id() == bbp_get_current_user_id() );
+
+	return (bool) apply_filters( 'bbp_is_user_home_edit', $retval );
 }
 
 /**
@@ -551,7 +630,7 @@ function bbp_is_single_user_edit() {
  * @since bbPress (r2789)
  *
  * @global WP_Query $wp_query To check if WP_Query::bbp_is_view is true 
- * @uses bbp_get_query_name() To get the query name
+ * @uses bbp_is_query_name() To get the query name
  * @return bool Is it a view page?
  */
 function bbp_is_single_view() {
@@ -695,6 +774,12 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
 		$bbp_classes[] = 'singular';
 	}
 
+	if ( bbp_is_user_home_edit() ) {
+		$bbp_classes[] = 'bbp-user-home-edit';
+		$bbp_classes[] = 'single';
+		$bbp_classes[] = 'singular';
+	}
+
 	if ( bbp_is_topics_created() ) {
 		$bbp_classes[] = 'bbp-topics-created';
 		$bbp_classes[] = 'single';
@@ -808,6 +893,9 @@ function is_bbpress() {
 	elseif ( bbp_is_user_home() )
 		$retval = true;
 
+	elseif ( bbp_is_user_home_edit() )
+		$retval = true;
+
 	elseif ( bbp_is_topics_created() )
 		$retval = true;
 
@@ -819,7 +907,7 @@ function is_bbpress() {
 
 	/** Done ******************************************************************/
 
-	return apply_filters( 'is_bbpress', $retval );
+	return (bool) apply_filters( 'is_bbpress', $retval );
 }
 
 /** Forms *********************************************************************/
@@ -1234,8 +1322,6 @@ function bbp_topic_form_fields() {
 
 			<input type="hidden" name="bbp_forum_id" id="bbp_forum_id" value="<?php bbp_forum_id(); ?>" />
 
-			<?php bbp_redirect_to_field( get_permalink() ); ?>
-
 		<?php endif; ?>
 
 		<input type="hidden" name="action" id="bbp_post_action" value="bbp-new-topic" />
@@ -1275,7 +1361,6 @@ function bbp_reply_form_fields() {
 	else : ?>
 
 		<input type="hidden" name="bbp_reply_title" id="bbp_reply_title" value="<?php printf( __( 'Reply To: %s', 'bbpress' ), bbp_get_topic_title() ); ?>" maxlength="<?php bbp_get_title_max_length(); ?>" />
-		<input type="hidden" name="bbp_forum_id"    id="bbp_forum_id"    value="<?php bbp_forum_id(); ?>" />
 		<input type="hidden" name="bbp_topic_id"    id="bbp_topic_id"    value="<?php bbp_topic_id(); ?>" />
 		<input type="hidden" name="action"          id="bbp_post_action" value="bbp-new-reply" />
 
@@ -1565,18 +1650,8 @@ function bbp_view_url( $view = false ) {
  * @uses bbp_get_query_name() Get the query var '_bbp_query_name'
  * @return bool True if match, false if not
  */
-function bbp_is_query_name( $query_name )  {
-
-	// No empties
-	if ( empty( $query_name ) )
-		return false;
-
-	// Check if query var matches
-	if ( bbp_get_query_name() == $query_name )
-		return true;
-
-	// No match
-	return false;
+function bbp_is_query_name( $name = '' )  {
+	return (bool) ( bbp_get_query_name() == $name );
 }
 
 /**
@@ -1675,7 +1750,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// Define variables
 		$front_id         = $root_id                                 = 0;
-		$ancestors        = $breadcrumbs      = $tag_data            = array();
+		$ancestors        = $crumbs           = $tag_data            = array();
 		$pre_root_text    = $pre_front_text   = $pre_current_text    = '';
 		$pre_include_root = $pre_include_home = $pre_include_current = true;
 
@@ -1803,7 +1878,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// Do we want to include a link to home?
 		if ( !empty( $include_home ) || empty( $home_text ) )
-			$breadcrumbs[] = '<a href="' . trailingslashit( home_url() ) . '" class="bbp-breadcrumb-home">' . $home_text . '</a>';
+			$crumbs[] = '<a href="' . trailingslashit( home_url() ) . '" class="bbp-breadcrumb-home">' . $home_text . '</a>';
 
 		// Do we want to include a link to the forum root?
 		if ( !empty( $include_root ) || empty( $root_text ) ) {
@@ -1819,7 +1894,7 @@ function bbp_breadcrumb( $args = array() ) {
 			}
 
 			// Add the breadcrumb
-			$breadcrumbs[] = '<a href="' . $root_url . '" class="bbp-breadcrumb-root">' . $root_text . '</a>';
+			$crumbs[] = '<a href="' . $root_url . '" class="bbp-breadcrumb-root">' . $root_text . '</a>';
 		}
 
 		// Ancestors exist
@@ -1836,53 +1911,57 @@ function bbp_breadcrumb( $args = array() ) {
 
 					// Forum
 					case bbp_get_forum_post_type() :
-						$breadcrumbs[] = '<a href="' . bbp_get_forum_permalink( $parent->ID ) . '" class="bbp-breadcrumb-forum">' . bbp_get_forum_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . bbp_get_forum_permalink( $parent->ID ) . '" class="bbp-breadcrumb-forum">' . bbp_get_forum_title( $parent->ID ) . '</a>';
 						break;
 
 					// Topic
 					case bbp_get_topic_post_type() :
-						$breadcrumbs[] = '<a href="' . bbp_get_topic_permalink( $parent->ID ) . '" class="bbp-breadcrumb-topic">' . bbp_get_topic_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . bbp_get_topic_permalink( $parent->ID ) . '" class="bbp-breadcrumb-topic">' . bbp_get_topic_title( $parent->ID ) . '</a>';
 						break;
 
 					// Reply (Note: not in most themes)
 					case bbp_get_reply_post_type() :
-						$breadcrumbs[] = '<a href="' . bbp_get_reply_permalink( $parent->ID ) . '" class="bbp-breadcrumb-reply">' . bbp_get_reply_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . bbp_get_reply_permalink( $parent->ID ) . '" class="bbp-breadcrumb-reply">' . bbp_get_reply_title( $parent->ID ) . '</a>';
 						break;
 
 					// WordPress Post/Page/Other
 					default :
-						$breadcrumbs[] = '<a href="' . get_permalink( $parent->ID ) . '" class="bbp-breadcrumb-item">' . get_the_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . get_permalink( $parent->ID ) . '" class="bbp-breadcrumb-item">' . get_the_title( $parent->ID ) . '</a>';
 						break;
 				}
 			}
 
 		// Edit topic tag
 		} elseif ( bbp_is_topic_tag_edit() ) {
-			$breadcrumbs[] = '<a href="' . get_term_link( bbp_get_topic_tag_id(), bbp_get_topic_tag_tax_id() ) . '" class="bbp-breadcrumb-topic-tag">' . sprintf( __( 'Topic Tag: %s', 'bbpress' ), bbp_get_topic_tag_name() ) . '</a>';
+			$crumbs[] = '<a href="' . get_term_link( bbp_get_topic_tag_id(), bbp_get_topic_tag_tax_id() ) . '" class="bbp-breadcrumb-topic-tag">' . sprintf( __( 'Topic Tag: %s', 'bbpress' ), bbp_get_topic_tag_name() ) . '</a>';
 		}
 
 		/** Current ***********************************************************/
 
 		// Add current page to breadcrumb
 		if ( !empty( $include_current ) || empty( $pre_current_text ) )
-			$breadcrumbs[] = '<span class="bbp-breadcrumb-current">' . $current_text . '</span>';
+			$crumbs[] = '<span class="bbp-breadcrumb-current">' . $current_text . '</span>';
 
-		/** Finish Up *********************************************************/
+		/** Separator *********************************************************/
+
+		// Wrap the separator in a span before padding and filter
+		if ( !empty( $sep ) )
+			$sep = '<span class="bbp-breadcrumb-separator">' . $sep . '</span>';
 
 		// Pad the separator
 		if ( !empty( $pad_sep ) )
 			$sep = str_pad( $sep, strlen( $sep ) + ( (int) $pad_sep * 2 ), ' ', STR_PAD_BOTH );
 
-		// Allow the separator of the breadcrumb to be easily changed
-		$sep = apply_filters( 'bbp_breadcrumb_separator', $sep );
+		/** Finish Up *********************************************************/
 
-		// Filter breadcrumbs before imploding them
-		$breadcrumbs = apply_filters( 'bbp_breadcrumbs', $breadcrumbs );
+		// Filter the separator and breadcrumb
+		$sep    = apply_filters( 'bbp_breadcrumb_separator', $sep    );
+		$crumbs = apply_filters( 'bbp_breadcrumbs',          $crumbs );
 
 		// Build the trail
-		$trail = !empty( $breadcrumbs ) ? ( $before . implode( $sep, $breadcrumbs ) . $after ) : '';
+		$trail = !empty( $crumbs ) ? ( $before . implode( $sep, $crumbs ) . $after ) : '';
 
-		return apply_filters( 'bbp_get_breadcrumb', $trail, $breadcrumbs, $r );
+		return apply_filters( 'bbp_get_breadcrumb', $trail, $crumbs, $r );
 	}
 
 /** Topic Tags ***************************************************************/
@@ -2092,7 +2171,7 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 	} elseif ( bbp_is_single_user_edit() ) {
 
 		// Current users profile
-		if ( bbp_is_user_home() ) {
+		if ( bbp_is_user_home_edit() ) {
 			$title = __( 'Edit Your Profile', 'bbpress' );
 
 		// Other users profile
@@ -2137,5 +2216,3 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 	// Filter and return
 	return apply_filters( 'bbp_title', $title, $sep, $seplocation );
 }
-
-?>

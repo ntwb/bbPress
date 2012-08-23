@@ -166,9 +166,11 @@ function bbp_register_view( $view, $title, $query_args = '', $feed = true ) {
 	if ( !isset( $query_args['show_stickies'] ) )
 		$query_args['show_stickies'] = false;
 
-	$bbp->views[$view]['title'] = $title;
-	$bbp->views[$view]['query'] = $query_args;
-	$bbp->views[$view]['feed']  = $feed;
+	$bbp->views[$view] = array(
+		'title'  => $title,
+		'query'  => $query_args,
+		'feed'   => $feed
+	);
 
 	return $bbp->views[$view];
 }
@@ -403,5 +405,3 @@ function bbp_get_edit_rewrite_id() {
 function bbp_get_view_rewrite_id() {
 	return bbpress()->view_id;
 }
-
-?>

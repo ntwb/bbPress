@@ -48,16 +48,18 @@ class BBP_Akismet {
 
 		// bbPress functions to check for spam
 		$checks['check']  = array(
-			'bbp_new_topic_pre_insert' => 1,  // Topic check
-			'bbp_new_reply_pre_insert' => 1   // Reply check
+			'bbp_new_topic_pre_insert'  => 1,  // New topic check
+			'bbp_new_reply_pre_insert'  => 1,  // New reply check
+			'bbp_edit_topic_pre_insert' => 1,  // Edit topic check
+			'bbp_edit_reply_pre_insert' => 1   // Edit reply check
 		);
 
 		// bbPress functions for spam and ham submissions
 		$checks['submit'] = array(
-			'bbp_spammed_topic'        => 10, // Spammed topic
-			'bbp_unspammed_topic'      => 10, // Unspammed reply
-			'bbp_spammed_reply'        => 10, // Spammed reply
-			'bbp_unspammed_reply'      => 10, // Unspammed reply
+			'bbp_spammed_topic'   => 10, // Spammed topic
+			'bbp_unspammed_topic' => 10, // Unspammed reply
+			'bbp_spammed_reply'   => 10, // Spammed reply
+			'bbp_unspammed_reply' => 10, // Unspammed reply
 		);
 
 		// Add the checks
@@ -159,6 +161,9 @@ class BBP_Akismet {
 		// Store the data as submitted
 		$post_data['bbp_post_as_submitted'] = $_post;
 
+		// Allow post_data to be manipulated
+		do_action_ref_array( 'bbp_akismet_check_post', $post_data );
+
 		// Spam
 		if ( 'true' == $post_data['bbp_akismet_result'] ) {
 
@@ -187,7 +192,7 @@ class BBP_Akismet {
 	/**
 	 * Submit a post for spamming or hamming
 	 *
-	 * @since bbPress ({unknown})
+	 * @since bbPress (r3277)
 	 *
 	 * @param int $post_id
 	 *
@@ -693,5 +698,3 @@ function bbp_setup_akismet() {
 	// Instantiate Akismet for bbPress
 	bbpress()->extend->akismet = new BBP_Akismet();
 }
-
-?>

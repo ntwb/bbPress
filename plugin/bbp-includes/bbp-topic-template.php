@@ -45,6 +45,11 @@ function bbp_topic_post_type() {
  * @return bool Yes if the topic appears as a lead, otherwise false
  */
 function bbp_show_lead_topic( $show_lead = false ) {
+
+	// Never separate the lead topic in feeds
+	if ( is_feed() )
+		return false;
+
 	return (bool) apply_filters( 'bbp_show_lead_topic', (bool) $show_lead );
 }
 
@@ -80,28 +85,32 @@ function bbp_has_topics( $args = '' ) {
 	global $wp_rewrite;
 
 	// What are the default allowed statuses (based on user caps)
-	if ( !bbp_is_query_name( 'bbp_widget' ) && bbp_get_view_all() )
-		$default_status = join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id(), bbp_get_spam_status_id(), bbp_get_trash_status_id() ) );
+	if ( bbp_get_view_all() )
+		$default_post_status = join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id(), bbp_get_spam_status_id(), bbp_get_trash_status_id() ) );
 	else
-		$default_status = join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) );
+		$default_post_status = join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) );
 
-	// Default arguments
+	$default_topic_search    = !empty( $_REQUEST['ts'] ) ? $_REQUEST['ts'] : false;
+	$default_show_stickies   = (bool) ( bbp_is_single_forum() || bbp_is_topic_archive() ) && ( false === $default_topic_search );
+	$default_post_parent     = bbp_is_single_forum() ? bbp_get_forum_id() : 'any';
+
+	// Default argument array
 	$default = array(
-		'post_type'      => bbp_get_topic_post_type(),                          // Narrow query down to bbPress topics
-		'post_parent'    => bbp_is_single_forum() ? bbp_get_forum_id() : 'any', // Forum ID
-		'meta_key'       => '_bbp_last_active_time',                            // Make sure topic has some last activity time
-		'orderby'        => 'meta_value',                                       // 'meta_value', 'author', 'date', 'title', 'modified', 'parent', rand',
-		'order'          => 'DESC',                                             // 'ASC', 'DESC'
-		'posts_per_page' => bbp_get_topics_per_page(),                          // Topics per page
-		'paged'          => bbp_get_paged(),                                    // Page Number
-		's'              => !empty( $_REQUEST['ts'] ) ? $_REQUEST['ts'] : '',   // Topic Search
-		'show_stickies'  => bbp_is_single_forum() || bbp_is_topic_archive(),    // Ignore sticky topics?
-		'max_num_pages'  => false,                                              // Maximum number of pages to show
-		'post_status'    => $default_status,                                    // Post Status
+		'post_type'      => bbp_get_topic_post_type(), // Narrow query down to bbPress topics
+		'post_parent'    => $default_post_parent,      // Forum ID
+		'post_status'    => $default_post_status,      // Post Status
+		'meta_key'       => '_bbp_last_active_time',   // Make sure topic has some last activity time
+		'orderby'        => 'meta_value',              // 'meta_value', 'author', 'date', 'title', 'modified', 'parent', rand',
+		'order'          => 'DESC',                    // 'ASC', 'DESC'
+		'posts_per_page' => bbp_get_topics_per_page(), // Topics per page
+		'paged'          => bbp_get_paged(),           // Page Number
+		's'              => $default_topic_search,     // Topic Search
+		'show_stickies'  => $default_show_stickies,    // Ignore sticky topics?
+		'max_num_pages'  => false,                     // Maximum number of pages to show
 	);
 
 	// Maybe query for topic tags
-	if ( !bbp_is_query_name( 'bbp_widget' ) && bbp_is_topic_tag() ) {
+	if ( bbp_is_topic_tag() ) {
 		$default['term']     = bbp_get_topic_tag_slug();
 		$default['taxonomy'] = bbp_get_topic_tag_tax_id();
 	}
@@ -163,8 +172,9 @@ function bbp_has_topics( $args = '' ) {
 			}
 
 			// If any posts have been excluded specifically, Ignore those that are sticky.
-			if ( !empty( $stickies ) && !empty( $post__not_in ) )
+			if ( !empty( $stickies ) && !empty( $post__not_in ) ) {
 				$stickies = array_diff( $stickies, $post__not_in );
+			}
 
 			// Fetch sticky posts that weren't in the query results
 			if ( !empty( $stickies ) ) {
@@ -173,7 +183,10 @@ function bbp_has_topics( $args = '' ) {
 				$sticky_query = array(
 					'post_type'   => bbp_get_topic_post_type(),
 					'post_parent' => 'any',
-					'post_status' => $post_status,
+					'post_status' => $default_post_status,
+					'meta_key'    => '_bbp_last_active_time',
+					'orderby'     => 'meta_value',
+					'order'       => 'DESC',
 					'include'     => $stickies
 				);
 
@@ -215,7 +228,7 @@ function bbp_has_topics( $args = '' ) {
 	$bbp->topic_query->paged          = $paged;
 
 	// Only add pagination if query returned results
-	if ( !bbp_is_query_name( 'bbp_widget' ) && ( (int) $bbp->topic_query->post_count || (int) $bbp->topic_query->found_posts ) && (int) $bbp->topic_query->posts_per_page ) {
+	if ( ( (int) $bbp->topic_query->post_count || (int) $bbp->topic_query->found_posts ) && (int) $bbp->topic_query->posts_per_page ) {
 
 		// Limit the number of topics shown based on maximum allowed pages
 		if ( ( !empty( $max_num_pages ) ) && $bbp->topic_query->found_posts > $bbp->topic_query->max_num_pages * $bbp->topic_query->post_count )
@@ -242,7 +255,7 @@ function bbp_has_topics( $args = '' ) {
 
 			// Topic archive
 			elseif ( bbp_is_topic_archive() )
-				$base = home_url( bbp_get_topic_archive_slug() );
+				$base = bbp_get_topics_url();
 
 			// Default
 			else
@@ -618,6 +631,52 @@ function bbp_topic_excerpt( $topic_id = 0, $length = 100 ) {
 	}
 
 /**
+ * Output the post date and time of a topic
+ *
+ * @since bbPress (r4155)
+ *
+ * @param int $topic_id Optional. Topic id.
+ * @param bool $humanize Optional. Humanize output using time_since
+ * @param bool $gmt Optional. Use GMT
+ * @uses bbp_get_topic_post_date() to get the output
+ */
+function bbp_topic_post_date( $topic_id = 0, $humanize = false, $gmt = false ) {
+	echo bbp_get_topic_post_date( $topic_id, $humanize, $gmt );
+}
+	/**
+	 * Return the post date and time of a topic
+	 *
+	 * @since bbPress (r4155)
+	 *
+	 * @param int $topic_id Optional. Topic id.
+	 * @param bool $humanize Optional. Humanize output using time_since
+	 * @param bool $gmt Optional. Use GMT
+	 * @uses bbp_get_topic_id() To get the topic id
+	 * @uses get_post_time() to get the topic post time
+	 * @uses bbp_time_since() to maybe humanize the topic post time
+	 * @return string
+	 */
+	function bbp_get_topic_post_date( $topic_id = 0, $humanize = false, $gmt = false ) {
+		$topic_id = bbp_get_topic_id( $topic_id );
+		
+		// 4 days, 4 hours ago
+		if ( !empty( $humanize ) ) {
+			$gmt    = !empty( $gmt ) ? 'G' : 'U';
+			$date   = get_post_time( $gmt, $topic_id );
+			$time   = false; // For filter below
+			$result = bbp_time_since( $date );
+
+		// August 4, 2012 at 2:37 pm
+		} else {
+			$date   = get_post_time( get_option( 'date_format' ), $gmt, $topic_id );
+			$time   = get_post_time( get_option( 'time_format' ), $gmt, $topic_id );
+			$result = sprintf( _x( '%1$s at %2$s', 'date at time', 'bbpress' ), $date, $time );
+		}
+
+		return apply_filters( 'bbp_get_topic_post_date', $result, $topic_id, $humanize, $gmt, $date, $time );
+	}
+
+/**
  * Output pagination links of a topic within the topic loop
  *
  * @since bbPress (r2966)
@@ -720,8 +779,8 @@ function bbp_topic_pagination( $args = '' ) {
  */
 function bbp_topic_content_append_revisions( $content = '', $topic_id = 0 ) {
 
-	// Bail if in admin
-	if ( is_admin() )
+	// Bail if in admin or feed
+	if ( is_admin() || is_feed() )
 		return;
 
 	// Validate the ID
@@ -1966,6 +2025,10 @@ function bbp_topic_tag_list( $topic_id = 0, $args = '' ) {
 	 */
 	function bbp_get_topic_tag_list( $topic_id = 0, $args = '' ) {
 
+		// Bail if topic-tags are off
+		if ( ! bbp_allow_topic_tags() )
+			return;
+
 		$defaults = array(
 			'before' => '<div class="bbp-topic-tags"><p>' . __( 'Tagged:', 'bbpress' ) . '&nbsp;',
 			'sep'    => ', ',
@@ -2899,6 +2962,7 @@ function bbp_topic_tag_id( $tag = '' ) {
 	 * @since bbPress (r3109)
 	 *
 	 * @uses get_term_by()
+	 * @uses get_queried_object()
 	 * @uses get_query_var()
 	 * @uses apply_filters()
 	 *
@@ -2907,8 +2971,12 @@ function bbp_topic_tag_id( $tag = '' ) {
 	function bbp_get_topic_tag_id( $tag = '' ) {
 
 		// Get the term
-		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );
-		$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		if ( ! empty( $tag ) ) {
+			$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		} else {
+			$tag  = get_query_var( 'term' );
+			$term = get_queried_object();
+		}
 
 		// Add before and after if description exists
 		if ( !empty( $term->term_id ) ) {
@@ -2938,6 +3006,7 @@ function bbp_topic_tag_name( $tag = '' ) {
 	 * @since bbPress (r3109)
 	 *
 	 * @uses get_term_by()
+	 * @uses get_queried_object()
 	 * @uses get_query_var()
 	 * @uses apply_filters()
 	 *
@@ -2946,8 +3015,12 @@ function bbp_topic_tag_name( $tag = '' ) {
 	function bbp_get_topic_tag_name( $tag = '' ) {
 
 		// Get the term
-		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );
-		$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		if ( ! empty( $tag ) ) {
+			$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		} else {
+			$tag  = get_query_var( 'term' );
+			$term = get_queried_object();
+		}
 
 		// Add before and after if description exists
 		if ( !empty( $term->name ) ) {
@@ -2977,6 +3050,7 @@ function bbp_topic_tag_slug( $tag = '' ) {
 	 * @since bbPress (r3109)
 	 *
 	 * @uses get_term_by()
+	 * @uses get_queried_object()
 	 * @uses get_query_var()
 	 * @uses apply_filters()
 	 *
@@ -2985,8 +3059,12 @@ function bbp_topic_tag_slug( $tag = '' ) {
 	function bbp_get_topic_tag_slug( $tag = '' ) {
 
 		// Get the term
-		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );
-		$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		if ( ! empty( $tag ) ) {
+			$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		} else {
+			$tag  = get_query_var( 'term' );
+			$term = get_queried_object();
+		}
 
 		// Add before and after if description exists
 		if ( !empty( $term->slug ) ) {
@@ -3016,6 +3094,7 @@ function bbp_topic_tag_link( $tag = '' ) {
 	 * @since bbPress (r3348)
 	 *
 	 * @uses get_term_by()
+	 * @uses get_queried_object()
 	 * @uses get_query_var()
 	 * @uses apply_filters()
 	 *
@@ -3024,8 +3103,12 @@ function bbp_topic_tag_link( $tag = '' ) {
 	function bbp_get_topic_tag_link( $tag = '' ) {
 
 		// Get the term
-		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );
-		$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		if ( ! empty( $tag ) ) {
+			$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		} else {
+			$tag  = get_query_var( 'term' );
+			$term = get_queried_object();
+		}
 
 		// Add before and after if description exists
 		if ( !empty( $term->term_id ) ) {
@@ -3036,7 +3119,7 @@ function bbp_topic_tag_link( $tag = '' ) {
 			$retval = '';
 		}
 
-		return apply_filters( 'bbp_get_topic_tag_link', $retval );
+		return apply_filters( 'bbp_get_topic_tag_link', $retval, $tag );
 	}
 
 /**
@@ -3055,6 +3138,7 @@ function bbp_topic_tag_edit_link( $tag = '' ) {
 	 * @since bbPress (r3348)
 	 *
 	 * @uses get_term_by()
+	 * @uses get_queried_object()
 	 * @uses get_query_var()
 	 * @uses apply_filters()
 	 *
@@ -3063,14 +3147,18 @@ function bbp_topic_tag_edit_link( $tag = '' ) {
 	function bbp_get_topic_tag_edit_link( $tag = '' ) {
 		global $wp_rewrite;
 
-		$bbp = bbpress();
-
 		// Get the term
-		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );
-		$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		if ( ! empty( $tag ) ) {
+			$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		} else {
+			$tag  = get_query_var( 'term' );
+			$term = get_queried_object();
+		}
 
 		// Add before and after if description exists
 		if ( !empty( $term->term_id ) ) {
+
+			$bbp = bbpress();
 
 			// Pretty
 			if ( $wp_rewrite->using_permalinks() ) {
@@ -3086,7 +3174,7 @@ function bbp_topic_tag_edit_link( $tag = '' ) {
 			$retval = '';
 		}
 
-		return apply_filters( 'bbp_get_topic_tag_edit_link', $retval );
+		return apply_filters( 'bbp_get_topic_tag_edit_link', $retval, $tag );
 	}
 
 /**
@@ -3105,9 +3193,11 @@ function bbp_topic_tag_description( $args = array() ) {
 	 * @since bbPress (r3109)
 	 *
 	 * @uses get_term_by()
+	 * @uses get_queried_object()
 	 * @uses get_query_var()
 	 * @uses apply_filters()
 	 * @param array $args before|after|tag
+	 *
 	 * @return string Term Name
 	 */
 	function bbp_get_topic_tag_description( $args = array() ) {
@@ -3121,8 +3211,13 @@ function bbp_topic_tag_description( $args = array() ) {
 		extract( $r );
 
 		// Get the term
-		$tag  = !empty( $tag ) ? $tag : get_query_var( 'term' );
-		$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		if ( ! empty( $tag ) ) {
+			$term = get_term_by( 'slug', $tag, bbp_get_topic_tag_tax_id() );
+		} else {
+			$tag         = get_query_var( 'term' );
+			$args['tag'] = $tag;
+			$term        = get_queried_object();
+		}
 
 		// Add before and after if description exists
 		if ( !empty( $term->description ) ) {
@@ -3460,5 +3555,3 @@ function bbp_form_topic_edit_reason() {
 
 		return apply_filters( 'bbp_get_form_topic_edit_reason', esc_attr( $topic_edit_reason ) );
 	}
-
-?>
