@@ -76,8 +76,11 @@ add_filter( 'bbp_request', 'bbp_request_feed_trap' );
  * template hierarchy, start here by removing this filter, then look at how
  * bbp_template_include() works and do something similar. :)
  */
-add_filter( 'bbp_template_include', 'bbp_template_include_theme_supports', 2, 1 );
-add_filter( 'bbp_template_include', 'bbp_template_include_theme_compat',   4, 2 );
+add_filter( 'bbp_template_include',   'bbp_template_include_theme_supports', 2, 1 );
+add_filter( 'bbp_template_include',   'bbp_template_include_theme_compat',   4, 2 );
+
+// Filter bbPress template locations
+add_filter( 'bbp_get_template_stack', 'bbp_add_template_stack_locations'          );
 
 // Links
 add_filter( 'paginate_links',            'bbp_add_view_all' );
@@ -90,6 +93,24 @@ add_filter( 'bbp_new_reply_pre_title',    'wp_filter_kses'  );
 add_filter( 'bbp_new_topic_pre_title',    'wp_filter_kses'  );
 add_filter( 'bbp_edit_reply_pre_title',   'wp_filter_kses'  );
 add_filter( 'bbp_edit_topic_pre_title',   'wp_filter_kses'  );
+
+// Strip slashes for WordPress 3.6 and higher
+if ( function_exists( 'wp_slash' ) ) {
+	add_filter( 'bbp_new_reply_pre_title',  'stripslashes' );
+	add_filter( 'bbp_new_topic_pre_title',  'stripslashes' );
+	add_filter( 'bbp_edit_reply_pre_title', 'stripslashes' );
+	add_filter( 'bbp_edit_topic_pre_title', 'stripslashes' );
+}
+
+// Code filters on output (hooked in early for plugin compatibility)
+add_filter( 'bbp_get_reply_content', 'bbp_code_trick', 3 );
+add_filter( 'bbp_get_topic_content', 'bbp_code_trick', 3 );
+
+// Code filters on input
+add_filter( 'bbp_new_reply_pre_content',  'bbp_code_trick_reverse' );
+add_filter( 'bbp_edit_reply_pre_content', 'bbp_code_trick_reverse' );
+add_filter( 'bbp_new_topic_pre_content',  'bbp_code_trick_reverse' );
+add_filter( 'bbp_edit_topic_pre_content', 'bbp_code_trick_reverse' );
 
 // balanceTags, wp_filter_kses and wp_rel_nofollow on new/edit topic/reply text
 add_filter( 'bbp_new_reply_pre_content',  'wp_rel_nofollow'    );
@@ -104,6 +125,14 @@ add_filter( 'bbp_edit_reply_pre_content', 'balanceTags',    50 );
 add_filter( 'bbp_edit_topic_pre_content', 'wp_rel_nofollow'    );
 add_filter( 'bbp_edit_topic_pre_content', 'bbp_filter_kses'    );
 add_filter( 'bbp_edit_topic_pre_content', 'balanceTags',    50 );
+
+// Strip slashes for WordPress 3.6 and higher
+if ( function_exists( 'wp_slash' ) ) {
+	add_filter( 'bbp_new_reply_pre_content',  'stripslashes' );
+	add_filter( 'bbp_new_topic_pre_content',  'stripslashes' );
+	add_filter( 'bbp_edit_reply_pre_content', 'stripslashes' );
+	add_filter( 'bbp_edit_topic_pre_content', 'stripslashes' );
+}
 
 // No follow and stripslashes on user profile links
 add_filter( 'bbp_get_reply_author_link',      'wp_rel_nofollow' );
@@ -121,23 +150,23 @@ add_filter( 'bbp_get_user_profile_edit_link', 'stripslashes'    );
 
 // Run filters on reply content
 add_filter( 'bbp_get_reply_content', 'make_clickable',     4    );
+add_filter( 'bbp_get_reply_content', 'bbp_mention_filter', 5    );
 add_filter( 'bbp_get_reply_content', 'wptexturize',        6    );
 add_filter( 'bbp_get_reply_content', 'convert_chars',      8    );
 add_filter( 'bbp_get_reply_content', 'capital_P_dangit',   10   );
 add_filter( 'bbp_get_reply_content', 'convert_smilies',    20   );
-add_filter( 'bbp_get_reply_content', 'force_balance_tags', 25   );
-add_filter( 'bbp_get_reply_content', 'wpautop',            30   );
-add_filter( 'bbp_get_reply_content', 'bbp_mention_filter', 40   );
+add_filter( 'bbp_get_reply_content', 'force_balance_tags', 30   );
+add_filter( 'bbp_get_reply_content', 'wpautop',            40   );
 
 // Run filters on topic content
 add_filter( 'bbp_get_topic_content', 'make_clickable',     4    );
+add_filter( 'bbp_get_topic_content', 'bbp_mention_filter', 5    );
 add_filter( 'bbp_get_topic_content', 'wptexturize',        6    );
 add_filter( 'bbp_get_topic_content', 'convert_chars',      8    );
 add_filter( 'bbp_get_topic_content', 'capital_P_dangit',   10   );
 add_filter( 'bbp_get_topic_content', 'convert_smilies',    20   );
-add_filter( 'bbp_get_topic_content', 'force_balance_tags', 25   );
-add_filter( 'bbp_get_topic_content', 'wpautop',            30   );
-add_filter( 'bbp_get_topic_content', 'bbp_mention_filter', 40   );
+add_filter( 'bbp_get_topic_content', 'force_balance_tags', 30   );
+add_filter( 'bbp_get_topic_content', 'wpautop',            40   );
 
 // Add number format filter to functions requiring numeric output
 add_filter( 'bbp_get_user_topic_count',     'bbp_number_format', 10 );
@@ -150,18 +179,6 @@ add_filter( 'bbp_get_forum_post_count',     'bbp_number_format', 10 );
 add_filter( 'bbp_get_topic_voice_count',    'bbp_number_format', 10 );
 add_filter( 'bbp_get_topic_reply_count',    'bbp_number_format', 10 );
 add_filter( 'bbp_get_topic_post_count',     'bbp_number_format', 10 );
-
-// Code filters on input
-add_filter( 'bbp_new_reply_pre_content',  'bbp_code_trick_reverse' );
-add_filter( 'bbp_edit_reply_pre_content', 'bbp_code_trick_reverse' );
-add_filter( 'bbp_new_topic_pre_content',  'bbp_code_trick_reverse' );
-add_filter( 'bbp_edit_topic_pre_content', 'bbp_code_trick_reverse' );
-
-// Code filters on output (hooked in early for plugin compatibility)
-add_filter( 'bbp_get_reply_content', 'bbp_code_trick', 4 );
-add_filter( 'bbp_get_reply_content', 'bbp_encode_bad', 6 );
-add_filter( 'bbp_get_topic_content', 'bbp_code_trick', 4 );
-add_filter( 'bbp_get_topic_content', 'bbp_encode_bad', 6 );
 
 // Run wp_kses_data on topic/reply content in admin section
 if ( is_admin() ) {
@@ -182,19 +199,6 @@ add_filter( 'bbp_get_forum_freshness_link', 'bbp_suppress_private_forum_meta',  
 add_filter( 'bbp_get_author_link',          'bbp_suppress_private_author_link', 10, 2 );
 add_filter( 'bbp_get_topic_author_link',    'bbp_suppress_private_author_link', 10, 2 );
 add_filter( 'bbp_get_reply_author_link',    'bbp_suppress_private_author_link', 10, 2 );
-
-// Filter bbPress template locations
-add_filter( 'bbp_get_template_part',         'bbp_add_template_locations' );
-add_filter( 'bbp_get_profile_template',      'bbp_add_template_locations' );
-add_filter( 'bbp_get_profileedit_template',  'bbp_add_template_locations' );
-add_filter( 'bbp_get_singleview_template',   'bbp_add_template_locations' );
-add_filter( 'bbp_get_forumedit_template',    'bbp_add_template_locations' );
-add_filter( 'bbp_get_topicedit_template',    'bbp_add_template_locations' );
-add_filter( 'bbp_get_topicsplit_template',   'bbp_add_template_locations' );
-add_filter( 'bbp_get_topicmerge_template',   'bbp_add_template_locations' );
-add_filter( 'bbp_get_topictag_template',     'bbp_add_template_locations' );
-add_filter( 'bbp_get_topictagedit_template', 'bbp_add_template_locations' );
-add_filter( 'bbp_get_replymove_template',    'bbp_add_template_locations' );
 
 // Topic and reply author display names
 add_filter( 'bbp_get_topic_author_display_name', 'wptexturize'   );

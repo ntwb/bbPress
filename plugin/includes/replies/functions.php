@@ -1709,7 +1709,7 @@ function bbp_reply_content_autoembed() {
 	global $wp_embed;
 
 	if ( bbp_use_autoembed() && is_a( $wp_embed, 'WP_Embed' ) ) {
-		add_filter( 'bbp_get_reply_content', array( $wp_embed, 'autoembed' ), 8 );
+		add_filter( 'bbp_get_reply_content', array( $wp_embed, 'autoembed' ), 2 );
 	}
 }
 
@@ -1738,6 +1738,10 @@ function _bbp_has_replies_where( $where, $query ) {
 
 	// Bail if meta query
 	if ( $query->get( 'meta_key' ) || $query->get( 'meta_query' ) )
+		return $where;
+
+	// Bail if including or excluding specific post ID's
+	if ( $query->get( 'post__not_in' ) || $query->get( 'post__in' ) )
 		return $where;
 
 	global $wpdb;

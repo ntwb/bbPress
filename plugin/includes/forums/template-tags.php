@@ -659,7 +659,7 @@ function bbp_forum_get_subforums( $args = '' ) {
 	// No forum passed
 	$sub_forums = !empty( $r['post_parent'] ) ? $get_posts->query( $r ) : array();
 
-	return (array) apply_filters( 'bbp_forum_get_subforums', $sub_forums, $args );
+	return (array) apply_filters( 'bbp_forum_get_subforums', $sub_forums, $r );
 }
 
 /**
@@ -1816,7 +1816,6 @@ function bbp_single_forum_description( $args = '' ) {
 	 * @uses bbp_get_forum_id() To get the forum id
 	 * @uses bbp_get_forum_topic_count() To get the forum topic count
 	 * @uses bbp_get_forum_reply_count() To get the forum reply count
-	 * @uses bbp_get_forum_subforum_count() To get the forum subforum count
 	 * @uses bbp_get_forum_freshness_link() To get the forum freshness link
 	 * @uses bbp_get_forum_last_active_id() To get the forum last active id
 	 * @uses bbp_get_author_link() To get the author link
@@ -1922,7 +1921,7 @@ function bbp_single_forum_description( $args = '' ) {
 		$retstr = $r['before'] . $retstr . $r['after'];
 
 		// Return filtered result
-		return apply_filters( 'bbp_get_single_forum_description', $retstr, $args );
+		return apply_filters( 'bbp_get_single_forum_description', $retstr, $r );
 	}
 
 /** Forms *********************************************************************/
