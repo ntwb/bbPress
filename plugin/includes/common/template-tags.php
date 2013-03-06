@@ -2228,6 +2228,10 @@ function bbp_breadcrumb( $args = array() ) {
 				// Parents
 				$parent = get_post( $parent_id );
 
+				// Skip parent if empty or error
+				if ( empty( $parent ) || is_wp_error( $parent ) )
+					continue;
+
 				// Switch through post_type to ensure correct filters are applied
 				switch ( $parent->post_type ) {
 
@@ -2278,7 +2282,11 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// Pad the separator
 		if ( !empty( $r['pad_sep'] ) ) {
-			$sep = str_pad( $sep, strlen( $sep ) + ( (int) $r['pad_sep'] * 2 ), ' ', STR_PAD_BOTH );
+			if ( function_exists( 'mb_strlen' ) ) {
+				$sep = str_pad( $sep, mb_strlen( $sep ) + ( (int) $r['pad_sep'] * 2 ), ' ', STR_PAD_BOTH );
+			} else {
+				$sep = str_pad( $sep, strlen( $sep ) + ( (int) $r['pad_sep'] * 2 ), ' ', STR_PAD_BOTH );
+			}
 		}
 
 		/** Finish Up *********************************************************/
