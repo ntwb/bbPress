@@ -1935,10 +1935,11 @@ function bbp_topic_split_link( $args = '' ) {
  * @since bbPress (r2678)
  *
  * @param int $reply_id Optional. Reply ID
+ * @param array Extra classes you can pass when calling this function
  * @uses bbp_get_reply_class() To get the reply class
  */
-function bbp_reply_class( $reply_id = 0 ) {
-	echo bbp_get_reply_class( $reply_id );
+function bbp_reply_class( $reply_id = 0, $classes = array() ) {
+	echo bbp_get_reply_class( $reply_id, $classes );
 }
 	/**
 	 * Return the row class of a reply
@@ -1946,6 +1947,7 @@ function bbp_reply_class( $reply_id = 0 ) {
 	 * @since bbPress (r2678)
 	 *
 	 * @param int $reply_id Optional. Reply ID
+	 * @param array Extra classes you can pass when calling this function
 	 * @uses bbp_get_reply_id() To validate the reply id
 	 * @uses bbp_get_reply_forum_id() To get the reply's forum id
 	 * @uses bbp_get_reply_topic_id() To get the reply's topic id
@@ -1953,11 +1955,11 @@ function bbp_reply_class( $reply_id = 0 ) {
 	 * @uses apply_filters() Calls 'bbp_get_reply_class' with the classes
 	 * @return string Row class of the reply
 	 */
-	function bbp_get_reply_class( $reply_id = 0 ) {
+	function bbp_get_reply_class( $reply_id = 0, $classes = array() ) {
 		$bbp       = bbpress();
 		$reply_id  = bbp_get_reply_id( $reply_id );
 		$count     = isset( $bbp->reply_query->current_post ) ? $bbp->reply_query->current_post : 1;
-		$classes   = array();
+		$classes   = (array) $classes;
 		$classes[] = ( (int) $count % 2 ) ? 'even' : 'odd';
 		$classes[] = 'bbp-parent-forum-'   . bbp_get_reply_forum_id( $reply_id );
 		$classes[] = 'bbp-parent-topic-'   . bbp_get_reply_topic_id( $reply_id );
@@ -2087,7 +2089,7 @@ function bbp_form_reply_content() {
 	function bbp_get_form_reply_content() {
 
 		// Get _POST data
-		if ( 'POST' == strtoupper( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_reply_content'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_reply_content'] ) ) {
 			$reply_content = $_POST['bbp_reply_content'];
 
 		// Get edit data
@@ -2124,7 +2126,7 @@ function bbp_form_reply_log_edit() {
 	function bbp_get_form_reply_log_edit() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_log_reply_edit'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_log_reply_edit'] ) ) {
 			$reply_revision = $_POST['bbp_log_reply_edit'];
 
 		// No data
@@ -2157,7 +2159,7 @@ function bbp_form_reply_edit_reason() {
 	function bbp_get_form_reply_edit_reason() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_reply_edit_reason'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_reply_edit_reason'] ) ) {
 			$reply_edit_reason = $_POST['bbp_reply_edit_reason'];
 
 		// No data

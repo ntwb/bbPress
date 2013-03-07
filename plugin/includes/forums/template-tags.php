@@ -1745,10 +1745,11 @@ function bbp_suppress_private_author_link( $author_link, $args ) {
  * @since bbPress (r2667)
  *
  * @param int $forum_id Optional. Forum ID.
+ * @param array Extra classes you can pass when calling this function
  * @uses bbp_get_forum_class() To get the row class of the forum
  */
-function bbp_forum_class( $forum_id = 0 ) {
-	echo bbp_get_forum_class( $forum_id );
+function bbp_forum_class( $forum_id = 0, $classes = array() ) {
+	echo bbp_get_forum_class( $forum_id, $classes );
 }
 	/**
 	 * Return the row class of a forum
@@ -1756,6 +1757,7 @@ function bbp_forum_class( $forum_id = 0 ) {
 	 * @since bbPress (r2667)
 	 *
 	 * @param int $forum_id Optional. Forum ID
+	 * @param array Extra classes you can pass when calling this function
 	 * @uses bbp_get_forum_id() To validate the forum id
 	 * @uses bbp_is_forum_category() To see if forum is a category
 	 * @uses bbp_get_forum_status() To get the forum status
@@ -1765,11 +1767,11 @@ function bbp_forum_class( $forum_id = 0 ) {
 	 * @uses apply_filters() Calls 'bbp_get_forum_class' with the classes
 	 * @return string Row class of the forum
 	 */
-	function bbp_get_forum_class( $forum_id = 0 ) {
+	function bbp_get_forum_class( $forum_id = 0, $classes = array() ) {
 		$bbp       = bbpress();
 		$forum_id  = bbp_get_forum_id( $forum_id );
 		$count     = isset( $bbp->forum_query->current_post ) ? $bbp->forum_query->current_post : 1;
-		$classes   = array();
+		$classes   = (array) $classes;
 
 		// Get some classes
 		$classes[] = 'loop-item-' . $count;
@@ -1951,7 +1953,7 @@ function bbp_form_forum_title() {
 	function bbp_get_form_forum_title() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_forum_title'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_title'] ) ) {
 			$forum_title = $_POST['bbp_forum_title'];
 
 		// Get edit data
@@ -1988,7 +1990,7 @@ function bbp_form_forum_content() {
 	function bbp_get_form_forum_content() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_forum_content'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_content'] ) ) {
 			$forum_content = $_POST['bbp_forum_content'];
 
 		// Get edit data
@@ -2026,7 +2028,7 @@ function bbp_form_forum_parent() {
 	function bbp_get_form_forum_parent() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_forum_id'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_id'] ) ) {
 			$forum_parent = $_POST['bbp_forum_id'];
 
 		// Get edit data
@@ -2064,7 +2066,7 @@ function bbp_form_forum_type() {
 	function bbp_get_form_forum_type() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_forum_type'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_type'] ) ) {
 			$forum_type = $_POST['bbp_forum_type'];
 
 		// Get edit data
@@ -2102,7 +2104,7 @@ function bbp_form_forum_visibility() {
 	function bbp_get_form_forum_visibility() {
 
 		// Get _POST data
-		if ( 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST['bbp_forum_visibility'] ) ) {
+		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_visibility'] ) ) {
 			$forum_visibility = $_POST['bbp_forum_visibility'];
 
 		// Get edit data
