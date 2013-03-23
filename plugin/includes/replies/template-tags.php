@@ -47,7 +47,6 @@ function bbp_reply_post_type() {
  * @uses bbp_get_topic_id() To get the topic id
  * @uses bbp_get_reply_post_type() To get the reply post type
  * @uses bbp_get_topic_post_type() To get the topic post type
- * @uses bbp_is_query_name() To check if we are getting replies for a widget
  * @uses get_option() To get the replies per page option
  * @uses bbp_get_paged() To get the current page value
  * @uses current_user_can() To check if the current user is capable of editing
@@ -1069,18 +1068,21 @@ function bbp_reply_author_link( $args = '' ) {
 		// Reply ID is good
 		if ( !empty( $reply_id ) ) {
 
+			// Get some useful reply information
+			$author_url = bbp_get_reply_author_url( $reply_id );
+			$anonymous  = bbp_is_reply_anonymous( $reply_id );
+
 			// Tweak link title if empty
 			if ( empty( $$r['link_title'] ) ) {
-				$link_title = sprintf( !bbp_is_reply_anonymous( $reply_id ) ? __( 'View %s\'s profile', 'bbpress' ) : __( 'Visit %s\'s website', 'bbpress' ), bbp_get_reply_author_display_name( $reply_id ) );
+				$link_title = sprintf( empty( $anonymous ) ? __( 'View %s\'s profile', 'bbpress' ) : __( 'Visit %s\'s website', 'bbpress' ), bbp_get_reply_author_display_name( $reply_id ) );
 
 			// Use what was passed if not
 			} else {
 				$link_title = $r['link_title'];
 			}
 
+			// Setup title and author_links array
 			$link_title   = !empty( $link_title ) ? ' title="' . $link_title . '"' : '';
-			$author_url   = bbp_get_reply_author_url( $reply_id );
-			$anonymous    = bbp_is_reply_anonymous( $reply_id );
 			$author_links = array();
 
 			// Get avatar
