@@ -685,10 +685,15 @@ function bbp_check_for_duplicate( $post_data = array() ) {
 		$join    = $where = '';
 	}
 
-	// Simple duplicate check
-	// Expected slashed ($post_type, $post_parent, $post_author, $post_content, $anonymous_data)
-	$query  = $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} {$join} WHERE post_type = '%s' AND post_status != '%s' AND post_author = '%d' AND post_content = '%s' {$where}", $r['post_type'], $r['post_status'], $r['post_author'], $r['post_content'] );
-	$query .= !empty( $r['post_parent'] ) ? $wpdb->prepare( " AND post_parent = '%d'", $r['post_parent'] ) : '';
+	// Unslash $r to pass through $wpdb->prepare()
+	//
+	// @see: http://bbpress.trac.wordpress.org/ticket/2185/
+	// @see: http://core.trac.wordpress.org/changeset/23973/
+	$r = function_exists( 'wp_unslash' ) ? wp_unslash( $r ) : stripslashes_deep( $r );
+
+	// Prepare duplicate check query
+	$query  = $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} {$join} WHERE post_type = %s AND post_status != %s AND post_author = %d AND post_content = %s {$where}", $r['post_type'], $r['post_status'], $r['post_author'], $r['post_content'] );
+	$query .= !empty( $r['post_parent'] ) ? $wpdb->prepare( " AND post_parent = %d", $r['post_parent'] ) : '';
 	$query .= " LIMIT 1";
 	$dupe   = apply_filters( 'bbp_check_for_duplicate_query', $query, $r );
 
@@ -1250,10 +1255,10 @@ function bbp_get_public_child_last_id( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	$child_id = wp_cache_get( $cache_id, 'bbpress' );
+	$child_id = wp_cache_get( $cache_id, 'bbpress_posts' );
 	if ( empty( $child_id ) ) {
 		$child_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s' ORDER BY ID DESC LIMIT 1;", $parent_id, $post_type ) );
-		wp_cache_set( $cache_id, $child_id, 'bbpress' );
+		wp_cache_set( $cache_id, $child_id, 'bbpress_posts' );
 	}
 
 	// Filter and return
@@ -1293,10 +1298,10 @@ function bbp_get_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	$child_count = wp_cache_get( $cache_id, 'bbpress' );
+	$child_count = wp_cache_get( $cache_id, 'bbpress_posts' );
 	if ( empty( $child_count ) ) {
 		$child_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s';", $parent_id, $post_type ) );
-		wp_cache_set( $cache_id, $child_count, 'bbpress' );
+		wp_cache_set( $cache_id, $child_count, 'bbpress_posts' );
 	}
 
 	// Filter and return
@@ -1336,10 +1341,10 @@ function bbp_get_public_child_ids( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	$child_ids = wp_cache_get( $cache_id, 'bbpress' );
+	$child_ids = wp_cache_get( $cache_id, 'bbpress_posts' );
 	if ( empty( $child_ids ) ) {
 		$child_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s' ORDER BY ID DESC;", $parent_id, $post_type ) );
-		wp_cache_set( $cache_id, $child_ids, 'bbpress' );
+		wp_cache_set( $cache_id, $child_ids, 'bbpress_posts' );
 	}
 
 	// Filter and return
@@ -1397,10 +1402,10 @@ function bbp_get_all_child_ids( $parent_id = 0, $post_type = 'post' ) {
 	$post_status = "'" . join( "', '", $post_status ) . "'";
 
 	// Check for cache and set if needed
-	$child_ids = wp_cache_get( $cache_id, 'bbpress' );
+	$child_ids = wp_cache_get( $cache_id, 'bbpress_posts' );
 	if ( empty( $child_ids ) ) {
 		$child_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s' ORDER BY ID DESC;", $parent_id, $post_type ) );
-		wp_cache_set( $cache_id, $child_ids, 'bbpress' );
+		wp_cache_set( $cache_id, $child_ids, 'bbpress_posts' );
 	}
 
 	// Filter and return
@@ -1489,6 +1494,23 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 
 		// Forum/Topic/Reply Feed
 		if ( isset( $query_vars['post_type'] ) ) {
+                    
+			// Supported select query vars
+			$select_query_vars = array(
+				'p'                      => false,
+				'name'                   => false,
+				$query_vars['post_type'] => false
+			);
+
+			// Setup matched variables to select
+			foreach ( $query_vars as $key => $value ) {
+				if ( isset( $select_query_vars[$key] ) ) {
+					$select_query_vars[$key] = $value;
+				}
+			}
+
+			// Remove any empties
+			$select_query_vars = array_filter( $select_query_vars );
 
 			// What bbPress post type are we looking for feeds on?
 			switch ( $query_vars['post_type'] ) {
@@ -1500,14 +1522,13 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 					$meta_query = array();
 
 					// Single forum
-					if ( isset( $query_vars[bbp_get_forum_post_type()] ) ) {
+					if ( !empty( $select_query_vars ) ) {
 
 						// Load up our own query
-						query_posts( array(
+						query_posts( array_merge( array(
 							'post_type' => bbp_get_forum_post_type(),
-							'name'      => $query_vars[bbp_get_forum_post_type()],
 							'feed'      => true
-						) );
+						), $select_query_vars ) );
 
 						// Restrict to specific forum ID
 						$meta_query = array( array(
@@ -1527,7 +1548,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 							'feed'           => true,
 							'post_type'      => bbp_get_reply_post_type(),
 							'post_parent'    => 'any',
-							'post_status'    => join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) ),
+							'post_status'    => array( bbp_get_public_status_id(), bbp_get_closed_status_id() ),
 							'posts_per_page' => bbp_get_replies_per_rss_page(),
 							'order'          => 'DESC',
 							'meta_query'     => $meta_query
@@ -1545,7 +1566,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 							'feed'           => true,
 							'post_type'      => bbp_get_topic_post_type(),
 							'post_parent'    => bbp_get_forum_id(),
-							'post_status'    => join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) ),
+							'post_status'    => array( bbp_get_public_status_id(), bbp_get_closed_status_id() ),
 							'posts_per_page' => bbp_get_topics_per_rss_page(),
 							'order'          => 'DESC'
 						);
@@ -1557,7 +1578,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 					} else {
 
 						// Exclude private/hidden forums if not looking at single
-						if ( empty( $query_vars['forum'] ) )
+						if ( empty( $select_query_vars ) )
 							$meta_query = array( bbp_exclude_forum_ids( 'meta_query' ) );
 
 						// The query
@@ -1566,7 +1587,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 							'feed'           => true,
 							'post_type'      => array( bbp_get_reply_post_type(), bbp_get_topic_post_type() ),
 							'post_parent'    => 'any',
-							'post_status'    => join( ',', array( bbp_get_public_status_id(), bbp_get_closed_status_id() ) ),
+							'post_status'    => array( bbp_get_public_status_id(), bbp_get_closed_status_id() ),
 							'posts_per_page' => bbp_get_replies_per_rss_page(),
 							'order'          => 'DESC',
 							'meta_query'     => $meta_query
@@ -1582,14 +1603,13 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 				case bbp_get_topic_post_type() :
 
 					// Single topic
-					if ( isset( $query_vars[bbp_get_topic_post_type()] ) ) {
+					if ( !empty( $select_query_vars ) ) {
 
 						// Load up our own query
-						query_posts( array(
+						query_posts( array_merge( array(
 							'post_type' => bbp_get_topic_post_type(),
-							'name'      => $query_vars[bbp_get_topic_post_type()],
 							'feed'      => true
-						) );
+						), $select_query_vars ) );
 
 						// Output the feed
 						bbp_display_replies_feed_rss2( array( 'feed' => true ) );
@@ -1623,7 +1643,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 					);
 
 					// All replies
-					if ( !isset( $query_vars[bbp_get_reply_post_type()] ) ) {
+					if ( empty( $select_query_vars ) ) {
 						bbp_display_replies_feed_rss2( $the_query );
 					}
 
