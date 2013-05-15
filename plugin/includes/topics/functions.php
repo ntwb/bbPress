@@ -95,7 +95,7 @@ function bbp_insert_topic( $topic_data = array(), $topic_meta = array() ) {
  * @uses bbp_check_for_flood() To check for flooding
  * @uses bbp_check_for_duplicate() To check for duplicates
  * @uses bbp_get_topic_post_type() To get the topic post type
- * @uses remove_filter() To remove the custom kses filters if needed
+ * @uses remove_filter() To remove kses filters if needed
  * @uses apply_filters() Calls 'bbp_new_topic_pre_title' with the content
  * @uses apply_filters() Calls 'bbp_new_topic_pre_content' with the content
  * @uses bbPress::errors::get_error_codes() To get the {@link WP_Error} errors
@@ -153,10 +153,11 @@ function bbp_new_topic_handler( $action = '' ) {
 		$topic_author = bbp_get_current_user_id();
 	}
 
-	// Remove the custom kses filters from title and content for capable users and if the nonce is verified
+	// Remove kses filters from title and content for capable users and if the nonce is verified
 	if ( current_user_can( 'unfiltered_html' ) && !empty( $_POST['_bbp_unfiltered_html_topic'] ) && wp_create_nonce( 'bbp-unfiltered-html-topic_new' ) == $_POST['_bbp_unfiltered_html_topic'] ) {
-		remove_filter( 'bbp_new_topic_pre_title',   'wp_filter_kses'  );
-		remove_filter( 'bbp_new_topic_pre_content', 'bbp_filter_kses' );
+		remove_filter( 'bbp_new_topic_pre_title',   'wp_filter_kses'      );
+		remove_filter( 'bbp_new_topic_pre_content', 'bbp_encode_bad',  10 );
+		remove_filter( 'bbp_new_topic_pre_content', 'bbp_filter_kses', 30 );
 	}
 
 	/** Topic Title ***********************************************************/
@@ -199,26 +200,26 @@ function bbp_new_topic_handler( $action = '' ) {
 
 		// Forum is a category
 		if ( bbp_is_forum_category( $forum_id ) ) {
-			bbp_add_error( 'bbp_edit_topic_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No topics can be created in this forum.', 'bbpress' ) );
+			bbp_add_error( 'bbp_new_topic_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No topics can be created in this forum.', 'bbpress' ) );
 
 		// Forum is not a category
 		} else {
 
 			// Forum is closed and user cannot access
 			if ( bbp_is_forum_closed( $forum_id ) && !current_user_can( 'edit_forum', $forum_id ) ) {
-				bbp_add_error( 'bbp_edit_topic_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new topics.', 'bbpress' ) );
+				bbp_add_error( 'bbp_new_topic_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new topics.', 'bbpress' ) );
 			}
 
 			// Forum is private and user cannot access
 			if ( bbp_is_forum_private( $forum_id ) ) {
 				if ( !current_user_can( 'read_private_forums' ) ) {
-					bbp_add_error( 'bbp_edit_topic_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
+					bbp_add_error( 'bbp_new_topic_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
 				}
 
 			// Forum is hidden and user cannot access
 			} elseif ( bbp_is_forum_hidden( $forum_id ) ) {
 				if ( !current_user_can( 'read_hidden_forums' ) ) {
-					bbp_add_error( 'bbp_edit_topic_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
+					bbp_add_error( 'bbp_new_topic_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
 				}
 			}
 		}
@@ -406,7 +407,7 @@ function bbp_new_topic_handler( $action = '' ) {
  * @uses bbp_is_forum_category() To check if the forum is a category
  * @uses bbp_is_forum_closed() To check if the forum is closed
  * @uses bbp_is_forum_private() To check if the forum is private
- * @uses remove_filter() To remove the custom kses filters if needed
+ * @uses remove_filter() To remove kses filters if needed
  * @uses apply_filters() Calls 'bbp_edit_topic_pre_title' with the title and
  *                        topic id
  * @uses apply_filters() Calls 'bbp_edit_topic_pre_content' with the content
@@ -483,10 +484,11 @@ function bbp_edit_topic_handler( $action = '' ) {
 		return;
 	}
 
-	// Remove the custom kses filters from title and content for capable users and if the nonce is verified
+	// Remove kses filters from title and content for capable users and if the nonce is verified
 	if ( current_user_can( 'unfiltered_html' ) && !empty( $_POST['_bbp_unfiltered_html_topic'] ) && ( wp_create_nonce( 'bbp-unfiltered-html-topic_' . $topic_id ) == $_POST['_bbp_unfiltered_html_topic'] ) ) {
-		remove_filter( 'bbp_edit_topic_pre_title',   'wp_filter_kses'  );
-		remove_filter( 'bbp_edit_topic_pre_content', 'bbp_filter_kses' );
+		remove_filter( 'bbp_edit_topic_pre_title',   'wp_filter_kses'      );
+		remove_filter( 'bbp_edit_topic_pre_content', 'bbp_encode_bad',  10 );
+		remove_filter( 'bbp_edit_topic_pre_content', 'bbp_filter_kses', 30 );
 	}
 
 	/** Topic Forum ***********************************************************/
@@ -2338,7 +2340,8 @@ function bbp_update_topic_reply_count_hidden( $topic_id = 0, $reply_count = 0 ) 
 
 	// Get replies of topic
 	if ( empty( $reply_count ) ) {
-		$reply_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( '" . join( '\',\'', array( bbp_get_trash_status_id(), bbp_get_spam_status_id() ) ) . "') AND post_type = '%s';", $topic_id, bbp_get_reply_post_type() ) );
+		$post_status = "'" . implode( "','", array( bbp_get_trash_status_id(), bbp_get_spam_status_id() ) ) . "'";
+		$reply_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s';", $topic_id, bbp_get_reply_post_type() ) );
 	}
 
 	update_post_meta( $topic_id, '_bbp_reply_count_hidden', (int) $reply_count );

@@ -87,7 +87,7 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
  * @uses bbp_set_current_anonymous_user_data() To set the anonymous user
  *                                                cookies
  * @uses is_wp_error() To check if the value retrieved is a {@link WP_Error}
- * @uses remove_filter() To remove the custom kses filters if needed
+ * @uses remove_filter() To remove kses filters if needed
  * @uses esc_attr() For sanitization
  * @uses bbp_check_for_flood() To check for flooding
  * @uses bbp_check_for_duplicate() To check for duplicates
@@ -165,12 +165,43 @@ function bbp_new_reply_handler( $action = '' ) {
 		bbp_add_error( 'bbp_reply_forum_id', __( '<strong>ERROR</strong>: Forum ID is missing.', 'bbpress' ) );
 	}
 
+	// Forum exists
+	if ( !empty( $forum_id ) ) {
+
+		// Forum is a category
+		if ( bbp_is_forum_category( $forum_id ) ) {
+			bbp_add_error( 'bbp_new_reply_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No replies can be created in this forum.', 'bbpress' ) );
+
+		// Forum is not a category
+		} else {
+
+			// Forum is closed and user cannot access
+			if ( bbp_is_forum_closed( $forum_id ) && !current_user_can( 'edit_forum', $forum_id ) ) {
+				bbp_add_error( 'bbp_new_reply_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new replies.', 'bbpress' ) );
+			}
+
+			// Forum is private and user cannot access
+			if ( bbp_is_forum_private( $forum_id ) ) {
+				if ( !current_user_can( 'read_private_forums' ) ) {
+					bbp_add_error( 'bbp_new_reply_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new replies in it.', 'bbpress' ) );
+				}
+
+			// Forum is hidden and user cannot access
+			} elseif ( bbp_is_forum_hidden( $forum_id ) ) {
+				if ( !current_user_can( 'read_hidden_forums' ) ) {
+					bbp_add_error( 'bbp_new_reply_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new replies in it.', 'bbpress' ) );
+				}
+			}
+		}
+	}
+
 	/** Unfiltered HTML *******************************************************/
 
-	// Remove the custom kses filters from title and content for capable users and if the nonce is verified
+	// Remove kses filters from title and content for capable users and if the nonce is verified
 	if ( current_user_can( 'unfiltered_html' ) && !empty( $_POST['_bbp_unfiltered_html_reply'] ) && wp_create_nonce( 'bbp-unfiltered-html-reply_' . $topic_id ) == $_POST['_bbp_unfiltered_html_reply'] ) {
-		remove_filter( 'bbp_new_reply_pre_title',   'wp_filter_kses'  );
-		remove_filter( 'bbp_new_reply_pre_content', 'bbp_filter_kses' );
+		remove_filter( 'bbp_new_reply_pre_title',   'wp_filter_kses'      );
+		remove_filter( 'bbp_new_reply_pre_content', 'bbp_encode_bad',  10 );
+		remove_filter( 'bbp_new_reply_pre_content', 'bbp_filter_kses', 30 );
 	}
 
 	/** Reply Title ***********************************************************/
@@ -377,7 +408,7 @@ function bbp_new_reply_handler( $action = '' ) {
  * @uses current_user_can() To check if the current user can edit that reply
  * @uses bbp_filter_anonymous_post_data() To filter anonymous data
  * @uses is_wp_error() To check if the value retrieved is a {@link WP_Error}
- * @uses remove_filter() To remove the custom kses filters if needed
+ * @uses remove_filter() To remove kses filters if needed
  * @uses esc_attr() For sanitization
  * @uses apply_filters() Calls 'bbp_edit_reply_pre_title' with the title and
  *                       reply id
@@ -455,10 +486,11 @@ function bbp_edit_reply_handler( $action = '' ) {
 		}
 	}
 
-	// Remove the custom kses filters from title and content for capable users and if the nonce is verified
+	// Remove kses filters from title and content for capable users and if the nonce is verified
 	if ( current_user_can( 'unfiltered_html' ) && !empty( $_POST['_bbp_unfiltered_html_reply'] ) && wp_create_nonce( 'bbp-unfiltered-html-reply_' . $reply_id ) == $_POST['_bbp_unfiltered_html_reply'] ) {
-		remove_filter( 'bbp_edit_reply_pre_title',   'wp_filter_kses'  );
-		remove_filter( 'bbp_edit_reply_pre_content', 'bbp_filter_kses' );
+		remove_filter( 'bbp_edit_reply_pre_title',   'wp_filter_kses'      );
+		remove_filter( 'bbp_edit_reply_pre_content', 'bbp_encode_bad',  10 );
+		remove_filter( 'bbp_edit_reply_pre_content', 'bbp_filter_kses', 30 );
 	}
 
 	/** Reply Topic ***********************************************************/
@@ -473,20 +505,30 @@ function bbp_edit_reply_handler( $action = '' ) {
 	if ( !empty( $forum_id ) && ( $forum_id !== bbp_get_reply_forum_id( $reply_id ) ) ) {
 
 		// Forum is a category
-		if ( bbp_is_forum_category( $forum_id ) )
-			bbp_add_error( 'bbp_edit_reply_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No topics or replies can be created in it.', 'bbpress' ) );
+		if ( bbp_is_forum_category( $forum_id ) ) {
+			bbp_add_error( 'bbp_edit_reply_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No replies can be created in this forum.', 'bbpress' ) );
 
-		// Forum is closed and user cannot access
-		if ( bbp_is_forum_closed( $forum_id ) && !current_user_can( 'edit_forum', $forum_id ) )
-			bbp_add_error( 'bbp_edit_reply_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new topics and replies.', 'bbpress' ) );
+		// Forum is not a category
+		} else {
 
-		// Forum is private and user cannot access
-		if ( bbp_is_forum_private( $forum_id ) && !current_user_can( 'read_private_forums' ) )
-			bbp_add_error( 'bbp_edit_reply_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new replies in it.', 'bbpress' ) );
+			// Forum is closed and user cannot access
+			if ( bbp_is_forum_closed( $forum_id ) && !current_user_can( 'edit_forum', $forum_id ) ) {
+				bbp_add_error( 'bbp_edit_reply_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new replies.', 'bbpress' ) );
+			}
 
-		// Forum is hidden and user cannot access
-		if ( bbp_is_forum_hidden( $forum_id ) && !current_user_can( 'read_hidden_forums' ) )
-			bbp_add_error( 'bbp_edit_reply_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new replies in it.', 'bbpress' ) );
+			// Forum is private and user cannot access
+			if ( bbp_is_forum_private( $forum_id ) ) {
+				if ( !current_user_can( 'read_private_forums' ) ) {
+					bbp_add_error( 'bbp_edit_reply_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new replies in it.', 'bbpress' ) );
+				}
+
+			// Forum is hidden and user cannot access
+			} elseif ( bbp_is_forum_hidden( $forum_id ) ) {
+				if ( !current_user_can( 'read_hidden_forums' ) ) {
+					bbp_add_error( 'bbp_edit_reply_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new replies in it.', 'bbpress' ) );
+				}
+			}
+		}
 	}
 
 	/** Reply Title ***********************************************************/

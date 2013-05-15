@@ -969,7 +969,10 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
 	// Merge WP classes with bbPress classes and remove any duplicates
 	$classes = array_unique( array_merge( (array) $bbp_classes, (array) $wp_classes ) );
 
-	return apply_filters( 'bbp_get_the_body_class', $classes, $bbp_classes, $wp_classes, $custom_classes );
+	// Deprecated filter (do not use)
+	$classes = apply_filters( 'bbp_get_the_body_class', $classes, $bbp_classes, $wp_classes, $custom_classes );
+
+	return apply_filters( 'bbp_body_class', $classes, $bbp_classes, $wp_classes, $custom_classes );
 }
 
 /**
@@ -1677,11 +1680,18 @@ function bbp_the_content( $args = array() ) {
 			'tabindex'          => bbp_get_tab_index(),
 			'tabfocus_elements' => 'bbp_topic_title,bbp_topic_tags',
 			'editor_class'      => 'bbp-the-content',
-			'tinymce'           => true,
+			'tinymce'           => false,
 			'teeny'             => true,
 			'quicktags'         => true,
 			'dfw'               => false
 		), 'get_the_content' );
+
+		// If using tinymce, remove our escaping and trust tinymce
+		if ( bbp_use_wp_editor() && ( true === $r['tinymce'] ) ) {
+			remove_filter( 'bbp_get_form_forum_content', 'esc_textarea' );
+			remove_filter( 'bbp_get_form_topic_content', 'esc_textarea' );
+			remove_filter( 'bbp_get_form_reply_content', 'esc_textarea' );
+		}
 
 		// Assume we are not editing
 		$post_content = call_user_func( 'bbp_get_form_' . $r['context'] . '_content' );
@@ -1704,7 +1714,7 @@ function bbp_the_content( $args = array() ) {
 			add_filter( 'quicktags_settings', 'bbp_get_quicktags_settings' );
 
 			// Output the editor
-			wp_editor( htmlspecialchars_decode( $post_content, ENT_QUOTES ), 'bbp_' . $r['context'] . '_content', array(
+			wp_editor( $post_content, 'bbp_' . $r['context'] . '_content', array(
 				'wpautop'           => $r['wpautop'],
 				'media_buttons'     => $r['media_buttons'],
 				'textarea_rows'     => $r['textarea_rows'],

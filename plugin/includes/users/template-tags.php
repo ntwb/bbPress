@@ -1439,11 +1439,11 @@ function bbp_author_link( $args = '' ) {
 				foreach ( $author_links as $link_text ) {
 					$author_link[] = sprintf( '<a href="%1$s"%2$s>%3$s</a>', $author_url, $link_title, $link_text );
 				}
-				$author_link = join( '&nbsp;', $author_link );
+				$author_link = implode( '&nbsp;', $author_link );
 
 			// No links if anonymous
 			} else {
-				$author_link = join( '&nbsp;', $author_links );
+				$author_link = implode( '&nbsp;', $author_links );
 			}
 
 		// No post so link is empty
@@ -1645,7 +1645,7 @@ function bbp_get_forums_for_current_user( $args = array() ) {
 		$hidden  = bbp_get_hidden_forum_ids();
 
 	// Merge private and hidden forums together and remove any empties
-	$forum_ids = (array) array_filter( array_merge( $private, $hidden ) );
+	$forum_ids = (array) array_filter( wp_parse_id_list( array_merge( $private, $hidden ) ) );
 
 	// There are forums that need to be ex
 	if ( !empty( $forum_ids ) )

@@ -93,7 +93,7 @@ function bbp_insert_forum( $forum_data = array(), $forum_meta = array() ) {
  * @uses bbp_check_for_flood() To check for flooding
  * @uses bbp_check_for_duplicate() To check for duplicates
  * @uses bbp_get_forum_post_type() To get the forum post type
- * @uses remove_filter() To remove 'wp_filter_kses' filters if needed
+ * @uses remove_filter() To remove kses filters if needed
  * @uses apply_filters() Calls 'bbp_new_forum_pre_title' with the content
  * @uses apply_filters() Calls 'bbp_new_forum_pre_content' with the content
  * @uses bbPress::errors::get_error_codes() To get the {@link WP_Error} errors
@@ -135,10 +135,11 @@ function bbp_new_forum_handler( $action = '' ) {
 	// Forum author is current user
 	$forum_author = bbp_get_current_user_id();
 
-	// Remove wp_filter_kses filters from title and content for capable users and if the nonce is verified
+	// Remove kses filters from title and content for capable users and if the nonce is verified
 	if ( current_user_can( 'unfiltered_html' ) && !empty( $_POST['_bbp_unfiltered_html_forum'] ) && wp_create_nonce( 'bbp-unfiltered-html-forum_new' ) == $_POST['_bbp_unfiltered_html_forum'] ) {
-		remove_filter( 'bbp_new_forum_pre_title',   'wp_filter_kses' );
-		remove_filter( 'bbp_new_forum_pre_content', 'wp_filter_kses' );
+		remove_filter( 'bbp_new_forum_pre_title',   'wp_filter_kses'      );
+		remove_filter( 'bbp_new_forum_pre_content', 'bbp_encode_bad',  10 );
+		remove_filter( 'bbp_new_forum_pre_content', 'bbp_filter_kses', 30 );
 	}
 
 	/** Forum Title ***********************************************************/
@@ -347,7 +348,7 @@ function bbp_new_forum_handler( $action = '' ) {
  * @uses bbp_is_forum_category() To check if the forum is a category
  * @uses bbp_is_forum_closed() To check if the forum is closed
  * @uses bbp_is_forum_private() To check if the forum is private
- * @uses remove_filter() To remove 'wp_filter_kses' filters if needed
+ * @uses remove_filter() To remove kses filters if needed
  * @uses apply_filters() Calls 'bbp_edit_forum_pre_title' with the title and
  *                        forum id
  * @uses apply_filters() Calls 'bbp_edit_forum_pre_content' with the content
@@ -405,10 +406,11 @@ function bbp_edit_forum_handler( $action = '' ) {
 		return;
 	}
 
-	// Remove wp_filter_kses filters from title and content for capable users and if the nonce is verified
+	// Remove kses filters from title and content for capable users and if the nonce is verified
 	if ( current_user_can( 'unfiltered_html' ) && !empty( $_POST['_bbp_unfiltered_html_forum'] ) && ( wp_create_nonce( 'bbp-unfiltered-html-forum_' . $forum_id ) == $_POST['_bbp_unfiltered_html_forum'] ) ) {
-		remove_filter( 'bbp_edit_forum_pre_title',   'wp_filter_kses' );
-		remove_filter( 'bbp_edit_forum_pre_content', 'wp_filter_kses' );
+		remove_filter( 'bbp_edit_forum_pre_title',   'wp_filter_kses'      );
+		remove_filter( 'bbp_edit_forum_pre_content', 'bbp_encode_bad',  10 );
+		remove_filter( 'bbp_edit_forum_pre_content', 'bbp_filter_kses', 30 );
 	}
 
 	/** Forum Parent ***********************************************************/
@@ -1359,8 +1361,10 @@ function bbp_update_forum_topic_count_hidden( $forum_id = 0, $topic_count = 0 ) 
 	if ( !empty( $forum_id ) ) {
 
 		// Get topics of forum
-		if ( empty( $topic_count ) )
-			$topic_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( '" . join( '\',\'', array( bbp_get_trash_status_id(), bbp_get_spam_status_id() ) ) . "') AND post_type = '%s';", $forum_id, bbp_get_topic_post_type() ) );
+		if ( empty( $topic_count ) ) {
+			$post_status = "'" . implode( "','", array( bbp_get_trash_status_id(), bbp_get_spam_status_id() ) ) . "'";
+			$topic_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = '%s';", $forum_id, bbp_get_topic_post_type() ) );
+		}
 
 		// Update the count
 		update_post_meta( $forum_id, '_bbp_topic_count_hidden', (int) $topic_count );
@@ -1407,7 +1411,8 @@ function bbp_update_forum_reply_count( $forum_id = 0 ) {
 	// Don't count replies if the forum is a category
 	$topic_ids = bbp_forum_query_topic_ids( $forum_id );
 	if ( !empty( $topic_ids ) ) {
-		$reply_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent IN ( " . join( ',', $topic_ids ) . " ) AND post_status = '%s' AND post_type = '%s';", bbp_get_public_status_id(), bbp_get_reply_post_type() ) );
+		$topic_ids   = implode( ',', wp_parse_id_list( $topic_ids ) );
+		$reply_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_parent IN ( {$topic_ids} ) AND post_status = '%s' AND post_type = '%s';", bbp_get_public_status_id(), bbp_get_reply_post_type() ) );
 	} else {
 		$reply_count = 0;
 	}
@@ -1572,7 +1577,7 @@ function bbp_exclude_forum_ids( $type = 'string' ) {
 			$hidden  = bbp_get_hidden_forum_ids();
 
 		// Merge private and hidden forums together
-		$forum_ids = (array) array_filter( array_merge( $private, $hidden ) );
+		$forum_ids = (array) array_filter( wp_parse_id_list( array_merge( $private, $hidden ) ) );
 
 		// There are forums that need to be excluded
 		if ( !empty( $forum_ids ) ) {
@@ -1796,14 +1801,15 @@ function bbp_forum_query_last_reply_id( $forum_id, $topic_ids = 0 ) {
 	$cache_id = 'bbp_get_forum_' . $forum_id . '_reply_id';
 	$reply_id = (int) wp_cache_get( $cache_id, 'bbpress_posts' );
 
-	if ( empty( $reply_id ) ) {
+	if ( false === $reply_id ) {
 
 		if ( empty( $topic_ids ) ) {
 			$topic_ids = bbp_forum_query_topic_ids( $forum_id );
 		}
 
 		if ( !empty( $topic_ids ) ) {
-			$reply_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent IN ( " . join( ',', $topic_ids ) . " ) AND post_status = '%s' AND post_type = '%s' ORDER BY ID DESC LIMIT 1;", bbp_get_public_status_id(), bbp_get_reply_post_type() ) );
+			$topic_ids = implode( ',', wp_parse_id_list( $topic_ids ) );
+			$reply_id  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_parent IN ( {$topic_ids} ) AND post_status = '%s' AND post_type = '%s' ORDER BY ID DESC LIMIT 1;", bbp_get_public_status_id(), bbp_get_reply_post_type() ) );
 			wp_cache_set( $cache_id, $reply_id, 'bbpress_posts' ); // May be (int) 0
 		} else {
 			wp_cache_set( $cache_id, '0', 'bbpress_posts' );
@@ -2019,7 +2025,7 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
 		return;
 
 	// Allowed post statuses to pre-trash
-	$post_stati = join( ',', array(
+	$post_stati = implode( ',', array(
 		bbp_get_public_status_id(),
 		bbp_get_closed_status_id(),
 		bbp_get_pending_status_id()

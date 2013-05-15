@@ -221,20 +221,20 @@ function bbp_get_user_reply_count_raw( $user_id = 0 ) {
  * @return array|bool Results if the topic has any favoriters, otherwise false
  */
 function bbp_get_topic_favoriters( $topic_id = 0 ) {
+	$topic_id = bbp_get_topic_id( $topic_id );
 	if ( empty( $topic_id ) )
 		return;
 
 	global $wpdb;
 
-	// Get the users who have favorited the topic
 	$key   = $wpdb->prefix . '_bbp_favorites';
-	$users = $wpdb->get_col( "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$key}' and FIND_IN_SET('{$topic_id}', meta_value) > 0" );
-	$users = apply_filters( 'bbp_get_topic_favoriters', $users, $topic_id );
+	$users = wp_cache_get( 'bbp_get_topic_favoriters_' . $topic_id, 'bbpress_users' );
+	if ( false === $users ) {
+		$users = $wpdb->get_col( "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$key}' and FIND_IN_SET('{$topic_id}', meta_value) > 0" );
+		wp_cache_set( 'bbp_get_topic_favoriters_' . $topic_id, $users, 'bbpress_users' );
+	}
 
-	if ( !empty( $users ) )
-		return $users;
-
-	return false;
+	return apply_filters( 'bbp_get_topic_favoriters', $users );
 }
 
 /**
@@ -257,14 +257,12 @@ function bbp_get_user_favorites( $user_id = 0 ) {
 	// If user has favorites, load them
 	$favorites = bbp_get_user_favorites_topic_ids( $user_id );
 	if ( !empty( $favorites ) ) {
-
-		// Setup the topics query
-		$topics_query = bbp_has_topics( array( 'post__in' => $favorites ) );
-
-		return apply_filters( 'bbp_get_user_favorites', $topics_query, $user_id );
+		$query = bbp_has_topics( array( 'post__in' => $favorites ) );
+	} else {
+		$query = false;
 	}
 
-	return false;
+	return apply_filters( 'bbp_get_user_favorites', $query, $user_id, $favorites );
 }
 
 /**
@@ -284,11 +282,10 @@ function bbp_get_user_favorites_topic_ids( $user_id = 0 ) {
 	if ( empty( $user_id ) )
 		return false;
 
-	$favorites = (string) get_user_option( '_bbp_favorites', $user_id );
-	$favorites = (array) explode( ',', $favorites );
-	$favorites = array_filter( $favorites );
+	$favorites = get_user_option( '_bbp_favorites', $user_id );
+	$favorites = array_filter( wp_parse_id_list( $favorites ) );
 
-	return apply_filters( 'bbp_get_user_favorites_topic_ids', $favorites, $user_id );
+	return (array) apply_filters( 'bbp_get_user_favorites_topic_ids', $favorites, $user_id );
 }
 
 /**
@@ -356,15 +353,14 @@ function bbp_add_user_favorite( $user_id = 0, $topic_id = 0 ) {
 	if ( empty( $user_id ) || empty( $topic_id ) )
 		return false;
 
-	$favorites = (array) bbp_get_user_favorites_topic_ids( $user_id );
-	$topic     = bbp_get_topic( $topic_id );
+	$topic = bbp_get_topic( $topic_id );
 	if ( empty( $topic ) )
 		return false;
 
+	$favorites = bbp_get_user_favorites_topic_ids( $user_id );
 	if ( !in_array( $topic_id, $favorites ) ) {
 		$favorites[] = $topic_id;
-		$favorites   = array_filter( $favorites );
-		$favorites   = (string) implode( ',', $favorites );
+		$favorites   = implode( ',', wp_parse_id_list( array_filter( $favorites ) ) );
 		update_user_option( $user_id, '_bbp_favorites', $favorites );
 	}
 
@@ -401,7 +397,7 @@ function bbp_remove_user_favorite( $user_id, $topic_id ) {
 		$favorites = array_filter( $favorites );
 
 		if ( !empty( $favorites ) ) {
-			$favorites = implode( ',', $favorites );
+			$favorites = implode( ',', wp_parse_id_list( $favorites ) );
 			update_user_option( $user_id, '_bbp_favorites', $favorites );
 		} else {
 			delete_user_option( $user_id, '_bbp_favorites' );
@@ -526,23 +522,20 @@ function bbp_favorites_handler( $action = '' ) {
  * @return array|bool Results if the topic has any subscribers, otherwise false
  */
 function bbp_get_topic_subscribers( $topic_id = 0 ) {
-	if ( empty( $topic_id ) ) return;
+	$topic_id = bbp_get_topic_id( $topic_id );
+	if ( empty( $topic_id ) )
+		return;
 
 	global $wpdb;
 
 	$key   = $wpdb->prefix . '_bbp_subscriptions';
 	$users = wp_cache_get( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress_users' );
-	if ( empty( $users ) ) {
+	if ( false === $users ) {
 		$users = $wpdb->get_col( "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '{$key}' and FIND_IN_SET('{$topic_id}', meta_value) > 0" );
 		wp_cache_set( 'bbp_get_topic_subscribers_' . $topic_id, $users, 'bbpress_users' );
 	}
 
-	if ( !empty( $users ) ) {
-		$users = apply_filters( 'bbp_get_topic_subscribers', $users );
-		return $users;
-	}
-
-	return false;
+	return apply_filters( 'bbp_get_topic_subscribers', $users );
 }
 
 /**
@@ -568,10 +561,11 @@ function bbp_get_user_subscriptions( $user_id = 0 ) {
 	$subscriptions = bbp_get_user_subscribed_topic_ids( $user_id );
 	if ( !empty( $subscriptions ) ) {
 		$query = bbp_has_topics( array( 'post__in' => $subscriptions ) );
-		return apply_filters( 'bbp_get_user_subscriptions', $query, $user_id );
+	} else {
+		$query = false;
 	}
 
-	return false;
+	return apply_filters( 'bbp_get_user_subscriptions', $query, $user_id );
 }
 
 /**
@@ -591,11 +585,10 @@ function bbp_get_user_subscribed_topic_ids( $user_id = 0 ) {
 	if ( empty( $user_id ) )
 		return false;
 
-	$subscriptions = (string) get_user_option( '_bbp_subscriptions', $user_id );
-	$subscriptions = (array) explode( ',', $subscriptions );
-	$subscriptions = array_filter( $subscriptions );
+	$subscriptions = get_user_option( '_bbp_subscriptions', $user_id );
+	$subscriptions = array_filter( wp_parse_id_list( $subscriptions ) );
 
-	return apply_filters( 'bbp_get_user_subscribed_topic_ids', $subscriptions, $user_id );
+	return (array) apply_filters( 'bbp_get_user_subscribed_topic_ids', $subscriptions, $user_id );
 }
 
 /**
@@ -665,19 +658,17 @@ function bbp_add_user_subscription( $user_id = 0, $topic_id = 0 ) {
 	if ( empty( $user_id ) || empty( $topic_id ) )
 		return false;
 
-	$subscriptions = (array) bbp_get_user_subscribed_topic_ids( $user_id );
-
 	$topic = bbp_get_topic( $topic_id );
 	if ( empty( $topic ) )
 		return false;
 
+	$subscriptions = (array) bbp_get_user_subscribed_topic_ids( $user_id );
 	if ( !in_array( $topic_id, $subscriptions ) ) {
 		$subscriptions[] = $topic_id;
-		$subscriptions   = array_filter( $subscriptions );
-		$subscriptions   = (string) implode( ',', $subscriptions );
+		$subscriptions   = implode( ',', wp_parse_id_list( array_filter( $subscriptions ) ) );
 		update_user_option( $user_id, '_bbp_subscriptions', $subscriptions );
 
-		wp_cache_delete( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress' );
+		wp_cache_delete( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress_users' );
 	}
 
 	do_action( 'bbp_add_user_subscription', $user_id, $topic_id );
@@ -715,13 +706,13 @@ function bbp_remove_user_subscription( $user_id, $topic_id ) {
 		$subscriptions = array_filter( $subscriptions );
 
 		if ( !empty( $subscriptions ) ) {
-			$subscriptions = implode( ',', $subscriptions );
+			$subscriptions = implode( ',', wp_parse_id_list( $subscriptions ) );
 			update_user_option( $user_id, '_bbp_subscriptions', $subscriptions );
 		} else {
 			delete_user_option( $user_id, '_bbp_subscriptions' );
 		}
 
-		wp_cache_delete( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress' );
+		wp_cache_delete( 'bbp_get_topic_subscribers_' . $topic_id, 'bbpress_users' );
 	}
 
 	do_action( 'bbp_remove_user_subscription', $user_id, $topic_id );
