@@ -145,12 +145,13 @@ function bbp_is_forum( $post_id = 0 ) {
  * @return bool
  */
 function bbp_is_forum_archive() {
+	global $wp_query;
 
 	// Default to false
 	$retval = false;
 
 	// In forum archive
-	if ( is_post_type_archive( bbp_get_forum_post_type() ) || bbp_is_query_name( 'bbp_forum_archive' ) )
+	if ( is_post_type_archive( bbp_get_forum_post_type() ) || bbp_is_query_name( 'bbp_forum_archive' ) || !empty( $wp_query->bbp_show_topics_on_root ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_forum_archive', $retval );
@@ -805,10 +806,40 @@ function bbp_is_search() {
 		$retval = true;
 
 	// Check $_GET
-	if ( empty( $retval ) && isset( $_GET[bbp_get_search_rewrite_id()] ) )
+	if ( empty( $retval ) && isset( $_REQUEST[ bbp_get_search_rewrite_id() ] ) && empty( $_REQUEST[ bbp_get_search_rewrite_id() ] ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_search', $retval );
+}
+
+/**
+ * Check if current page is a search results page
+ *
+ * @since bbPress (r4919)
+ *
+ * @global WP_Query $wp_query To check if WP_Query::bbp_is_search is true
+ * @uses bbp_is_query_name() To get the query name
+ * @return bool Is it a search page?
+ */
+function bbp_is_search_results() {
+	global $wp_query;
+
+	// Assume false
+	$retval = false;
+
+	// Check query
+	if ( !empty( $wp_query->bbp_search_terms ) )
+		$retval = true;
+
+	// Check query name
+	if ( empty( $retval ) && bbp_is_query_name( 'bbp_search_results' ) )
+		$retval = true;
+
+	// Check $_REQUEST
+	if ( empty( $retval ) && !empty( $_REQUEST[bbp_get_search_rewrite_id()] ) )
+		$retval = true;
+
+	return (bool) apply_filters( 'bbp_is_search_results', $retval );
 }
 
 /**
@@ -957,6 +988,10 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
 	} elseif ( bbp_is_search() ) {
 		$bbp_classes[] = 'bbp-search';
 		$bbp_classes[] = 'forum-search';
+
+	} elseif ( bbp_is_search_results() ) {
+		$bbp_classes[] = 'bbp-search-results';
+		$bbp_classes[] = 'forum-search-results';
 	}
 
 	/** Clean up **************************************************************/
@@ -1073,6 +1108,9 @@ function is_bbpress() {
 	/** Search ****************************************************************/
 
 	} elseif ( bbp_is_search() ) {
+		$retval = true;
+
+	} elseif ( bbp_is_search_results() ) {
 		$retval = true;
 	}
 
@@ -2271,7 +2309,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// Search
 		} elseif ( bbp_is_search() && bbp_get_search_terms() ) {
-			$crumbs[] = '<a href="' . home_url( bbp_get_search_slug() ) . '" class="bbp-breadcrumb-search">' . __( 'Search', 'bbpress' ) . '</a>';
+			$crumbs[] = '<a href="' . bbp_get_search_url() . '" class="bbp-breadcrumb-search">' . __( 'Search', 'bbpress' ) . '</a>';
 		}
 
 		/** Current ***********************************************************/
