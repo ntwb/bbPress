@@ -95,9 +95,6 @@ function bbp_get_caps_for_role( $role = '' ) {
 				// Forum caps
 				'publish_forums'        => true,
 				'edit_forums'           => true,
-				'edit_others_forums'    => false,
-				'delete_forums'         => false,
-				'delete_others_forums'  => false,
 				'read_private_forums'   => true,
 				'read_hidden_forums'    => true,
 
@@ -132,41 +129,6 @@ function bbp_get_caps_for_role( $role = '' ) {
 
 				// Primary caps
 				'spectate'              => true,
-				'participate'           => false,
-				'moderate'              => false,
-				'throttle'              => false,
-				'view_trash'            => false,
-
-				// Forum caps
-				'publish_forums'        => false,
-				'edit_forums'           => false,
-				'edit_others_forums'    => false,
-				'delete_forums'         => false,
-				'delete_others_forums'  => false,
-				'read_private_forums'   => false,
-				'read_hidden_forums'    => false,
-
-				// Topic caps
-				'publish_topics'        => false,
-				'edit_topics'           => false,
-				'edit_others_topics'    => false,
-				'delete_topics'         => false,
-				'delete_others_topics'  => false,
-				'read_private_topics'   => false,
-
-				// Reply caps
-				'publish_replies'       => false,
-				'edit_replies'          => false,
-				'edit_others_replies'   => false,
-				'delete_replies'        => false,
-				'delete_others_replies' => false,
-				'read_private_replies'  => false,
-
-				// Topic tag caps
-				'manage_topic_tags'     => false,
-				'edit_topic_tags'       => false,
-				'delete_topic_tags'     => false,
-				'assign_topic_tags'     => false,
 			);
 
 			break;
@@ -224,39 +186,19 @@ function bbp_get_caps_for_role( $role = '' ) {
 				// Primary caps
 				'spectate'              => true,
 				'participate'           => true,
-				'moderate'              => false,
-				'throttle'              => false,
-				'view_trash'            => false,
 
 				// Forum caps
-				'publish_forums'        => false,
-				'edit_forums'           => false,
-				'edit_others_forums'    => false,
-				'delete_forums'         => false,
-				'delete_others_forums'  => false,
 				'read_private_forums'   => true,
-				'read_hidden_forums'    => false,
 
 				// Topic caps
 				'publish_topics'        => true,
 				'edit_topics'           => true,
-				'edit_others_topics'    => false,
-				'delete_topics'         => false,
-				'delete_others_topics'  => false,
-				'read_private_topics'   => false,
 
 				// Reply caps
 				'publish_replies'       => true,
 				'edit_replies'          => true,
-				'edit_others_replies'   => false,
-				'delete_replies'        => false,
-				'delete_others_replies' => false,
-				'read_private_replies'  => false,
 
 				// Topic tag caps
-				'manage_topic_tags'     => false,
-				'edit_topic_tags'       => false,
-				'delete_topic_tags'     => false,
 				'assign_topic_tags'     => true,
 			);
 
@@ -274,7 +216,7 @@ function bbp_get_caps_for_role( $role = '' ) {
 function bbp_add_caps() {
 
 	// Loop through available roles and add caps
-	foreach( bbp_get_wp_roles()->role_objects as $role ) {
+	foreach ( bbp_get_wp_roles()->role_objects as $role ) {
 		foreach ( bbp_get_caps_for_role( $role->name ) as $cap => $value ) {
 			$role->add_cap( $cap, $value );
 		}
@@ -291,7 +233,7 @@ function bbp_add_caps() {
 function bbp_remove_caps() {
 
 	// Loop through available roles and remove caps
-	foreach( bbp_get_wp_roles()->role_objects as $role ) {
+	foreach ( bbp_get_wp_roles()->role_objects as $role ) {
 		foreach ( array_keys( bbp_get_caps_for_role( $role->name ) ) as $cap ) {
 			$role->remove_cap( $cap );
 		}
@@ -331,7 +273,7 @@ function bbp_get_wp_roles() {
 function bbp_add_forums_roles() {
 	$wp_roles = bbp_get_wp_roles();
 
-	foreach( bbp_get_dynamic_roles() as $role_id => $details ) {
+	foreach ( bbp_get_dynamic_roles() as $role_id => $details ) {
 		$wp_roles->roles[$role_id]        = $details;
 		$wp_roles->role_objects[$role_id] = new WP_Role( $role_id, $details['capabilities'] );
 		$wp_roles->role_names[$role_id]   = $details['name'];
@@ -381,7 +323,7 @@ function bbp_filter_user_roles_option() {
  * @return array Combined array of database roles and dynamic bbPress roles
  */
 function _bbp_reinit_dynamic_roles( $roles = array() ) {
-	foreach( bbp_get_dynamic_roles() as $role_id => $details ) {
+	foreach ( bbp_get_dynamic_roles() as $role_id => $details ) {
 		$roles[$role_id] = $details;
 	}
 	return $roles;
@@ -474,7 +416,7 @@ function bbp_filter_blog_editable_roles( $all_roles = array() ) {
 		foreach ( array_keys( $all_roles ) as $wp_role ) {
 
 			// If keys match, unset
-			if ( $wp_role == $bbp_role ) {
+			if ( $wp_role === $bbp_role ) {
 				unset( $all_roles[$wp_role] );
 			}
 		}

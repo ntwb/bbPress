@@ -33,17 +33,17 @@ function bbp_admin_repair() {
 
 		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( __( 'Repair Forums', 'bbpress' ) ); ?></h2>
 
-		<p><?php _e( 'bbPress keeps track of relationships between forums, topics, replies, and topic tags, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
-		<p class="description"><?php _e( 'Some of these tools create substantial database overhead. Avoid running more than 1 repair job at a time.', 'bbpress' ); ?></p>
+		<p><?php esc_html_e( 'bbPress keeps track of relationships between forums, topics, replies, and topic tags, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Avoid running more than 1 repair job at a time.', 'bbpress' ); ?></p>
 
 		<form class="settings" method="post" action="">
 			<table class="form-table">
 				<tbody>
 					<tr valign="top">
-						<th scope="row"><?php _e( 'Relationships to Repair:', 'bbpress' ) ?></th>
+						<th scope="row"><?php esc_html_e( 'Relationships to Repair:', 'bbpress' ) ?></th>
 						<td>
 							<fieldset>
-								<legend class="screen-reader-text"><span><?php _e( 'Repair', 'bbpress' ) ?></span></legend>
+								<legend class="screen-reader-text"><span><?php esc_html_e( 'Repair', 'bbpress' ) ?></span></legend>
 
 								<?php foreach ( bbp_admin_repair_list() as $item ) : ?>
 
@@ -90,7 +90,7 @@ function bbp_admin_repair_handler() {
 	wp_cache_flush();
 
 	foreach ( (array) bbp_admin_repair_list() as $item ) {
-		if ( isset( $item[2] ) && isset( $_POST[$item[0]] ) && 1 == $_POST[$item[0]] && is_callable( $item[2] ) ) {
+		if ( isset( $item[2] ) && isset( $_POST[$item[0]] ) && 1 === absint( $_POST[$item[0]] ) && is_callable( $item[2] ) ) {
 			$messages[] = call_user_func( $item[2] );
 		}
 	}
@@ -401,7 +401,7 @@ function bbp_admin_repair_group_forum_relationship() {
 	if ( ! empty( $posts ) ) {
 
 		// Rename 'Default Forum'  since it's now visible in sitewide forums
-		if ( 'Default Forum' == $posts[0]->post_title ) {
+		if ( 'Default Forum' === $posts[0]->post_title ) {
 			wp_update_post( array(
 				'ID'         => $posts[0]->ID,
 				'post_title' => __( 'Group Forums', 'bbpress' ),
@@ -449,7 +449,7 @@ function bbp_admin_repair_forum_topic_count() {
 
 	$forums = get_posts( array( 'post_type' => bbp_get_forum_post_type(), 'numberposts' => -1 ) );
 	if ( !empty( $forums ) ) {
-		foreach( $forums as $forum ) {
+		foreach ( $forums as $forum ) {
 			bbp_update_forum_topic_count( $forum->ID );
 		}
 	} else {
@@ -483,7 +483,7 @@ function bbp_admin_repair_forum_reply_count() {
 
 	$forums = get_posts( array( 'post_type' => bbp_get_forum_post_type(), 'numberposts' => -1 ) );
 	if ( !empty( $forums ) ) {
-		foreach( $forums as $forum ) {
+		foreach ( $forums as $forum ) {
 			bbp_update_forum_reply_count( $forum->ID );
 		}
 	} else {
@@ -909,7 +909,7 @@ function bbp_admin_repair_sticky() {
 
 			// If the topic is not a super sticky, and the forum ID does not
 			// match the topic's forum ID, unset the forum's sticky meta.
-			if ( ! bbp_is_topic_super_sticky( $topic_id ) && $forum_id != bbp_get_topic_forum_id( $topic_id ) ) {
+			if ( ! bbp_is_topic_super_sticky( $topic_id ) && $forum_id !== bbp_get_topic_forum_id( $topic_id ) ) {
 				unset( $forum_stickies[$forum_id][$id] );
 			}
 		}
@@ -937,42 +937,16 @@ function bbp_admin_repair_sticky() {
  * @return array An array of the status code and the message
  */
 function bbp_admin_repair_forum_visibility() {
-
 	$statement = __( 'Recalculating forum visibility &hellip; %s', 'bbpress' );
-	$result    = __( 'Failed!', 'bbpress' );
-
-	// First, delete everything.
-	delete_option( '_bbp_private_forums' );
-	delete_option( '_bbp_hidden_forums'  );
-
-	// Next, get all the private and hidden forums
-	$private_forums = new WP_Query( array(
-		'suppress_filters' => true,
-		'nopaging'         => true,
-		'post_type'        => bbp_get_forum_post_type(),
-		'post_status'      => bbp_get_private_status_id(),
-		'fields'           => 'ids'
-	) );
-	$hidden_forums = new WP_Query( array(
-		'suppress_filters' => true,
-		'nopaging'         => true,
-		'post_type'        => bbp_get_forum_post_type(),
-		'post_status'      => bbp_get_hidden_status_id(),
-		'fields'           => 'ids'
-	) );
 
 	// Bail if queries returned errors
-	if ( is_wp_error( $private_forums ) || is_wp_error( $hidden_forums ) )
-		return array( 2, sprintf( $statement, $result ) );
-
-	update_option( '_bbp_private_forums', $private_forums->posts ); // Private forums
-	update_option( '_bbp_hidden_forums',  $hidden_forums->posts  ); // Hidden forums
-
-	// Reset the $post global
-	wp_reset_postdata();
+	if ( ! bbp_repair_forum_visibility() ) {
+		return array( 2, sprintf( $statement, __( 'Failed!',   'bbpress' ) ) );
 
 	// Complete results
-	return array( 0, sprintf( $statement, __( 'Complete!', 'bbpress' ) ) );
+	} else {
+		return array( 0, sprintf( $statement, __( 'Complete!', 'bbpress' ) ) );
+	}
 }
 
 /**
@@ -1094,31 +1068,31 @@ function bbp_admin_reset() {
 		<?php screen_icon( 'tools' ); ?>
 
 		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( __( 'Reset Forums', 'bbpress' ) ); ?></h2>
-		<p><?php _e( 'This will revert your forums back to a brand new installation. This process cannot be undone. <strong>Backup your database before proceeding</strong>.', 'bbpress' ); ?></p>
+		<p><?php esc_html_e( 'This will revert your forums back to a brand new installation. This process cannot be undone. <strong>Backup your database before proceeding</strong>.', 'bbpress' ); ?></p>
 
 		<form class="settings" method="post" action="">
 			<table class="form-table">
 				<tbody>
 					<tr valign="top">
-						<th scope="row"><?php _e( 'The following data will be removed:', 'bbpress' ) ?></th>
+						<th scope="row"><?php esc_html_e( 'The following data will be removed:', 'bbpress' ) ?></th>
 						<td>
-							<?php _e( 'All Forums',           'bbpress' ); ?><br />
-							<?php _e( 'All Topics',           'bbpress' ); ?><br />
-							<?php _e( 'All Replies',          'bbpress' ); ?><br />
-							<?php _e( 'All Topic Tags',       'bbpress' ); ?><br />
-							<?php _e( 'Related Meta Data',    'bbpress' ); ?><br />
-							<?php _e( 'Forum Settings',       'bbpress' ); ?><br />
-							<?php _e( 'Forum Activity',       'bbpress' ); ?><br />
-							<?php _e( 'Forum User Roles',     'bbpress' ); ?><br />
-							<?php _e( 'Importer Helper Data', 'bbpress' ); ?><br />
+							<?php esc_html_e( 'All Forums',           'bbpress' ); ?><br />
+							<?php esc_html_e( 'All Topics',           'bbpress' ); ?><br />
+							<?php esc_html_e( 'All Replies',          'bbpress' ); ?><br />
+							<?php esc_html_e( 'All Topic Tags',       'bbpress' ); ?><br />
+							<?php esc_html_e( 'Related Meta Data',    'bbpress' ); ?><br />
+							<?php esc_html_e( 'Forum Settings',       'bbpress' ); ?><br />
+							<?php esc_html_e( 'Forum Activity',       'bbpress' ); ?><br />
+							<?php esc_html_e( 'Forum User Roles',     'bbpress' ); ?><br />
+							<?php esc_html_e( 'Importer Helper Data', 'bbpress' ); ?><br />
 						</td>
 					</tr>
 					<tr valign="top">
-						<th scope="row"><?php _e( 'Are you sure you want to do this?', 'bbpress' ) ?></th>
+						<th scope="row"><?php esc_html_e( 'Are you sure you want to do this?', 'bbpress' ) ?></th>
 						<td>
 							<fieldset>
-								<legend class="screen-reader-text"><span><?php _e( "Say it ain't so!", 'bbpress' ) ?></span></legend>
-								<label><input type="checkbox" class="checkbox" name="bbpress-are-you-sure" id="bbpress-are-you-sure" value="1" /> <?php _e( 'This process cannot be undone.', 'bbpress' ); ?></label>
+								<legend class="screen-reader-text"><span><?php esc_html_e( "Say it ain't so!", 'bbpress' ) ?></span></legend>
+								<label><input type="checkbox" class="checkbox" name="bbpress-are-you-sure" id="bbpress-are-you-sure" value="1" /> <?php esc_html_e( 'This process cannot be undone.', 'bbpress' ); ?></label>
 							</fieldset>
 						</td>
 					</tr>
@@ -1177,7 +1151,7 @@ function bbp_admin_reset_handler() {
 	/** Post Meta *********************************************************/
 
 	if ( !empty( $sql_posts ) ) {
-		foreach( $sql_posts as $key => $value ) {
+		foreach ( $sql_posts as $key => $value ) {
 			$sql_meta[] = $key;
 		}
 		$statement  = __( 'Deleting Post Meta&hellip; %s', 'bbpress' );
@@ -1205,7 +1179,7 @@ function bbp_admin_reset_handler() {
 
 	$statement  = __( 'Deleting Conversion Table&hellip; %s', 'bbpress' );
 	$table_name = $wpdb->prefix . 'bbp_converter_translator';
-	if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) == $table_name ) {
+	if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name ) {
 		$wpdb->query( "DROP TABLE {$table_name}" );
 		$result = $success;
 	} else {

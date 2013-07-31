@@ -68,7 +68,7 @@ function bbp_set_user_role( $user_id = 0, $new_role = '' ) {
 		$role = bbp_get_user_role( $user_id );
 
 		// User already has this role so no new role is set
-		if ( $new_role == $role ) {
+		if ( $new_role === $role ) {
 			$new_role = false;
 
 		// Users role is different than the new role
@@ -115,13 +115,20 @@ function bbp_get_user_role( $user_id = 0 ) {
 	$user    = get_userdata( $user_id );
 	$role    = false;
 
-	// User has roles so lets
+	// User has roles so look for a bbPress one
 	if ( ! empty( $user->roles ) ) {
-		$roles = array_intersect( array_values( $user->roles ), array_keys( bbp_get_dynamic_roles() ) );
 
-		// If there's a role in the array, use the first one
+		// Look for a bbPress role
+		$roles = array_intersect(
+			array_values( $user->roles ),
+			array_keys( bbp_get_dynamic_roles() )
+		);
+
+		// If there's a role in the array, use the first one. This isn't very
+		// smart, but since roles aren't hierarchical, and bbPress doesn't
+		// enable a user to have multiple forum roles, it's fine for now.
 		if ( !empty( $roles ) ) {
-			$role = array_shift( array_values( $roles ) );
+			$role = array_shift( $roles );
 		}
 	}
 
@@ -192,7 +199,7 @@ function bbp_profile_update_role( $user_id = 0 ) {
 	$forums_role = bbp_get_user_role( $user_id );
 
 	// Bail if no role change
-	if ( $new_role == $forums_role )
+	if ( $new_role === $forums_role )
 		return;
 
 	// Bail if trying to set their own role
@@ -280,7 +287,7 @@ function bbp_set_current_user_default_role() {
 	/** Add or Map ************************************************************/
 
 	// Add the user to the site
-	if ( true == $add_to_site ) {
+	if ( true === $add_to_site ) {
 
 		// Make sure bbPress roles are added
 		bbp_add_forums_roles();
@@ -366,7 +373,7 @@ function bbp_is_user_spammer( $user_id = 0 ) {
 
  * @uses bbp_is_single_user()
  * @uses bbp_is_user_home()
- * @uses bbp_get_displayed_user_field()
+ * @uses bbp_get_displayed_user_id()
  * @uses bbp_is_user_keymaster()
  * @uses get_blogs_of_user()
  * @uses get_current_blog_id()
@@ -454,7 +461,7 @@ function bbp_make_spam_user( $user_id = 0 ) {
  *
  * @uses bbp_is_single_user()
  * @uses bbp_is_user_home()
- * @uses bbp_get_displayed_user_field()
+ * @uses bbp_get_displayed_user_id()
  * @uses bbp_is_user_keymaster()
  * @uses get_blogs_of_user()
  * @uses bbp_get_topic_post_type()
@@ -471,7 +478,7 @@ function bbp_make_ham_user( $user_id = 0 ) {
 
 	// Use displayed user if it's not yourself
 	if ( empty( $user_id ) && bbp_is_single_user() && !bbp_is_user_home() )
-		$user_id = bbp_get_displayed_user_field();
+		$user_id = bbp_get_displayed_user_id();
 
 	// Bail if no user ID
 	if ( empty( $user_id ) )

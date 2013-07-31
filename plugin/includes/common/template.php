@@ -24,7 +24,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
  * @param string $path Additional path with leading slash
  */
 function bbp_forums_url( $path = '/' ) {
-	echo bbp_get_forums_url( $path );
+	echo esc_url( bbp_get_forums_url( $path ) );
 }
 	/**
 	 * Return the forum URL
@@ -48,7 +48,7 @@ function bbp_forums_url( $path = '/' ) {
  * @param string $path Additional path with leading slash
  */
 function bbp_topics_url( $path = '/' ) {
-	echo bbp_get_topics_url( $path );
+	echo esc_url( bbp_get_topics_url( $path ) );
 }
 	/**
 	 * Return the forum URL
@@ -128,7 +128,7 @@ function bbp_is_forum( $post_id = 0 ) {
 	$retval = false;
 
 	// Supplied ID is a forum
-	if ( !empty( $post_id ) && ( bbp_get_forum_post_type() == get_post_type( $post_id ) ))
+	if ( !empty( $post_id ) && ( bbp_get_forum_post_type() === get_post_type( $post_id ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_forum', $retval, $post_id );
@@ -200,11 +200,11 @@ function bbp_is_forum_edit() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_forum_edit ) && ( $wp_query->bbp_is_forum_edit == true ) )
+	if ( !empty( $wp_query->bbp_is_forum_edit ) && ( $wp_query->bbp_is_forum_edit === true ) )
 		$retval = true;
 
 	// Editing in admin
-	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_forum_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
+	elseif ( is_admin() && ( 'post.php' === $pagenow ) && ( get_post_type() === bbp_get_forum_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' === $_GET['action'] ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_forum_edit', $retval );
@@ -226,7 +226,7 @@ function bbp_is_topic( $post_id = 0 ) {
 	$retval = false;
 
 	// Supplied ID is a topic
-	if ( !empty( $post_id ) && ( bbp_get_topic_post_type() == get_post_type( $post_id ) ) )
+	if ( !empty( $post_id ) && ( bbp_get_topic_post_type() === get_post_type( $post_id ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topic', $retval, $post_id );
@@ -297,11 +297,11 @@ function bbp_is_topic_edit() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_topic_edit ) && ( $wp_query->bbp_is_topic_edit == true ) )
+	if ( !empty( $wp_query->bbp_is_topic_edit ) && ( $wp_query->bbp_is_topic_edit === true ) )
 		$retval = true;
 
 	// Editing in admin
-	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_topic_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
+	elseif ( is_admin() && ( 'post.php' === $pagenow ) && ( get_post_type() === bbp_get_topic_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' === $_GET['action'] ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topic_edit', $retval );
@@ -321,7 +321,7 @@ function bbp_is_topic_merge() {
 	$retval = false;
 
 	// Check topic edit and GET params
-	if ( bbp_is_topic_edit() && !empty( $_GET['action'] ) && ( 'merge' == $_GET['action'] ) )
+	if ( bbp_is_topic_edit() && !empty( $_GET['action'] ) && ( 'merge' === $_GET['action'] ) )
 		return true;
 
 	return (bool) apply_filters( 'bbp_is_topic_merge', $retval );
@@ -341,7 +341,7 @@ function bbp_is_topic_split() {
 	$retval = false;
 
 	// Check topic edit and GET params
-	if ( bbp_is_topic_edit() && !empty( $_GET['action'] ) && ( 'split' == $_GET['action'] ) )
+	if ( bbp_is_topic_edit() && !empty( $_GET['action'] ) && ( 'split' === $_GET['action'] ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topic_split', $retval );
@@ -393,11 +393,11 @@ function bbp_is_topic_tag_edit() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_topic_tag_edit ) && ( true == $wp_query->bbp_is_topic_tag_edit ) )
+	if ( !empty( $wp_query->bbp_is_topic_tag_edit ) && ( true === $wp_query->bbp_is_topic_tag_edit ) )
 		$retval = true;
 
 	// Editing in admin
-	elseif ( is_admin() && ( 'edit-tags.php' == $pagenow ) && ( bbp_get_topic_tag_tax_id() == $taxnow ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
+	elseif ( is_admin() && ( 'edit-tags.php' === $pagenow ) && ( bbp_get_topic_tag_tax_id() === $taxnow ) && ( !empty( $_GET['action'] ) && ( 'edit' === $_GET['action'] ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topic_tag_edit', $retval );
@@ -448,7 +448,7 @@ function bbp_is_reply( $post_id = 0 ) {
 	$retval = false;
 
 	// Supplied ID is a reply
-	if ( !empty( $post_id ) && ( bbp_get_reply_post_type() == get_post_type( $post_id ) ) )
+	if ( !empty( $post_id ) && ( bbp_get_reply_post_type() === get_post_type( $post_id ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_reply', $retval, $post_id );
@@ -469,11 +469,11 @@ function bbp_is_reply_edit() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_reply_edit ) && ( true == $wp_query->bbp_is_reply_edit ) )
+	if ( !empty( $wp_query->bbp_is_reply_edit ) && ( true === $wp_query->bbp_is_reply_edit ) )
 		$retval = true;
 
 	// Editing in admin
-	elseif ( is_admin() && ( 'post.php' == $pagenow ) && ( get_post_type() == bbp_get_reply_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' == $_GET['action'] ) ) )
+	elseif ( is_admin() && ( 'post.php' === $pagenow ) && ( get_post_type() === bbp_get_reply_post_type() ) && ( !empty( $_GET['action'] ) && ( 'edit' === $_GET['action'] ) ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_reply_edit', $retval );
@@ -491,7 +491,7 @@ function bbp_is_reply_move() {
 	$retval = false;
 
 	// Check reply edit and GET params
-	if ( bbp_is_reply_edit() && !empty( $_GET['action'] ) && ( 'move' == $_GET['action'] ) )
+	if ( bbp_is_reply_edit() && !empty( $_GET['action'] ) && ( 'move' === $_GET['action'] ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_reply_move', $retval );
@@ -539,7 +539,7 @@ function bbp_is_favorites() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_favs ) && ( true == $wp_query->bbp_is_single_user_favs ) )
+	if ( !empty( $wp_query->bbp_is_single_user_favs ) && ( true === $wp_query->bbp_is_single_user_favs ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_favorites', $retval );
@@ -559,7 +559,7 @@ function bbp_is_subscriptions() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_subs ) && ( true == $wp_query->bbp_is_single_user_subs ) )
+	if ( !empty( $wp_query->bbp_is_single_user_subs ) && ( true === $wp_query->bbp_is_single_user_subs ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_subscriptions', $retval );
@@ -580,7 +580,7 @@ function bbp_is_topics_created() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_topics ) && ( true == $wp_query->bbp_is_single_user_topics ) )
+	if ( !empty( $wp_query->bbp_is_single_user_topics ) && ( true === $wp_query->bbp_is_single_user_topics ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_topics_created', $retval );
@@ -601,7 +601,7 @@ function bbp_is_replies_created() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_replies ) && ( true == $wp_query->bbp_is_single_user_replies ) )
+	if ( !empty( $wp_query->bbp_is_single_user_replies ) && ( true === $wp_query->bbp_is_single_user_replies ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_replies_created', $retval );
@@ -624,7 +624,7 @@ function bbp_is_user_home() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_home ) && ( true == $wp_query->bbp_is_single_user_home ) )
+	if ( !empty( $wp_query->bbp_is_single_user_home ) && ( true === $wp_query->bbp_is_single_user_home ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_user_home', $retval );
@@ -666,7 +666,7 @@ function bbp_is_single_user() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user ) && ( true == $wp_query->bbp_is_single_user ) )
+	if ( !empty( $wp_query->bbp_is_single_user ) && ( true === $wp_query->bbp_is_single_user ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_single_user', $retval );
@@ -687,7 +687,7 @@ function bbp_is_single_user_edit() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_edit ) && ( true == $wp_query->bbp_is_single_user_edit ) )
+	if ( !empty( $wp_query->bbp_is_single_user_edit ) && ( true === $wp_query->bbp_is_single_user_edit ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_single_user_edit', $retval );
@@ -708,7 +708,7 @@ function bbp_is_single_user_profile() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_profile ) && ( true == $wp_query->bbp_is_single_user_profile ) )
+	if ( !empty( $wp_query->bbp_is_single_user_profile ) && ( true === $wp_query->bbp_is_single_user_profile ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_single_user_profile', $retval );
@@ -729,7 +729,7 @@ function bbp_is_single_user_topics() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_topics ) && ( true == $wp_query->bbp_is_single_user_topics ) )
+	if ( !empty( $wp_query->bbp_is_single_user_topics ) && ( true === $wp_query->bbp_is_single_user_topics ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_single_user_topics', $retval );
@@ -750,7 +750,7 @@ function bbp_is_single_user_replies() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_single_user_replies ) && ( true == $wp_query->bbp_is_single_user_replies ) )
+	if ( !empty( $wp_query->bbp_is_single_user_replies ) && ( true === $wp_query->bbp_is_single_user_replies ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_single_user_replies', $retval );
@@ -772,7 +772,7 @@ function bbp_is_single_view() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_view ) && ( true == $wp_query->bbp_is_view ) )
+	if ( !empty( $wp_query->bbp_is_view ) && ( true === $wp_query->bbp_is_view ) )
 		$retval = true;
 
 	// Check query name
@@ -794,11 +794,15 @@ function bbp_is_single_view() {
 function bbp_is_search() {
 	global $wp_query;
 
+	// Bail if search is disabled
+	if ( ! bbp_allow_search() )
+		return false;
+
 	// Assume false
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_search ) && ( true == $wp_query->bbp_is_search ) )
+	if ( !empty( $wp_query->bbp_is_search ) && ( true === $wp_query->bbp_is_search ) )
 		$retval = true;
 
 	// Check query name
@@ -823,6 +827,10 @@ function bbp_is_search() {
  */
 function bbp_is_search_results() {
 	global $wp_query;
+
+	// Bail if search is disabled
+	if ( ! bbp_allow_search() )
+		return false;
 
 	// Assume false
 	$retval = false;
@@ -857,7 +865,7 @@ function bbp_is_edit() {
 	$retval = false;
 
 	// Check query
-	if ( !empty( $wp_query->bbp_is_edit ) && ( $wp_query->bbp_is_edit == true ) )
+	if ( !empty( $wp_query->bbp_is_edit ) && ( $wp_query->bbp_is_edit === true ) )
 		$retval = true;
 
 	return (bool) apply_filters( 'bbp_is_edit', $retval );
@@ -1309,7 +1317,7 @@ function bbp_dropdown( $args = '' ) {
 	 *               anything smaller than 0 (due to the nature of select
 	 *               box, the first value would of course be selected -
 	 *               though you can have that as none (pass 'show_none' arg))
-	 *  - sort_column: Sort by? Defaults to 'menu_order, post_title'
+	 *  - orderby: Defaults to 'menu_order title'
 	 *  - post_parent: Post parent. Defaults to 0
 	 *  - post_status: Which all post_statuses to find in? Can be an array
 	 *                  or CSV of publish, category, closed, private, spam,
@@ -1348,12 +1356,12 @@ function bbp_dropdown( $args = '' ) {
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
 			'post_type'          => bbp_get_forum_post_type(),
-			'selected'           => 0,
-			'sort_column'        => 'menu_order',
-			'exclude'            => array(),
 			'post_parent'        => null,
+			'post_status'        => null,
+			'selected'           => 0,
+			'exclude'            => array(),
 			'numberposts'        => -1,
-			'orderby'            => 'menu_order',
+			'orderby'            => 'menu_order title',
 			'order'              => 'ASC',
 			'walker'             => '',
 
@@ -1382,42 +1390,12 @@ function bbp_dropdown( $args = '' ) {
 			$r['exclude'] = explode( ',', $r['exclude'] );
 		}
 
-		/** Post Status *******************************************************/
-
-		// Define local variable(s)
-		$post_stati = array();
-
-		// Public
-		$post_stati[] = bbp_get_public_status_id();
-
-		// Forums
-		if ( bbp_get_forum_post_type() == $r['post_type'] ) {
-
-			// Private forums
-			if ( current_user_can( 'read_private_forums' ) ) {
-				$post_stati[] = bbp_get_private_status_id();
-			}
-
-			// Hidden forums
-			if ( current_user_can( 'read_hidden_forums' ) ) {
-				$post_stati[] = bbp_get_hidden_status_id();
-			}
-		}
-
-		// Setup the post statuses
-		$r['post_status'] = implode( ',', $post_stati );
-
 		/** Setup variables ***************************************************/
 
-		$name      = esc_attr( $r['select_id'] );
-		$select_id = $name;
-		$tab       = (int) $r['tab'];
-		$retval    = '';
-		$disabled  = disabled( isset( bbpress()->options[$r['disabled']] ), true, false );
-		$post_arr  = array(
+		$retval = '';
+		$posts  = get_posts( array(
 			'post_type'          => $r['post_type'],
 			'post_status'        => $r['post_status'],
-			'sort_column'        => $r['sort_column'],
 			'exclude'            => $r['exclude'],
 			'post_parent'        => $r['post_parent'],
 			'numberposts'        => $r['numberposts'],
@@ -1425,22 +1403,31 @@ function bbp_dropdown( $args = '' ) {
 			'order'              => $r['order'],
 			'walker'             => $r['walker'],
 			'disable_categories' => $r['disable_categories']
-		);
-
-		$posts = get_posts( $post_arr );
+		) );
 
 		/** Drop Down *********************************************************/
 
 		// Items found
 		if ( !empty( $posts ) ) {
+
+			// Build the opening tag for the select element
 			if ( empty( $r['options_only'] ) ) {
-				$tab     = !empty( $tab ) ? ' tabindex="' . $tab . '"' : '';
-				$retval .= '<select name="' . $name . '" id="' . $select_id . '"' . $tab  . $disabled . '>' . "\n";
+
+				// Should this select appear disabled?
+				$disabled  = disabled( isset( bbpress()->options[ $r['disabled'] ] ), true, false );
+
+				// Setup the tab index attribute
+				$tab       = !empty( $r['tab'] ) ? ' tabindex="' . intval( $r['tab'] ) . '"' : '';
+
+				// Build the opening tag
+				$retval   .= '<select name="' . esc_attr( $r['select_id'] ) . '" id="' . esc_attr( $r['select_id'] ) . '"' . $disabled . $tab . '>' . "\n";
 			}
 
+			// Get the options
 			$retval .= !empty( $r['show_none'] ) ? "\t<option value=\"\" class=\"level-0\">" . $r['show_none'] . '</option>' : '';
 			$retval .= walk_page_dropdown_tree( $posts, 0, $r );
 
+			// Build the closing tag for the select element
 			if ( empty( $r['options_only'] ) ) {
 				$retval .= '</select>';
 			}
@@ -1582,6 +1569,7 @@ function bbp_reply_form_fields() {
 
 		<input type="hidden" name="bbp_reply_title" id="bbp_reply_title" value="<?php bbp_reply_title(); ?>" />
 		<input type="hidden" name="bbp_reply_id"    id="bbp_reply_id"    value="<?php bbp_reply_id(); ?>" />
+		<input type="hidden" name="bbp_reply_to"    id="bbp_reply_to"    value="<?php bbp_form_reply_to(); ?>" />
 		<input type="hidden" name="action"          id="bbp_post_action" value="bbp-edit-reply" />
 
 		<?php if ( current_user_can( 'unfiltered_html' ) )
@@ -1593,6 +1581,7 @@ function bbp_reply_form_fields() {
 
 		<input type="hidden" name="bbp_reply_title" id="bbp_reply_title" value="<?php printf( __( 'Reply To: %s', 'bbpress' ), bbp_get_topic_title() ); ?>" />
 		<input type="hidden" name="bbp_topic_id"    id="bbp_topic_id"    value="<?php bbp_topic_id(); ?>" />
+		<input type="hidden" name="bbp_reply_to"    id="bbp_reply_to"    value="<?php bbp_form_reply_to(); ?>" />
 		<input type="hidden" name="action"          id="bbp_post_action" value="bbp-new-reply" />
 
 		<?php if ( current_user_can( 'unfiltered_html' ) )
@@ -1614,8 +1603,7 @@ function bbp_reply_form_fields() {
  * @since bbPress (r2690)
  *
  * @uses bbp_displayed_user_id() To output the displayed user id
- * @uses wp_nonce_field() To generate a hidden nonce field
- * @uses wp_referer_field() To generate a hidden referer field
+ * @uses wp_nonce_field() To generate a hidden referer field
  */
 function bbp_edit_user_form_fields() {
 ?>
@@ -1725,7 +1713,7 @@ function bbp_the_content( $args = array() ) {
 		), 'get_the_content' );
 
 		// If using tinymce, remove our escaping and trust tinymce
-		if ( bbp_use_wp_editor() && ( true === $r['tinymce'] ) ) {
+		if ( bbp_use_wp_editor() && ( false !== $r['tinymce'] ) ) {
 			remove_filter( 'bbp_get_form_forum_content', 'esc_textarea' );
 			remove_filter( 'bbp_get_form_topic_content', 'esc_textarea' );
 			remove_filter( 'bbp_get_form_reply_content', 'esc_textarea' );
@@ -1789,10 +1777,7 @@ function bbp_the_content( $args = array() ) {
 		}
 
 		// Put the output into a usable variable
-		$output = ob_get_contents();
-
-		// Flush the output buffer
-		ob_end_clean();
+		$output = ob_get_clean();
 
 		return apply_filters( 'bbp_get_the_content', $output, $args, $post_content );
 	}
@@ -1810,7 +1795,7 @@ function bbp_get_tiny_mce_plugins( $plugins = array() ) {
 
 	// Unset fullscreen
 	foreach ( $plugins as $key => $value ) {
-		if ( 'fullscreen' == $value ) {
+		if ( 'fullscreen' === $value ) {
 			unset( $plugins[$key] );
 			break;
 		}
@@ -1955,7 +1940,7 @@ function bbp_view_title( $view = '' ) {
  * @uses bbp_get_view_url() To get the view url
  */
 function bbp_view_url( $view = false ) {
-	echo bbp_get_view_url( $view );
+	echo esc_url( bbp_get_view_url( $view ) );
 }
 	/**
 	 * Return the view url
@@ -2001,7 +1986,7 @@ function bbp_view_url( $view = false ) {
  * @return bool True if match, false if not
  */
 function bbp_is_query_name( $name = '' )  {
-	return (bool) ( bbp_get_query_name() == $name );
+	return (bool) ( bbp_get_query_name() === $name );
 }
 
 /**
@@ -2135,7 +2120,7 @@ function bbp_breadcrumb( $args = array() ) {
 		/** Includes **********************************************************/
 
 		// Root slug is also the front page
-		if ( !empty( $front_id ) && ( $front_id == $root_id ) ) {
+		if ( !empty( $front_id ) && ( $front_id === $root_id ) ) {
 			$pre_include_root = false;
 		}
 
@@ -2145,7 +2130,7 @@ function bbp_breadcrumb( $args = array() ) {
 		}
 
 		// Don't show root if viewing page in place of forum archive
-		if ( !empty( $root_id ) && ( ( is_single() || is_page() ) && ( $root_id == get_the_ID() ) ) ) {
+		if ( !empty( $root_id ) && ( ( is_single() || is_page() ) && ( $root_id === get_the_ID() ) ) ) {
 			$pre_include_root = false;
 		}
 
@@ -2187,7 +2172,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 			// If capable, include a link to edit the tag
 			if ( current_user_can( 'manage_topic_tags' ) ) {
-				$tag_data[] = '<a href="' . bbp_get_topic_tag_edit_link() . '" class="bbp-edit-topic-tag-link">' . __( '(Edit)', 'bbpress' ) . '</a>';
+				$tag_data[] = '<a href="' . esc_url( bbp_get_topic_tag_edit_link() ) . '" class="bbp-edit-topic-tag-link">' . esc_html__( '(Edit)', 'bbpress' ) . '</a>';
 			}
 
 			// Implode the results of the tag data
@@ -2262,14 +2247,14 @@ function bbp_breadcrumb( $args = array() ) {
 			}
 
 			// Add the breadcrumb
-			$crumbs[] = '<a href="' . $root_url . '" class="bbp-breadcrumb-root">' . $r['root_text'] . '</a>';
+			$crumbs[] = '<a href="' . esc_url( $root_url ) . '" class="bbp-breadcrumb-root">' . $r['root_text'] . '</a>';
 		}
 
 		// Ancestors exist
 		if ( !empty( $ancestors ) ) {
 
 			// Loop through parents
-			foreach( (array) $ancestors as $parent_id ) {
+			foreach ( (array) $ancestors as $parent_id ) {
 
 				// Parents
 				$parent = get_post( $parent_id );
@@ -2283,39 +2268,39 @@ function bbp_breadcrumb( $args = array() ) {
 
 					// Forum
 					case bbp_get_forum_post_type() :
-						$crumbs[] = '<a href="' . bbp_get_forum_permalink( $parent->ID ) . '" class="bbp-breadcrumb-forum">' . bbp_get_forum_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . esc_url( bbp_get_forum_permalink( $parent->ID ) ) . '" class="bbp-breadcrumb-forum">' . bbp_get_forum_title( $parent->ID ) . '</a>';
 						break;
 
 					// Topic
 					case bbp_get_topic_post_type() :
-						$crumbs[] = '<a href="' . bbp_get_topic_permalink( $parent->ID ) . '" class="bbp-breadcrumb-topic">' . bbp_get_topic_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . esc_url( bbp_get_topic_permalink( $parent->ID ) ) . '" class="bbp-breadcrumb-topic">' . bbp_get_topic_title( $parent->ID ) . '</a>';
 						break;
 
 					// Reply (Note: not in most themes)
 					case bbp_get_reply_post_type() :
-						$crumbs[] = '<a href="' . bbp_get_reply_permalink( $parent->ID ) . '" class="bbp-breadcrumb-reply">' . bbp_get_reply_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . esc_url( bbp_get_reply_permalink( $parent->ID ) ) . '" class="bbp-breadcrumb-reply">' . bbp_get_reply_title( $parent->ID ) . '</a>';
 						break;
 
 					// WordPress Post/Page/Other
 					default :
-						$crumbs[] = '<a href="' . get_permalink( $parent->ID ) . '" class="bbp-breadcrumb-item">' . get_the_title( $parent->ID ) . '</a>';
+						$crumbs[] = '<a href="' . esc_url( get_permalink( $parent->ID ) ) . '" class="bbp-breadcrumb-item">' . get_the_title( $parent->ID ) . '</a>';
 						break;
 				}
 			}
 
 		// Edit topic tag
 		} elseif ( bbp_is_topic_tag_edit() ) {
-			$crumbs[] = '<a href="' . get_term_link( bbp_get_topic_tag_id(), bbp_get_topic_tag_tax_id() ) . '" class="bbp-breadcrumb-topic-tag">' . sprintf( __( 'Topic Tag: %s', 'bbpress' ), bbp_get_topic_tag_name() ) . '</a>';
+			$crumbs[] = '<a href="' . esc_url( get_term_link( bbp_get_topic_tag_id(), bbp_get_topic_tag_tax_id() ) ) . '" class="bbp-breadcrumb-topic-tag">' . sprintf( __( 'Topic Tag: %s', 'bbpress' ), bbp_get_topic_tag_name() ) . '</a>';
 
 		// Search
 		} elseif ( bbp_is_search() && bbp_get_search_terms() ) {
-			$crumbs[] = '<a href="' . bbp_get_search_url() . '" class="bbp-breadcrumb-search">' . __( 'Search', 'bbpress' ) . '</a>';
+			$crumbs[] = '<a href="' . esc_url( bbp_get_search_url() ) . '" class="bbp-breadcrumb-search">' . esc_html__( 'Search', 'bbpress' ) . '</a>';
 		}
 
 		/** Current ***********************************************************/
 
 		// Add current page to breadcrumb
-		if ( !empty( $r['include_current'] ) || empty( $r['pre_current_text'] ) ) {
+		if ( !empty( $r['include_current'] ) || empty( $r['current_text'] ) ) {
 			$crumbs[] = $r['current_before'] . $r['current_text'] . $r['current_after'];
 		}
 
@@ -2424,7 +2409,7 @@ function bbp_template_notices() {
 
 		// Loop through notices and separate errors from messages
 		foreach ( $bbp->errors->get_error_messages( $code ) as $error ) {
-			if ( 'message' == $severity ) {
+			if ( 'message' === $severity ) {
 				$messages[] = $error;
 			} else {
 				$errors[]   = $error;
@@ -2480,7 +2465,7 @@ function bbp_logout_link( $redirect_to = '' ) {
 	 * @return string The logout link
 	 */
 	function bbp_get_logout_link( $redirect_to = '' ) {
-		return apply_filters( 'bbp_get_logout_link', '<a href="' . wp_logout_url( $redirect_to ) . '" class="button logout-link">' . __( 'Log Out', 'bbpress' ) . '</a>', $redirect_to );
+		return apply_filters( 'bbp_get_logout_link', '<a href="' . wp_logout_url( $redirect_to ) . '" class="button logout-link">' . esc_html__( 'Log Out', 'bbpress' ) . '</a>', $redirect_to );
 	}
 
 /** Title *********************************************************************/
@@ -2519,34 +2504,61 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 	// Store original title to compare
 	$_title = $title;
 
+	// Title array
+	$title = array();
+
 	/** Archives **************************************************************/
 
 	// Forum Archive
 	if ( bbp_is_forum_archive() ) {
-		$title = bbp_get_forum_archive_title();
+		$title['text'] = bbp_get_forum_archive_title();
 
 	// Topic Archive
 	} elseif ( bbp_is_topic_archive() ) {
-		$title = bbp_get_topic_archive_title();
+		$title['text'] = bbp_get_topic_archive_title();
+
+	/** Edit ******************************************************************/
+
+	// Forum edit page
+	} elseif ( bbp_is_forum_edit() ) {
+		$title['text']   = bbp_get_forum_title();
+		$title['format'] = esc_attr__( 'Forum Edit: %s', 'bbpress' );
+
+	// Topic edit page
+	} elseif ( bbp_is_topic_edit() ) {
+		$title['text']   = bbp_get_topic_title();
+		$title['format'] = esc_attr__( 'Topic Edit: %s', 'bbpress' );
+
+	// Reply edit page
+	} elseif ( bbp_is_reply_edit() ) {
+		$title['text']   = bbp_get_reply_title();
+		$title['format'] = esc_attr__( 'Reply Edit: %s', 'bbpress' );
+
+	// Topic tag edit page
+	} elseif ( bbp_is_topic_tag_edit() ) {
+		$title['text']   = bbp_get_topic_tag_name();
+		$title['format'] = esc_attr__( 'Topic Tag Edit: %s', 'bbpress' );
 
 	/** Singles ***************************************************************/
 
 	// Forum page
 	} elseif ( bbp_is_single_forum() ) {
-		$title = sprintf( __( 'Forum: %s', 'bbpress' ), bbp_get_forum_title() );
+		$title['text']   = bbp_get_forum_title();
+		$title['format'] = esc_attr__( 'Forum: %s', 'bbpress' );
 
 	// Topic page
 	} elseif ( bbp_is_single_topic() ) {
-		$title = sprintf( __( 'Topic: %s', 'bbpress' ), bbp_get_topic_title() );
+		$title['text']   = bbp_get_topic_title();
+		$title['format'] = esc_attr__( 'Topic: %s', 'bbpress' );
 
 	// Replies
 	} elseif ( bbp_is_single_reply() ) {
-		$title = bbp_get_reply_title();
+		$title['text']   = bbp_get_reply_title();
 
-	// Topic tag page (or edit)
-	} elseif ( bbp_is_topic_tag() || bbp_is_topic_tag_edit() || get_query_var( 'bbp_topic_tag' ) ) {
-		$term  = get_queried_object();
-		$title = sprintf( __( 'Topic Tag: %s', 'bbpress' ), $term->name );
+	// Topic tag page
+	} elseif ( bbp_is_topic_tag() || get_query_var( 'bbp_topic_tag' ) ) {
+		$title['text']   = bbp_get_topic_tag_name();
+		$title['format'] = esc_attr__( 'Topic Tag: %s', 'bbpress' );
 
 	/** Users *****************************************************************/
 
@@ -2555,12 +2567,12 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 
 		// Current users profile
 		if ( bbp_is_user_home() ) {
-			$title = __( 'Your Profile', 'bbpress' );
+			$title['text'] = esc_attr__( 'Your Profile', 'bbpress' );
 
 		// Other users profile
 		} else {
-			$userdata = get_userdata( bbp_get_user_id() );
-			$title    = sprintf( __( '%s\'s Profile', 'bbpress' ), $userdata->display_name );
+			$title['text']   = get_userdata( bbp_get_user_id() )->display_name;
+			$title['format'] = esc_attr__( "%s's Profile", 'bbpress' );
 		}
 
 	// Profile edit page
@@ -2568,32 +2580,45 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 
 		// Current users profile
 		if ( bbp_is_user_home_edit() ) {
-			$title = __( 'Edit Your Profile', 'bbpress' );
+			$title['text']   = esc_attr__( 'Edit Your Profile', 'bbpress' );
 
 		// Other users profile
 		} else {
-			$userdata = get_userdata( bbp_get_user_id() );
-			$title    = sprintf( __( 'Edit %s\'s Profile', 'bbpress' ), $userdata->display_name );
+			$title['text']   = get_userdata( bbp_get_user_id() )->display_name;
+			$title['format'] = esc_attr__( "Edit %s's Profile", 'bbpress' );
 		}
 
 	/** Views *****************************************************************/
 
 	// Views
 	} elseif ( bbp_is_single_view() ) {
-		$title = sprintf( __( 'View: %s', 'bbpress' ), bbp_get_view_title() );
+		$title['text']   = bbp_get_view_title();
+		$title['format'] = esc_attr__( 'View: %s', 'bbpress' );
 
 	/** Search ****************************************************************/
 
 	// Search
 	} elseif ( bbp_is_search() ) {
-		$title = bbp_get_search_title();
+		$title['text'] = bbp_get_search_title();
 	}
+
+	// This filter is deprecated. Use 'bbp_before_title_parse_args' instead.
+	$title = apply_filters( 'bbp_raw_title_array', $title );
+
+	// Set title array defaults
+	$title = bbp_parse_args( $title, array(
+		'text'   => '',
+		'format' => '%s'
+	), 'title' );
+
+	// Get the formatted raw title
+	$title = sprintf( $title['format'], $title['text'] );
 
 	// Filter the raw title
 	$title = apply_filters( 'bbp_raw_title', $title, $sep, $seplocation );
 
 	// Compare new title with original title
-	if ( $title == $_title )
+	if ( $title === $_title )
 		return $title;
 
 	// Temporary separator, for accurate flipping, if necessary
@@ -2604,7 +2629,7 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 		$prefix = " $sep ";
 
 	// sep on right, so reverse the order
-	if ( 'right' == $seplocation ) {
+	if ( 'right' === $seplocation ) {
 		$title_array = array_reverse( explode( $t_sep, $title ) );
 		$title       = implode( " $sep ", $title_array ) . $prefix;
 

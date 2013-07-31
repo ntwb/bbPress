@@ -17,7 +17,7 @@
  * Description: bbPress is forum software with a twist from the creators of WordPress.
  * Author:      The bbPress Community
  * Author URI:  http://bbpress.org
- * Version:     2.4-alpha
+ * Version:     2.4-beta1
  * Text Domain: bbpress
  * Domain Path: /languages/
  */
@@ -80,11 +80,6 @@ final class bbPress {
 	/** Singleton *************************************************************/
 
 	/**
-	 * @var bbPress The one true bbPress
-	 */
-	private static $instance;
-
-	/**
 	 * Main bbPress Instance
 	 *
 	 * bbPress is fun
@@ -95,7 +90,7 @@ final class bbPress {
 	 * time. Also prevents needing to define globals all over the place.
 	 *
 	 * @since bbPress (r3757)
-	 * @staticvar array $instance
+	 * @staticvar object $instance
 	 * @uses bbPress::setup_globals() Setup the globals needed
 	 * @uses bbPress::includes() Include the required files
 	 * @uses bbPress::setup_actions() Setup the hooks and actions
@@ -103,13 +98,20 @@ final class bbPress {
 	 * @return The one true bbPress
 	 */
 	public static function instance() {
-		if ( ! isset( self::$instance ) ) {
-			self::$instance = new bbPress;
-			self::$instance->setup_globals();
-			self::$instance->includes();
-			self::$instance->setup_actions();
+
+		// Store the instance locally to avoid private static replication
+		static $instance = null;
+
+		// Only run these methods if they haven't been ran previously
+		if ( null === $instance ) {
+			$instance = new bbPress;
+			$instance->setup_globals();
+			$instance->includes();
+			$instance->setup_actions();
 		}
-		return self::$instance;
+
+		// Always return the instance
+		return $instance;
 	}
 
 	/** Magic Methods *********************************************************/
@@ -188,7 +190,7 @@ final class bbPress {
 
 		/** Versions **********************************************************/
 
-		$this->version    = '2.4-alpha-r4900';
+		$this->version    = '2.4-beta1-5033';
 		$this->db_version = '240';
 
 		/** Paths *************************************************************/
@@ -246,10 +248,10 @@ final class bbPress {
 		$this->current_reply_id     = 0; // Current reply id
 		$this->current_topic_tag_id = 0; // Current topic tag id
 
-		$this->forum_query    = new stdClass(); // Main forum query
-		$this->topic_query    = new stdClass(); // Main topic query
-		$this->reply_query    = new stdClass(); // Main reply query
-		$this->search_query   = new stdClass(); // Main search query
+		$this->forum_query    = new WP_Query(); // Main forum query
+		$this->topic_query    = new WP_Query(); // Main topic query
+		$this->reply_query    = new WP_Query(); // Main reply query
+		$this->search_query   = new WP_Query(); // Main search query
 
 		/** Theme Compat ******************************************************/
 
@@ -258,8 +260,8 @@ final class bbPress {
 
 		/** Users *************************************************************/
 
-		$this->current_user   = new stdClass(); // Currently logged in user
-		$this->displayed_user = new stdClass(); // Currently displayed user
+		$this->current_user   = new WP_User(); // Currently logged in user
+		$this->displayed_user = new WP_User(); // Currently displayed user
 
 		/** Misc **************************************************************/
 
@@ -293,38 +295,38 @@ final class bbPress {
 		/** Components ********************************************************/
 
 		// Common
-		require( $this->includes_dir . 'common/ajax.php'           );
-		require( $this->includes_dir . 'common/classes.php'        );
-		require( $this->includes_dir . 'common/functions.php'      );
-		require( $this->includes_dir . 'common/formatting.php'     );
-		require( $this->includes_dir . 'common/template-tags.php'  );
-		require( $this->includes_dir . 'common/widgets.php'        );
-		require( $this->includes_dir . 'common/shortcodes.php'     );
+		require( $this->includes_dir . 'common/ajax.php'          );
+		require( $this->includes_dir . 'common/classes.php'       );
+		require( $this->includes_dir . 'common/functions.php'     );
+		require( $this->includes_dir . 'common/formatting.php'    );
+		require( $this->includes_dir . 'common/template.php'      );
+		require( $this->includes_dir . 'common/widgets.php'       );
+		require( $this->includes_dir . 'common/shortcodes.php'    );
 
 		// Forums
-		require( $this->includes_dir . 'forums/capabilities.php'   );
-		require( $this->includes_dir . 'forums/functions.php'      );
-		require( $this->includes_dir . 'forums/template-tags.php'  );
+		require( $this->includes_dir . 'forums/capabilities.php'  );
+		require( $this->includes_dir . 'forums/functions.php'     );
+		require( $this->includes_dir . 'forums/template.php'      );
 
 		// Topics
-		require( $this->includes_dir . 'topics/capabilities.php'   );
-		require( $this->includes_dir . 'topics/functions.php'      );
-		require( $this->includes_dir . 'topics/template-tags.php'  );
+		require( $this->includes_dir . 'topics/capabilities.php'  );
+		require( $this->includes_dir . 'topics/functions.php'     );
+		require( $this->includes_dir . 'topics/template.php'      );
 
 		// Replies
-		require( $this->includes_dir . 'replies/capabilities.php'  );
-		require( $this->includes_dir . 'replies/functions.php'     );
-		require( $this->includes_dir . 'replies/template-tags.php' );
+		require( $this->includes_dir . 'replies/capabilities.php' );
+		require( $this->includes_dir . 'replies/functions.php'    );
+		require( $this->includes_dir . 'replies/template.php'     );
 
 		// Search
-		require( $this->includes_dir . 'search/functions.php'      );
-		require( $this->includes_dir . 'search/template-tags.php'  );
+		require( $this->includes_dir . 'search/functions.php'     );
+		require( $this->includes_dir . 'search/template.php'      );
 
 		// Users
-		require( $this->includes_dir . 'users/capabilities.php'    );
-		require( $this->includes_dir . 'users/functions.php'       );
-		require( $this->includes_dir . 'users/template-tags.php'   );
-		require( $this->includes_dir . 'users/options.php'         );
+		require( $this->includes_dir . 'users/capabilities.php'   );
+		require( $this->includes_dir . 'users/functions.php'      );
+		require( $this->includes_dir . 'users/template.php'       );
+		require( $this->includes_dir . 'users/options.php'        );
 
 		/** Hooks *************************************************************/
 
@@ -375,7 +377,7 @@ final class bbPress {
 		);
 
 		// Add the actions
-		foreach( $actions as $class_action )
+		foreach ( $actions as $class_action )
 			add_action( 'bbp_' . $class_action, array( $this, $class_action ), 5 );
 
 		// All bbPress actions are setup (includes bbp-core-hooks.php)
@@ -836,7 +838,7 @@ final class bbPress {
 	 * @uses wp_get_current_user()
 	 */
 	public function setup_current_user() {
-		$this->current_user = &wp_get_current_user();
+		$this->current_user = wp_get_current_user();
 	}
 
 	/** Custom Rewrite Rules **************************************************/
