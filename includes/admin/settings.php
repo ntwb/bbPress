@@ -193,7 +193,7 @@ function bbp_admin_get_settings_fields() {
 				'args'              => array()
 			),
 
-			// Allow threadde replies
+			// Allow threaded replies
 			'_bbp_allow_threaded_replies' => array(
 				'sanitize_callback' => 'intval',
 				'args'              => array()
@@ -578,7 +578,7 @@ function bbp_admin_setting_callback_subscriptions() {
 ?>
 
 	<input name="_bbp_enable_subscriptions" id="_bbp_enable_subscriptions" type="checkbox" value="1" <?php checked( bbp_is_subscriptions_active( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_enable_subscriptions' ); ?> />
-	<label for="_bbp_enable_subscriptions"><?php esc_html_e( 'Allow users to subscribe to topics', 'bbpress' ); ?></label>
+	<label for="_bbp_enable_subscriptions"><?php esc_html_e( 'Allow users to subscribe to forums and topics', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1281,7 +1281,7 @@ function bbp_admin_settings() {
 function bbp_converter_setting_callback_main_section() {
 ?>
 
-	<p><?php esc_html_e( 'Information about your previous forums database so that they can be converted. <strong>Backup your database before proceeding.</strong>', 'bbpress' ); ?></p>
+	<p><?php _e( 'Information about your previous forums database so that they can be converted. <strong>Backup your database before proceeding.</strong>', 'bbpress' ); ?></p>
 
 <?php
 }

@@ -275,10 +275,6 @@ function bbp_new_reply_handler( $action = '' ) {
 	// Filter and sanitize
 	$reply_title = apply_filters( 'bbp_new_reply_pre_title', $reply_title );
 
-	// No reply title
-	if ( empty( $reply_title ) )
-		bbp_add_error( 'bbp_reply_title', __( '<strong>ERROR</strong>: Your reply needs a title.', 'bbpress' ) );
-
 	/** Reply Content *********************************************************/
 
 	if ( !empty( $_POST['bbp_reply_content'] ) )
@@ -870,7 +866,7 @@ function bbp_update_reply( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymo
 		update_post_meta( $reply_id, '_bbp_author_ip', bbp_current_author_ip(), false );
 
 		// Last active time
-		$last_active_time = current_time( 'mysql' );
+		$last_active_time = get_post_field( 'post_date', $reply_id );
 
 		// Walk up ancestors and do the dirty work
 		bbp_update_reply_walker( $reply_id, $last_active_time, $forum_id, $topic_id, false );

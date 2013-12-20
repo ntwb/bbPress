@@ -611,6 +611,176 @@ function bbp_author_ip( $args = '' ) {
 		return apply_filters( 'bbp_get_author_ip', $author_ip, $r );
 	}
 
+/** Anonymous Fields **********************************************************/
+
+/**
+ * Output the author disylay-name of a topic or reply.
+ *
+ * Convenience function to ensure proper template functions are called
+ * and correct filters are executed. Used primarily to display topic
+ * and reply author information in the anonymous form template-part.
+ *
+ * @since bbPress (r5119)
+ *
+ * @param int $post_id
+ * @uses bbp_get_author_display_name() to get the author name
+ */
+function bbp_author_display_name( $post_id = 0 ) {
+	echo bbp_get_author_display_name( $post_id );
+}
+
+	/**
+	 * Return the author name of a topic or reply.
+	 *
+	 * Convenience function to ensure proper template functions are called
+	 * and correct filters are executed. Used primarily to display topic
+	 * and reply author information in the anonymous form template-part.
+	 *
+	 * @since bbPress (r5119)
+	 *
+	 * @param int $post_id
+	 *
+	 * @uses bbp_is_topic_edit()
+	 * @uses bbp_get_topic_author_display_name()
+	 * @uses bbp_is_reply_edit()
+	 * @uses bbp_get_reply_author_display_name()
+	 * @uses bbp_current_anonymous_user_data()
+	 *
+	 * @return string The name of the author
+	 */
+	function bbp_get_author_display_name( $post_id = 0 ) {
+
+		// Define local variable(s)
+		$retval = '';
+
+		// Topic edit
+		if ( bbp_is_topic_edit() ) {
+			$retval = bbp_get_topic_author_display_name( $post_id );
+
+		// Reply edit
+		} elseif ( bbp_is_reply_edit() ) {
+			$retval = bbp_get_reply_author_display_name( $post_id );
+
+		// Not an edit, so rely on current user cookie data
+		} else {
+			$retval = bbp_current_anonymous_user_data( 'name' );
+		}
+
+		return apply_filters( 'bbp_get_author_display_name', $retval, $post_id );
+	}
+
+/**
+ * Output the author email of a topic or reply.
+ *
+ * Convenience function to ensure proper template functions are called
+ * and correct filters are executed. Used primarily to display topic
+ * and reply author information in the anonymous user form template-part.
+ *
+ * @since bbPress (r5119)
+ *
+ * @param int $post_id
+ * @uses bbp_get_author_email() to get the author email
+ */
+function bbp_author_email( $post_id = 0 ) {
+	echo bbp_get_author_email( $post_id );
+}
+
+	/**
+	 * Return the author email of a topic or reply.
+	 *
+	 * Convenience function to ensure proper template functions are called
+	 * and correct filters are executed. Used primarily to display topic
+	 * and reply author information in the anonymous user form template-part.
+	 *
+	 * @since bbPress (r5119)
+	 *
+	 * @param int $post_id
+	 *
+	 * @uses bbp_is_topic_edit()
+	 * @uses bbp_get_topic_author_email()
+	 * @uses bbp_is_reply_edit()
+	 * @uses bbp_get_reply_author_email()
+	 * @uses bbp_current_anonymous_user_data()
+	 *
+	 * @return string The email of the author
+	 */
+	function bbp_get_author_email( $post_id = 0 ) {
+
+		// Define local variable(s)
+		$retval = '';
+
+		// Topic edit
+		if ( bbp_is_topic_edit() ) {
+			$retval = bbp_get_topic_author_email( $post_id );
+
+		// Reply edit
+		} elseif ( bbp_is_reply_edit() ) {
+			$retval = bbp_get_reply_author_email( $post_id );
+
+		// Not an edit, so rely on current user cookie data
+		} else {
+			$retval = bbp_current_anonymous_user_data( 'email' );
+		}
+
+		return apply_filters( 'bbp_get_author_email', $retval, $post_id );
+	}
+
+/**
+ * Output the author url of a topic or reply.
+ *
+ * Convenience function to ensure proper template functions are called
+ * and correct filters are executed. Used primarily to display topic
+ * and reply author information in the anonymous user form template-part.
+ *
+ * @since bbPress (r5119)
+ *
+ * @param int $post_id
+ * @uses bbp_get_author_url() to get the author url
+ */
+function bbp_author_url( $post_id = 0 ) {
+	echo bbp_get_author_url( $post_id );
+}
+
+	/**
+	 * Return the author url of a topic or reply.
+	 *
+	 * Convenience function to ensure proper template functions are called
+	 * and correct filters are executed. Used primarily to display topic
+	 * and reply author information in the anonymous user form template-part.
+	 *
+	 * @since bbPress (r5119)
+	 *
+	 * @param int $post_id
+	 *
+	 * @uses bbp_is_topic_edit()
+	 * @uses bbp_get_topic_author_url()
+	 * @uses bbp_is_reply_edit()
+	 * @uses bbp_get_reply_author_url()
+	 * @uses bbp_current_anonymous_user_data()
+	 *
+	 * @return string The url of the author
+	 */
+	function bbp_get_author_url( $post_id = 0 ) {
+
+		// Define local variable(s)
+		$retval = '';
+
+		// Topic edit
+		if ( bbp_is_topic_edit() ) {
+			$retval = bbp_get_topic_author_url( $post_id );
+
+		// Reply edit
+		} elseif ( bbp_is_reply_edit() ) {
+			$retval = bbp_get_reply_author_url( $post_id );
+
+		// Not an edit, so rely on current user cookie data
+		} else {
+			$retval = bbp_current_anonymous_user_data( 'url' );
+		}
+
+		return apply_filters( 'bbp_get_author_url', $retval, $post_id );
+	}
+
 /** Favorites *****************************************************************/
 
 /**
@@ -715,8 +885,9 @@ function bbp_user_favorites_link( $args = array(), $user_id = 0, $wrap = true ) 
 	 * @return string User favorites link
 	 */
 	function bbp_get_user_favorites_link( $args = '', $user_id = 0, $wrap = true ) {
-		if ( !bbp_is_favorites_active() )
+		if ( ! bbp_is_favorites_active() ) {
 			return false;
+		}
 
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
@@ -736,13 +907,13 @@ function bbp_user_favorites_link( $args = array(), $user_id = 0, $wrap = true ) 
 		}
 
 		// No link if you can't edit yourself
-		if ( !current_user_can( 'edit_user', (int) $user_id ) ) {
+		if ( ! current_user_can( 'edit_user', (int) $user_id ) ) {
 			return false;
 		}
 
 		// Decide which link to show
 		$is_fav = bbp_is_user_favorite( $user_id, $topic_id );
-		if ( !empty( $is_fav ) ) {
+		if ( ! empty( $is_fav ) ) {
 			$text       = $r['favorited'];
 			$query_args = array( 'action' => 'bbp_favorite_remove', 'topic_id' => $topic_id );
 		} else {
@@ -765,7 +936,7 @@ function bbp_user_favorites_link( $args = array(), $user_id = 0, $wrap = true ) 
 		$html = sprintf( '%s<span id="favorite-%d"  %s><a href="%s" class="favorite-toggle" data-topic="%d">%s</a></span>%s', $r['before'], $topic_id, $sub, $url, $topic_id, $text, $r['after'] );
 
 		// Initial output is wrapped in a span, ajax output is hooked to this
-		if ( !empty( $wrap ) ) {
+		if ( ! empty( $wrap ) ) {
 			$html = '<span id="favorite-toggle">' . $html . '</span>';
 		}
 
@@ -848,7 +1019,7 @@ function bbp_user_subscribe_link( $args = '', $user_id = 0, $wrap = true ) {
 	echo bbp_get_user_subscribe_link( $args, $user_id, $wrap );
 }
 	/**
-	 * Return the link to subscribe/unsubscribe from a topic
+	 * Return the link to subscribe/unsubscribe from a forum or topic
 	 *
 	 * @since bbPress (r2668)
 	 *
@@ -857,14 +1028,19 @@ function bbp_user_subscribe_link( $args = '', $user_id = 0, $wrap = true ) {
 	 *  - unsubscribe: Unsubscribe text
 	 *  - user_id: User id
 	 *  - topic_id: Topic id
+	 *  - forum_id: Forum id
 	 *  - before: Before the link
 	 *  - after: After the link
 	 * @param int $user_id Optional. User id
 	 * @param bool $wrap Optional. If you want to wrap the link in <span id="subscription-toggle">.
+	 * @uses bbp_is_subscriptions_active() to check if subscriptions are active
 	 * @uses bbp_get_user_id() To get the user id
-	 * @uses current_user_can() To check if the current user can edit user
+	 * @uses bbp_get_user_id() To get the user id
 	 * @uses bbp_get_topic_id() To get the topic id
-	 * @uses bbp_is_user_subscribed() To check if the user is subscribed
+	 * @uses bbp_get_forum_id() To get the forum id
+	 * @uses current_user_can() To check if the current user can edit user
+	 * @uses bbp_is_user_subscribed_to_forum() To check if the user is subscribed to the forum
+	 * @uses bbp_is_user_subscribed_to_topic() To check if the user is subscribed to the topic
 	 * @uses bbp_is_subscriptions() To check if it's the subscriptions page
 	 * @uses bbp_get_subscriptions_permalink() To get subscriptions link
 	 * @uses bbp_get_topic_permalink() To get topic link
@@ -873,8 +1049,9 @@ function bbp_user_subscribe_link( $args = '', $user_id = 0, $wrap = true ) {
 	 * @return string Permanent link to topic
 	 */
 	function bbp_get_user_subscribe_link( $args = '', $user_id = 0, $wrap = true ) {
-		if ( !bbp_is_subscriptions_active() )
+		if ( ! bbp_is_subscriptions_active() ) {
 			return;
+		}
 
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
@@ -882,49 +1059,86 @@ function bbp_user_subscribe_link( $args = '', $user_id = 0, $wrap = true ) {
 			'unsubscribe' => __( 'Unsubscribe', 'bbpress' ),
 			'user_id'     => 0,
 			'topic_id'    => 0,
+			'forum_id'    => 0,
 			'before'      => '&nbsp;|&nbsp;',
 			'after'       => ''
 		), 'get_user_subscribe_link' );
 
-		// Validate user and topic ID's
+		// Validate user and object ID's
 		$user_id  = bbp_get_user_id( $r['user_id'], true, true );
 		$topic_id = bbp_get_topic_id( $r['topic_id'] );
-		if ( empty( $user_id ) || empty( $topic_id ) ) {
+		$forum_id = bbp_get_forum_id( $r['forum_id'] );
+		if ( empty( $user_id ) || ( empty( $topic_id ) && empty( $forum_id ) ) ) {
 			return false;
 		}
 
 		// No link if you can't edit yourself
-		if ( !current_user_can( 'edit_user', (int) $user_id ) ) {
+		if ( ! current_user_can( 'edit_user', (int) $user_id ) ) {
 			return false;
 		}
 
-		// Decide which link to show
-		$is_subscribed = bbp_is_user_subscribed( $user_id, $topic_id );
-		if ( !empty( $is_subscribed ) ) {
-			$text       = $r['unsubscribe'];
-			$query_args = array( 'action' => 'bbp_unsubscribe', 'topic_id' => $topic_id );
+		// Check if viewing a single forum
+		if ( empty( $topic_id ) && ! empty( $forum_id ) ) {
+
+			// Decide which link to show
+			$is_subscribed = bbp_is_user_subscribed_to_forum( $user_id, $forum_id );
+			if ( ! empty( $is_subscribed ) ) {
+				$text       = $r['unsubscribe'];
+				$query_args = array( 'action' => 'bbp_unsubscribe', 'forum_id' => $forum_id );
+			} else {
+				$text       = $r['subscribe'];
+				$query_args = array( 'action' => 'bbp_subscribe',   'forum_id' => $forum_id );
+			}
+
+			// Create the link based where the user is and if the user is
+			// subscribed already
+			if ( bbp_is_subscriptions() ) {
+				$permalink = bbp_get_subscriptions_permalink( $user_id );
+			} elseif ( bbp_is_single_forum() || bbp_is_single_reply() ) {
+				$permalink = bbp_get_forum_permalink( $forum_id );
+			} else {
+				$permalink = get_permalink();
+			}
+
+			$url  = esc_url( wp_nonce_url( add_query_arg( $query_args, $permalink ), 'toggle-subscription_' . $forum_id ) );
+			$sub  = $is_subscribed ? ' class="is-subscribed"' : '';
+			$html = sprintf( '%s<span id="subscribe-%d"  %s><a href="%s" class="subscription-toggle" data-forum="%d">%s</a></span>%s', $r['before'], $forum_id, $sub, $url, $forum_id, $text, $r['after'] );
+
+			// Initial output is wrapped in a span, ajax output is hooked to this
+			if ( !empty( $wrap ) ) {
+				$html = '<span id="subscription-toggle">' . $html . '</span>';
+			}
+
 		} else {
-			$text       = $r['subscribe'];
-			$query_args = array( 'action' => 'bbp_subscribe', 'topic_id' => $topic_id );
-		}
 
-		// Create the link based where the user is and if the user is
-		// subscribed already
-		if ( bbp_is_subscriptions() ) {
-			$permalink = bbp_get_subscriptions_permalink( $user_id );
-		} elseif ( bbp_is_single_topic() || bbp_is_single_reply() ) {
-			$permalink = bbp_get_topic_permalink( $topic_id );
-		} else {
-			$permalink = get_permalink();
-		}
+			// Decide which link to show
+			$is_subscribed = bbp_is_user_subscribed_to_topic( $user_id, $topic_id );
+			if ( ! empty( $is_subscribed ) ) {
+				$text       = $r['unsubscribe'];
+				$query_args = array( 'action' => 'bbp_unsubscribe', 'topic_id' => $topic_id );
+			} else {
+				$text       = $r['subscribe'];
+				$query_args = array( 'action' => 'bbp_subscribe',   'topic_id' => $topic_id );
+			}
 
-		$url  = esc_url( wp_nonce_url( add_query_arg( $query_args, $permalink ), 'toggle-subscription_' . $topic_id ) );
-		$sub  = $is_subscribed ? ' class="is-subscribed"' : '';
-		$html = sprintf( '%s<span id="subscribe-%d"  %s><a href="%s" class="subscription-toggle" data-topic="%d">%s</a></span>%s', $r['before'], $topic_id, $sub, $url, $topic_id, $text, $r['after'] );
+			// Create the link based where the user is and if the user is
+			// subscribed already
+			if ( bbp_is_subscriptions() ) {
+				$permalink = bbp_get_subscriptions_permalink( $user_id );
+			} elseif ( bbp_is_single_topic() || bbp_is_single_reply() ) {
+				$permalink = bbp_get_topic_permalink( $topic_id );
+			} else {
+				$permalink = get_permalink();
+			}
 
-		// Initial output is wrapped in a span, ajax output is hooked to this
-		if ( !empty( $wrap ) ) {
-			$html = '<span id="subscription-toggle">' . $html . '</span>';
+			$url  = esc_url( wp_nonce_url( add_query_arg( $query_args, $permalink ), 'toggle-subscription_' . $topic_id ) );
+			$sub  = $is_subscribed ? ' class="is-subscribed"' : '';
+			$html = sprintf( '%s<span id="subscribe-%d"  %s><a href="%s" class="subscription-toggle" data-topic="%d">%s</a></span>%s', $r['before'], $topic_id, $sub, $url, $topic_id, $text, $r['after'] );
+
+			// Initial output is wrapped in a span, ajax output is hooked to this
+			if ( !empty( $wrap ) ) {
+				$html = '<span id="subscription-toggle">' . $html . '</span>';
+			}
 		}
 
 		// Return the link
@@ -1142,7 +1356,7 @@ function bbp_user_topics_created_url( $user_id = 0 ) {
 
 		// Pretty permalinks
 		if ( $wp_rewrite->using_permalinks() ) {
-			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/topics';
+			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/' . bbp_get_topic_archive_slug();
 			$user = get_userdata( $user_id );
 			if ( ! empty( $user->user_nicename ) ) {
 				$user_nicename = $user->user_nicename;
@@ -1202,7 +1416,7 @@ function bbp_user_replies_created_url( $user_id = 0 ) {
 
 		// Pretty permalinks
 		if ( $wp_rewrite->using_permalinks() ) {
-			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/replies';
+			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/' . bbp_get_reply_archive_slug();
 			$user = get_userdata( $user_id );
 			if ( ! empty( $user->user_nicename ) ) {
 				$user_nicename = $user->user_nicename;
@@ -1439,7 +1653,6 @@ function bbp_author_link( $args = '' ) {
 
 			// Assemble some link bits
 			$link_title = !empty( $r['link_title'] ) ? ' title="' . $r['link_title'] . '"' : '';
-			$author_url = bbp_get_user_profile_url( $user_id );
 			$anonymous  = bbp_is_reply_anonymous( $r['post_id'] );
 
 			// Get avatar
@@ -1454,6 +1667,7 @@ function bbp_author_link( $args = '' ) {
 
 			// Add links if not anonymous
 			if ( empty( $anonymous ) && bbp_user_has_profile( $user_id ) ) {
+				$author_url = bbp_get_user_profile_url( $user_id );
 				foreach ( $author_links as $link_text ) {
 					$author_link[] = sprintf( '<a href="%1$s"%2$s>%3$s</a>', $author_url, $link_title, $link_text );
 				}
@@ -1509,7 +1723,7 @@ function bbp_user_can_view_forum( $args = '' ) {
 	$retval   = false;
 
 	// User is a keymaster
-	if ( bbp_is_user_keymaster( $user_id ) ) {
+	if ( !empty( $user_id ) && bbp_is_user_keymaster( $user_id ) ) {
 		$retval = true;
 
 	// Forum is public, and user can read forums or is not logged in
@@ -1791,4 +2005,40 @@ function bbp_current_user_can_access_create_reply_form() {
 
 	// Allow access to be filtered
 	return (bool) apply_filters( 'bbp_current_user_can_access_create_reply_form', (bool) $retval );
+}
+
+/**
+ * Performs a series of checks to ensure the current user should see the
+ * anonymous user form fields.
+ *
+ * @since bbPress (r5119)
+ *
+ * @uses bbp_is_anonymous()
+ * @uses bbp_is_topic_edit()
+ * @uses bbp_is_topic_anonymous()
+ * @uses bbp_is_reply_edit()
+ * @uses bbp_is_reply_anonymous()
+ *
+ * @return bool
+ */
+function bbp_current_user_can_access_anonymous_user_form() {
+
+	// Users need to earn access
+	$retval = false;
+
+	// User is not logged in, and anonymous posting is allowed
+	if ( bbp_is_anonymous() ) {
+		$retval = true;
+
+	// User is editing a topic, and topic is authored by anonymous user
+	} elseif ( bbp_is_topic_edit() && bbp_is_topic_anonymous() ) {
+		$retval = true;
+
+	// User is editing a reply, and reply is authored by anonymous user
+	} elseif ( bbp_is_reply_edit() && bbp_is_reply_anonymous() ) {
+		$retval = true;
+	}
+
+	// Allow access to be filtered
+	return (bool) apply_filters( 'bbp_current_user_can_access_anonymous_user_form', (bool) $retval );
 }

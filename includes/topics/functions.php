@@ -887,7 +887,7 @@ function bbp_update_topic( $topic_id = 0, $forum_id = 0, $anonymous_data = false
 		update_post_meta( $topic_id, '_bbp_author_ip', bbp_current_author_ip(), false );
 
 		// Last active time
-		$last_active = current_time( 'mysql' );
+		$last_active = get_post_field( 'post_date', $topic_id );
 
 		// Reply topic meta
 		bbp_update_topic_last_reply_id      ( $topic_id, 0            );
@@ -965,7 +965,7 @@ function bbp_update_topic_walker( $topic_id, $last_active_time = '', $forum_id =
 					'last_topic_id'      => $topic_id,
 					'last_reply_id'      => $reply_id,
 					'last_active_id'     => $active_id,
-					'last_active_time'   => 0,
+					'last_active_time'   => $last_active_time,
 					'last_active_status' => $topic_status
 				) );
 			}
@@ -2200,7 +2200,8 @@ function bbp_toggle_topic_handler( $action = '' ) {
  *
  * @since bbPress (r2652)
  *
- * @param int $topic_id Topic ID to remove
+ * @param int $topic_id Get the topic id to remove
+ * @uses bbp_get_topic_id To get the topic id
  * @uses bbp_get_topic_favoriters() To get the topic's favoriters
  * @uses bbp_remove_user_favorite() To remove the topic from user's favorites
  */
@@ -2231,8 +2232,9 @@ function bbp_remove_topic_from_all_favorites( $topic_id = 0 ) {
  *
  * @since bbPress (r2652)
  *
- * @param int $topic_id Topic ID to remove
+ * @param int $topic_id Get the topic id to remove
  * @uses bbp_is_subscriptions_active() To check if the subscriptions are active
+ * @uses bbp_get_topic_id To get the topic id
  * @uses bbp_get_topic_subscribers() To get the topic subscribers
  * @uses bbp_remove_user_subscription() To remove the user subscription
  */

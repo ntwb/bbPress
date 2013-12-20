@@ -1,9 +1,9 @@
 === bbPress ===
-Contributors: matt, johnjamesjacoby, jmdodd
+Contributors: matt, johnjamesjacoby, jmdodd, netweb
 Tags: forums, discussion, support, theme, akismet, multisite
 Requires at least: 3.6
-Tested up to: 3.6
-Stable tag: 2.4
+Tested up to: 3.8
+Stable tag: 2.5.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,31 @@ We're keeping things as small and light as possible while still allowing for gre
 2. Adjust the CSS of your theme as needed, to make everything pretty.
 
 == Changelog ==
+
+= 2.5.1 =
+* Updated subscriptions setting description
+* Fix forum subscriptions not appearing on profiles for some users
+* Allow links to have targets
+* Improve Windows compatibility
+
+= 2.5 =
+* Added forum subscriptions
+* Added importers for AEF, Drupal, FluxBB, Kunena Forums (Joomla), MyBB, Phorum, PHPFox, PHPWind, PunBB, SMF, Xenforo and XMB
+* Added BuddyPress Notifications integration
+* Added ability to enqueue scripts and styles in the template stack
+* Fix various existing importer scripts
+* Fix forum visibility meta saving
+* Fix Akismet anonymous user meta checking
+* Fix inconsistent bbp_dropdown() results
+* Fix topic and reply ping-status inconsistencies
+
+= 2.4.1 =
+* Fix forum status saving
+* Fix widget settings saving
+* Fix custom wp_title compatibility
+* Fix search results custom permalink compatibility
+* Fix custom user topics & replies pages
+* Fix hierarchical reply handling in converter
 
 = 2.4 =
 * Added hierarchical reply support
