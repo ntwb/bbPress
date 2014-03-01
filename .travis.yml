@@ -43,8 +43,8 @@ before_script:
     # prepare for running the tests
 #   - cd $plugin_dir
     #new alt build with grunt and wp develop repo
-    - WP_DEVELOP_DIR=/tmp/wordpress
-    - BBP_DEVELOP_DIR=/ntwb/bbPress
+    - WP_DEVELOP_DIR=tmp/wordpress
+    - BBP_DEVELOP_DIR=ntwb/bbPress
     - mkdir -p $WP_DEVELOP_DIR
     # setup db
     - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
