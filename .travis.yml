@@ -17,7 +17,7 @@ env:
     - WP_VERSION=3.7.1 WP_MULTISITE=1
 #    - WP_VERSION=3.6.1 WP_MULTISITE=1
 #    - WP_VERSION=3.5.2 WP_MULTISITE=1
-	- WP_DEVELOP_DIR=/tmp/wordpress/
+    - WP_DEVELOP_DIR=/tmp/wordpress/
 
 before_script:
     # set up WP install
