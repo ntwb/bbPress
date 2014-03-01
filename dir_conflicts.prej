@@ -1,9 +1,0 @@
-Trying to add new property 'svn:ignore'
-but the property already exists.
-<<<<<<< (local property value)
-.gitignore
-.git
-=======
-build
-node_modules
->>>>>>> (incoming property value)
