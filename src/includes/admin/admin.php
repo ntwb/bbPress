@@ -585,7 +585,13 @@ class BBP_Admin {
 	 * @since bbPress (r5224)
 	 */
 	public function enqueue_styles() {
-		wp_enqueue_style( 'bbp-admin-css', $this->css_url . 'admin.css', array( 'dashicons' ), bbp_get_version() );
+
+		// RTL and/or minified
+		$suffix  = is_rtl() ? '-rtl' : '';
+		$suffix .= defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		// Enqueue admin CSS with dashicons dependency
+		wp_enqueue_style( 'bbp-admin-css', $this->css_url . 'admin' . $suffix . '.css', array( 'dashicons' ), bbp_get_version() );
 	}
 
 	/**
@@ -638,15 +644,6 @@ class BBP_Admin {
 			array( '#324d3a', '#446950', '#56b274', '#324d3a' ),
 			array( 'base' => '#f1f3f2', 'focus' => '#fff', 'current' => '#fff' )
 		);
-
-		// Bail if already using the fresh color scheme
-		if ( 'fresh' === get_user_option( 'admin_color' ) ) {
-			return;
-		}
-
-		// Force 'colors-fresh' dependency
-		global $wp_styles;
-		$wp_styles->registered[ 'colors' ]->deps[] = 'colors-fresh';
 	}
 
 	/**
