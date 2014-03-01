@@ -59,6 +59,9 @@ before_script:
     - npm install -g grunt-cli
     - npm install
     - grunt build
+    - print $CWD;
+    - cd ..
+    - print $CWD;
     # bbPress' turn
     - plugin_slug=$(basename $(pwd))
     - plugin_dir=$WP_DEVELOP_DIR/build/wp-content/plugins/$plugin_slug
