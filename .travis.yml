@@ -40,7 +40,7 @@ before_script:
     # set up database
     - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
     # prepare for running the tests
-    - cd $plugin_dir/tests
+    - cd $plugin_dir
 
 script: phpunit
 
