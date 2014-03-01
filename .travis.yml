@@ -17,7 +17,6 @@ env:
     - WP_VERSION=3.7.1 WP_MULTISITE=1
 #    - WP_VERSION=3.6.1 WP_MULTISITE=1
 #    - WP_VERSION=3.5.2 WP_MULTISITE=1
-    - WP_DEVELOP_DIR=/tmp/wordpress/
 
 before_script:
     # set up WP install
@@ -44,6 +43,7 @@ before_script:
     # prepare for running the tests
 #   - cd $plugin_dir
     #new alt build with grunt and wp develop repo
+    - WP_DEVELOP_DIR=/tmp/wordpress/
     # setup db
     - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
     # grab wp branch
