@@ -112,6 +112,7 @@ before_script:
     - sed -i "s/yourdbnamehere/wordpress_test/" wp-tests-config.php
     - sed -i "s/yourusernamehere/root/" wp-tests-config.php
     - sed -i "s/yourpasswordhere//" wp-tests-config.php
+    - cd "/tmp/wordpress/src/wp-content/plugins/$PLUGIN_SLUG"
 
 script: phpunit
 # script: grunt travis
