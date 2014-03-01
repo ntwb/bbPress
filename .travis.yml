@@ -43,6 +43,7 @@ env:
 #      env: WP_VERSION=3.8 WP_MULTISITE=0
 
 before_script:
+    - set -x
     # set up WP install
 #    - WP_CORE_DIR=/tmp/wordpress/
 #    - WP_DEVELOP_DIR=/tmp/wordpress/
