@@ -290,6 +290,8 @@ module.exports = function( grunt ) {
 
 	grunt.registerTask( 'jstest', 'Runs all javascript tasks.', [ 'jsvalidate', 'jshint' ] );
 
+	grunt.registerTask('travis', ['phpunit']);
+
 	// Default task.
 	grunt.registerTask( 'default', [ 'build' ] );
 
