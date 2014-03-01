@@ -21,6 +21,7 @@ env:
 before_script:
     # set up WP install
     - WP_CORE_DIR=/tmp/wordpress/
+    - WP_DEVELOP_DIR=/tmp/wordpress/
     - wget -nv -O /tmp/wordpress.tar.gz https://github.com/WordPress/WordPress/tarball/$WP_VERSION
     - mkdir -p $WP_CORE_DIR
     - tar --strip-components=1 -zxmf /tmp/wordpress.tar.gz -C $WP_CORE_DIR
