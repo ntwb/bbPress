@@ -97,8 +97,8 @@ before_script:
     - sed -i "s/yourusernamehere/root/" wp-tests-config.php
     - sed -i "s/yourpasswordhere//" wp-tests-config.php
     # prepare for running bbPress' tests
-    - BBP_DEVELOP_DIR = $WP_DEVELOP_DIR/src/wp-content/plugins/bbpress
-    - cd "/tmp/wordpress/src/wp-content/plugins/bbpress"
+    - BBP_DEVELOP_DIR=$WP_DEVELOP_DIR/src/wp-content/plugins/bbpress
+    - cd $BBP_DEVELOP_DIR
     # 'build' bbPress
     - npm install -g grunt-cli
     - npm install
