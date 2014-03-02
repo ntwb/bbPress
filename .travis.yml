@@ -58,7 +58,7 @@ before_script:
     - cd $WP_DEVELOP_DIR
     - git checkout $WP_VERSION
     # setub db
-    - mysql -e "CREATE DATABASE wordpress_tests;" -uroot
+    - mysql -e "CREATE DATABASE wordpress_test;" -uroot
     # setub wp-configs
     - cp wp-tests-config-sample.php wp-tests-config.php
     - sed -i "s:dirname( __FILE__ ) . '/wordpress/':'$WP_DEVELOP_DIR':" wp-tests-config.php
