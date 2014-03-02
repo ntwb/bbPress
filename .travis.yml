@@ -35,14 +35,9 @@ env:
 
 matrix:
     include:
-#    - php: "5.5"
-#    - env: WP_VERSION=master WP_MULTISITE=1
-    - php: "5.4"
     - php: "5.3"
-    - php: "5.2"
-    - env: WP_VERSION=3.8.1
-    - env: WP_MULTISITE=0
-    - env: WP_MULTISITE=1
+      env: WP_VERSION=master WP_MULTISITE=0
+      env: WP_VERSION=master WP_MULTISITE=1
 
 before_script:
     # Lets try @tiera's way via https://github.com/tierra/wordpress-plugin-tests
