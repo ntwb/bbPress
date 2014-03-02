@@ -62,7 +62,7 @@ before_script:
     # setub wp-configs
     - cp wp-tests-config-sample.php wp-tests-config.php
     - sed -i "s:dirname( __FILE__ ) . '/wordpress/':'$WP_DEVELOP_DIR':" wp-tests-config.php
-    - sed -i "s/yourdbnamehere/wordpress_test/" wp-tests-config.php
+    - sed -i "s/youremptytestdbnamehere/wordpress_test/" wp-tests-config.php
     - sed -i "s/yourusernamehere/root/" wp-tests-config.php
     - sed -i "s/yourpasswordhere//" wp-tests-config.php
     # prepare for running bbPress' tests
