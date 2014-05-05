@@ -1290,7 +1290,7 @@ function bbp_move_reply_handler( $action = '' ) {
 				}
 
 				// Bump the reply position
-				$reply_position = bbp_get_topic_reply_count( $destination_topic->ID ) + 1;
+				$reply_position = bbp_get_topic_reply_count( $destination_topic->ID, true ) + 1;
 
 				// Update the reply
 				wp_update_post( array(
@@ -1389,6 +1389,7 @@ function bbp_move_reply_handler( $action = '' ) {
 	$children = get_posts( array(
 		'post_type'  => bbp_get_reply_post_type(),
 		'meta_key'   => '_bbp_reply_to',
+		'meta_type'  => 'NUMERIC',
 		'meta_value' => $move_reply->ID,
 	) );
 	foreach ( $children as $child )

@@ -504,8 +504,8 @@ function bbp_maybe_get_root_slug() {
  * @since bbPress (r3759)
  * @return string
  */
-function bbp_get_forum_slug( $default = 'forum' ) {;
-	return apply_filters( 'bbp_get_root_slug', bbp_maybe_get_root_slug() . get_option( '_bbp_forum_slug', $default ) );
+function bbp_get_forum_slug( $default = 'forum' ) {
+	return apply_filters( 'bbp_get_forum_slug', bbp_maybe_get_root_slug() . get_option( '_bbp_forum_slug', $default ) );
 }
 
 /**

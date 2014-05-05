@@ -359,14 +359,12 @@ class BBP_Akismet {
 		$post_data['referrer']     = $_SERVER['HTTP_REFERER'];
 		$post_data['user_agent']   = $_SERVER['HTTP_USER_AGENT'];
 
-		// Akismet Test Mode
-		if ( akismet_test_mode() )
-			$post_data['is_test'] = 'true';
-
 		// Loop through _POST args and rekey strings
-		foreach ( $_POST as $key => $value )
-			if ( is_string( $value ) )
+		foreach ( $_POST as $key => $value ) {
+			if ( is_string( $value ) ) {
 				$post_data['POST_' . $key] = $value;
+			}
+		}
 
 		// Keys to ignore
 		$ignore = array( 'HTTP_COOKIE', 'HTTP_COOKIE2', 'PHP_AUTH_PW' );
@@ -385,8 +383,9 @@ class BBP_Akismet {
 		}
 
 		// Ready...
-		foreach ( $post_data as $key => $data )
+		foreach ( $post_data as $key => $data ) {
 			$query_string .= $key . '=' . urlencode( stripslashes( $data ) ) . '&';
+		}
 
 		// Aim...
 		if ( 'check' === $check ) {
@@ -518,12 +517,17 @@ class BBP_Akismet {
 		$current_user = wp_get_current_user();
 
 		// Get the user's login name if possible
-		if ( is_object( $current_user ) && isset( $current_user->user_login ) )
+		if ( is_object( $current_user ) && isset( $current_user->user_login ) ) {
 			$user = $current_user->user_login;
+		}
+
+		// This used to be akismet_microtime() but it was removed in 3.0
+		$mtime        = explode( ' ', microtime() );
+		$message_time = $mtime[1] + $mtime[0];
 
 		// Setup the event to be saved
 		$event = array(
-			'time'    => akismet_microtime(),
+			'time'    => $message_time,
 			'message' => $message,
 			'event'   => $event,
 			'user'    => $user,
