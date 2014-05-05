@@ -9,7 +9,6 @@ php:
     - 5.3
     - 5.4
     - 5.5
-    - 5.6
 
 # WordPress versions 3.7.x and above as 'develop' repo
 env:
@@ -17,6 +16,13 @@ env:
     - WP_VERSION=3.9.0
     - WP_VERSION=3.8.3
     - WP_VERSION=3.7.3
+
+matrix:
+  include:
+    - php: 5.6
+      env: WP_VERSION=master
+  allow_failures:
+    - php: 5.6
 
 before_script:
     # setup WP_DEVELOP_DIR (needed for bbPress to bootstrap WP PhpUnit tests)
