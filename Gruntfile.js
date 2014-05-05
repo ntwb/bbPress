@@ -30,6 +30,7 @@ module.exports = function( grunt ) {
 		'!.jshintrc',
 		'!.travis.yml',
 		'node_modules/**',
+		'!**/*.scss',
 
 		// And these from .gitignore
 		'!**/.{svn,git}/**',
@@ -55,6 +56,7 @@ module.exports = function( grunt ) {
 
 	// Project configuration.
 	grunt.initConfig({
+		pkg: grunt.file.readJSON('package.json'),
 		clean: {
 			all: [ BUILD_DIR ],
 			dynamic: {
@@ -72,7 +74,7 @@ module.exports = function( grunt ) {
 						dest: BUILD_DIR,
 						dot: true,
 						expand: true,
-						src: [ '!**/.{svn,git}/**', '**' ]
+						src: [ '!**/.{svn,git}/**', '**', [ BBP_EXCLUDED_FILES ] ]
 					}
 				]
 			},
@@ -103,7 +105,11 @@ module.exports = function( grunt ) {
 				expand: true,
 				ext: '.min.css',
 				src: BBP_LTR_CSS,
-				options: { banner: '/*! https://wordpress.org/plugins/bbpress/ */' }
+				options: {
+					banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+					'<%= grunt.template.today("UTC:yyyy-mm-dd h:MM:ss TT Z") %> - ' +
+					'https://wordpress.org/plugins/bbpress/ */'
+				}
 			},
 			rtl: {
 				cwd: BUILD_DIR,
@@ -111,7 +117,11 @@ module.exports = function( grunt ) {
 				expand: true,
 				ext: '.min.css',
 				src: BBP_RTL_CSS,
-				options: { banner: '/*! https://wordpress.org/plugins/bbpress/ */' }
+				options: {
+					banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+					'<%= grunt.template.today("UTC:yyyy-mm-dd h:MM:ss TT Z") %> - ' +
+					'https://wordpress.org/plugins/bbpress/ */'
+				}
 			}
 		},
 		cssjanus: {
@@ -177,13 +187,15 @@ module.exports = function( grunt ) {
 				src: BBP_JS
 			},
 			options: {
-				banner: '/*! https://wordpress.org/plugins/bbpress/ */\n'
+				banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+				'<%= grunt.template.today("UTC:yyyy-mm-dd h:MM:ss TT Z") %> - ' +
+				'https://wordpress.org/plugins/bbpress/ */\n'
 			}
 		},
 		phpunit: {
 			'default': {
 				cmd: 'phpunit',
-				args: ['-c', 'phpunit.xml']
+				args: ['-c', 'phpunit.xml.dist']
 			},
 			multisite: {
 				cmd: 'phpunit',
@@ -197,7 +209,7 @@ module.exports = function( grunt ) {
 					domainPath: '.',
 					mainFile: 'bbpress.php',
 					potFilename: 'bbpress.pot',
-					processPot: function( pot, options ) {
+					processPot: function( pot ) {
 						pot.headers['report-msgid-bugs-to'] = 'https://bbpress.trac.wordpress.org';
 						pot.headers['last-translator'] = 'JOHN JAMES JACOBY <jjj@bbpress.org>';
 						pot.headers['language-team'] = 'ENGLISH <jjj@bbpress.org>';
@@ -205,6 +217,11 @@ module.exports = function( grunt ) {
 					},
 					type: 'wp-plugin'
 				}
+			}
+		},
+		patch: {
+			options: {
+				tracUrl: 'bbpress.trac.wordpress.org'
 			}
 		},
 		checktextdomain: {
@@ -296,7 +313,11 @@ module.exports = function( grunt ) {
 
 	grunt.registerTask( 'jstest', 'Runs all javascript tasks.', [ 'jsvalidate', 'jshint' ] );
 
+	// Travis CI Task
 	grunt.registerTask('travis', ['phpunit']);
+
+	// Patch task.
+	grunt.renameTask('patch_wordpress', 'patch');
 
 	// Default task.
 	grunt.registerTask( 'default', [ 'build' ] );
