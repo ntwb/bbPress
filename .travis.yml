@@ -14,7 +14,7 @@ php:
 # WordPress versions 3.7.x and above as 'develop' repo
 env:
     - WP_VERSION=master
-    - WP_VERSION=3.9
+    - WP_VERSION=3.9.0
     - WP_VERSION=3.8.3
     - WP_VERSION=3.7.3
 
@@ -24,10 +24,10 @@ before_script:
     # clone the WordPress develop repo
     - git clone --depth=50 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
     # Grab markoheijnen's MySQLi database layer
-    - wget -nv -O $WP_DEVELOP_DIR/src/wp-content/db.php https://raw.github.com/markoheijnen/wp-mysqli/master/db.php
+ #   - wget -nv -O $WP_DEVELOP_DIR/src/wp-content/db.php https://raw.github.com/markoheijnen/wp-mysqli/master/db.php
     - mv $TRAVIS_BUILD_DIR /tmp/wordpress/src/wp-content/plugins/bbpress
     - cd $WP_DEVELOP_DIR
-    - git checkout $WP_VERSION
+ #   - git checkout $WP_VERSION
     # setub db
     - mysql -e "CREATE DATABASE wordpress_test;" -uroot
     # setub wp-config
