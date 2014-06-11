@@ -10,13 +10,14 @@ php:
     - 5.4
     - 5.5
 
-# WordPress versions 3.7.x and above as 'develop' repo
+# WordPress versions uses Git 'develop' repo branches
 env:
-    - WP_VERSION=master
-    - WP_VERSION=3.9.0
-    - WP_VERSION=3.8.3
-    - WP_VERSION=3.7.3
+    - WP_VERSION=master # Git equivalent of SVN /trunk
+    - WP_VERSION=3.9    # Includes latest 3.9.x release
+    - WP_VERSION=3.8    # Includes latest 3.8.x release
+    - WP_VERSION=3.7    # Includes latest 3.7.x release
 
+# Build matrix options
 matrix:
   include:
     - php: 5.6
@@ -35,7 +36,7 @@ before_script:
     # setup WP_DEVELOP_DIR (needed for bbPress to bootstrap WP PhpUnit tests)
     - WP_DEVELOP_DIR=/tmp/wordpress
     # clone the WordPress develop repo
-    - git clone --depth=50 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
+    - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
     - mv $TRAVIS_BUILD_DIR /tmp/wordpress/src/wp-content/plugins/bbpress
     - cd $WP_DEVELOP_DIR
     # setub db
