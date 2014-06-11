@@ -33,7 +33,7 @@ matrix:
   fast_finish: true
 
 before_script:
-    # setup WP_DEVELOP_DIR (needed for bbPress to bootstrap WP PhpUnit tests)
+    # setup WP_DEVELOP_DIR (needed for bbPress to bootstrap WP PHPUnit tests)
     - WP_DEVELOP_DIR=/tmp/wordpress
     # clone the WordPress develop repo
     - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
