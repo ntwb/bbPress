@@ -55,7 +55,9 @@ before_script:
   - npm install
   - grunt build
 
-script: grunt travis
+# script: grunt travis
+phpunit --configuration -configuration phpunit.xml.dist
+phpunit --configuration -configuration tests/phpunit/multisite.xml
 
 notifications:
     email: false
