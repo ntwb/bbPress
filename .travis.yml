@@ -61,3 +61,9 @@ phpunit --configuration -configuration tests/phpunit/multisite.xml
 
 notifications:
     email: false
+
+#    irc:
+#      channels:
+#        - "irc.freenode.net#bbpress-dev"
+#      template:
+#        - "Build %{build_number} (%{branch} - %{commit}): %{message} %{build_url}"
