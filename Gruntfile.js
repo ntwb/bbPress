@@ -314,7 +314,7 @@ module.exports = function( grunt ) {
 	grunt.registerTask( 'jstest', 'Runs all javascript tasks.', [ 'jsvalidate', 'jshint' ] );
 
 	// Travis CI Task
-	grunt.registerTask('travis', ['phpunit']);
+	grunt.registerTask( 'travis', ['jshint', 'phpunit'] );
 
 	// Patch task.
 	grunt.renameTask('patch_wordpress', 'patch');
