@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Implementation of AEF Forum converter.
+ * Implementation of e107 v1.x Forum converter.
  *
- * @since bbPress (r5139)
- * @link Codex Docs http://codex.bbpress.org/import-forums/aef
+ * @since bbPress (r5352)
+ * @link Codex Docs http://codex.bbpress.org/import-forums/e107
  */
-class AEF extends BBP_Converter_Base {
+class e107v1 extends BBP_Converter_Base {
 
 	/**
 	 * Main Constructor
 	 *
-	 * @uses AEF::setup_globals()
+	 * @uses e107v1::setup_globals()
 	 */
 	function __construct() {
 		parent::__construct();
@@ -27,64 +27,64 @@ class AEF extends BBP_Converter_Base {
 
 		// Forum id (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
-			'from_fieldname' => 'fid',
+			'from_tablename' => 'forum',
+			'from_fieldname' => 'forum_id',
 			'to_type'        => 'forum',
 			'to_fieldname'   => '_bbp_forum_id'
 		);
 
 		// Forum parent id (If no parent, then 0, Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'forums',
-			'from_fieldname'  => 'par_board_id',
+			'from_tablename'  => 'forum',
+			'from_fieldname'  => 'forum_parent',
 			'to_type'         => 'forum',
 			'to_fieldname'    => '_bbp_forum_parent_id'
 		);
 
 		// Forum topic count (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
-			'from_fieldname' => 'ntopic',
+			'from_tablename' => 'forum',
+			'from_fieldname' => 'forum_threads',
 			'to_type'        => 'forum',
 			'to_fieldname'   => '_bbp_topic_count'
 		);
 
 		// Forum reply count (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
-			'from_fieldname' => 'nposts',
+			'from_tablename' => 'forum',
+			'from_fieldname' => 'forum_replies',
 			'to_type'        => 'forum',
 			'to_fieldname'   => '_bbp_reply_count'
 		);
 
-		// Forum total topic count (Stored in postmeta)
+		// Forum total topic count (Includes unpublished topics, Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
-			'from_fieldname' => 'ntopic',
+			'from_tablename' => 'forum',
+			'from_fieldname' => 'forum_threads',
 			'to_type'        => 'forum',
 			'to_fieldname'   => '_bbp_total_topic_count'
 		);
 
-		// Forum total reply count (Stored in postmeta)
+		// Forum total reply count (Includes unpublished replies, Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
-			'from_fieldname' => 'nposts',
+			'from_tablename' => 'forum',
+			'from_fieldname' => 'forum_replies',
 			'to_type'        => 'forum',
 			'to_fieldname'   => '_bbp_total_reply_count'
 		);
 
 		// Forum title.
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
-			'from_fieldname' => 'fname',
+			'from_tablename' => 'forum',
+			'from_fieldname' => 'forum_name',
 			'to_type'        => 'forum',
 			'to_fieldname'   => 'post_title'
 		);
 
 		// Forum slug (Clean name to avoid conflicts)
 		$this->field_map[] = array(
-			'from_tablename'  => 'forums',
-			'from_fieldname'  => 'fname',
+			'from_tablename'  => 'forum',
+			'from_fieldname'  => 'forum_name',
 			'to_type'         => 'forum',
 			'to_fieldname'    => 'post_name',
 			'callback_method' => 'callback_slug'
@@ -92,8 +92,8 @@ class AEF extends BBP_Converter_Base {
 
 		// Forum description.
 		$this->field_map[] = array(
-			'from_tablename'  => 'forums',
-			'from_fieldname'  => 'description',
+			'from_tablename'  => 'forum',
+			'from_fieldname'  => 'forum_description',
 			'to_type'         => 'forum',
 			'to_fieldname'    => 'post_content',
 			'callback_method' => 'callback_null'
@@ -101,19 +101,19 @@ class AEF extends BBP_Converter_Base {
 
 		// Forum display order (Starts from 1)
 		$this->field_map[] = array(
-			'from_tablename' => 'forums',
+			'from_tablename' => 'forum',
 			'from_fieldname' => 'forum_order',
 			'to_type'        => 'forum',
 			'to_fieldname'   => 'menu_order'
 		);
 
-		// Forum status (Unlocked = 1 or Locked = 0, Stored in postmeta)
+		// Forum type (Category = 0 or Forum > 0, Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'forums',
-			'from_fieldname'  => 'status',
+			'from_tablename'  => 'forum',
+			'from_fieldname'  => 'forum_parent',
 			'to_type'         => 'forum',
-			'to_fieldname'    => '_bbp_status',
-			'callback_method' => 'callback_forum_status'
+			'to_fieldname'    => '_bbp_forum_type',
+			'callback_method' => 'callback_forum_type'
 		);
 
 		// Forum dates.
@@ -142,16 +142,17 @@ class AEF extends BBP_Converter_Base {
 
 		// Topic id (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'topics',
-			'from_fieldname' => 'tid',
-			'to_type'        => 'topic',
-			'to_fieldname'   => '_bbp_topic_id'
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_id',
+			'from_expression' => 'WHERE thread_parent = 0',
+			'to_type'         => 'topic',
+			'to_fieldname'    => '_bbp_topic_id'
 		);
 
 		// Topic reply count (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 'n_posts',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_total_replies',
 			'to_type'         => 'topic',
 			'to_fieldname'    => '_bbp_reply_count',
 			'callback_method' => 'callback_topic_reply_count'
@@ -159,55 +160,36 @@ class AEF extends BBP_Converter_Base {
 
 		// Topic total reply count (Includes unpublished replies, Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 'n_posts',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_total_replies',
 			'to_type'         => 'topic',
 			'to_fieldname'    => '_bbp_total_reply_count',
 			'callback_method' => 'callback_topic_reply_count'
 		);
 
-		// Topic parent forum id (If no parent, then 0, Stored in postmeta)
+		// Topic parent forum id (If no parent, then 0. Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 't_bid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_forum_id',
 			'to_type'         => 'topic',
 			'to_fieldname'    => '_bbp_forum_id',
 			'callback_method' => 'callback_forumid'
 		);
 
 		// Topic author.
-		// Note: We join the 'posts' table because 'topics' table does not include author id.
+		// Note: Uses a custom callback to transform user id from '1.Administrator e107v1' to numeric user id.
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'poster_id',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_user',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_author',
-			'callback_method' => 'callback_userid'
-		);
-
-		// Topic Author ip (Stored in postmeta)
-		// Note: We join the 'posts' table because 'topics' table does not include author ip.
-		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'poster_ip',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
-			'to_type'         => 'topic',
-			'to_fieldname'    => '_bbp_author_ip'
+			'callback_method' => 'callback_e107v1_userid'
 		);
 
 		// Topic content.
-		// Note: We join the 'posts' table because 'topics' table does not include topic content.
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'post',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_thread',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_content',
 			'callback_method' => 'callback_html'
@@ -215,156 +197,134 @@ class AEF extends BBP_Converter_Base {
 
 		// Topic title.
 		$this->field_map[] = array(
-			'from_tablename' => 'topics',
-			'from_fieldname' => 'topic',
+			'from_tablename' => 'forum_t',
+			'from_fieldname' => 'thread_name',
 			'to_type'        => 'topic',
 			'to_fieldname'   => 'post_title'
 		);
 
 		// Topic slug (Clean name to avoid conflicts)
 		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 'topic',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_name',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_name',
 			'callback_method' => 'callback_slug'
 		);
 
+		// Topic status (Open or Closed, e107 v1.x open = 1 & closed = 0)
+		$this->field_map[] = array(
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_active',
+			'to_type'         => 'topic',
+			'to_fieldname'    => 'post_status',
+			'callback_method' => 'callback_topic_status'
+		);
+
 		// Topic parent forum id (If no parent, then 0)
 		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 't_bid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_forum_id',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_parent',
 			'callback_method' => 'callback_forumid'
 		);
 
-		// Sticky status (Stored in postmeta))
+		// Sticky status (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 't_sticky',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_s',
 			'to_type'         => 'topic',
 			'to_fieldname'    => '_bbp_old_sticky_status',
 			'callback_method' => 'callback_sticky_status'
 		);
 
 		// Topic dates.
-		// Note: We join the 'posts' table because 'topics' table does not include topic dates.
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_date',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_date_gmt',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_modified',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_modified_gmt',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
-			'join_tablename'  => 'topics',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON topics.first_post_id = posts.pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'topic',
 			'to_fieldname'    => '_bbp_last_active_time',
 			'callback_method' => 'callback_datetime'
 		);
 
-		// Topic status (Open = 1 or Closed = 0, AEF v1.0.9)
-		$this->field_map[] = array(
-			'from_tablename'  => 'topics',
-			'from_fieldname'  => 't_status',
-			'to_type'         => 'topic',
-			'to_fieldname'    => 'post_status',
-			'callback_method' => 'callback_topic_status'
-		);
-
 		/** Tags Section ******************************************************/
 
 		/**
-		 * AEF v1.0.9 Forums do not support topic tags out of the box
+		 * e107 v1.x Forums do not support topic tags out of the box
 		 */
 
 		/** Reply Section *****************************************************/
 
 		// Reply id (Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'pid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_id',
+			'from_expression' => 'WHERE thread_parent != 0',
 			'to_type'         => 'reply',
 			'to_fieldname'    => '_bbp_post_id'
 		);
 
-		// Reply parent forum id (If no parent, then 0, Stored in postmeta)
+		// Reply parent forum id (If no parent, then 0. Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'post_fid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_forum_id',
 			'to_type'         => 'reply',
 			'to_fieldname'    => '_bbp_forum_id',
 			'callback_method' => 'callback_topicid_to_forumid'
 		);
 
-		// Reply parent topic id (If no parent, then 0, Stored in postmeta)
+		// Reply parent topic id (If no parent, then 0. Stored in postmeta)
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'post_tid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_parent',
 			'to_type'         => 'reply',
 			'to_fieldname'    => '_bbp_topic_id',
 			'callback_method' => 'callback_topicid'
 		);
 
-		// Reply author ip (Stored in postmeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'posts',
-			'from_fieldname' => 'poster_ip',
-			'to_type'        => 'reply',
-			'to_fieldname'   => '_bbp_author_ip'
-		);
-
 		// Reply author.
+		// Note: Uses a custom callback to transform user id from '1.Administrator e107v1' to numeric user id.
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'poster_id',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_user',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_author',
-			'callback_method' => 'callback_userid'
+			'callback_method' => 'callback_e107v1_userid'
 		);
 
 		// Reply content.
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'post',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_thread',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_content',
 			'callback_method' => 'callback_html'
@@ -372,8 +332,8 @@ class AEF extends BBP_Converter_Base {
 
 		// Reply parent topic id (If no parent, then 0)
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'post_tid',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_parent',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_parent',
 			'callback_method' => 'callback_topicid'
@@ -381,29 +341,29 @@ class AEF extends BBP_Converter_Base {
 
 		// Reply dates.
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_date',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_date_gmt',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_modified',
 			'callback_method' => 'callback_datetime'
 		);
 		$this->field_map[] = array(
-			'from_tablename'  => 'posts',
-			'from_fieldname'  => 'ptime',
+			'from_tablename'  => 'forum_t',
+			'from_fieldname'  => 'thread_datestamp',
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_modified_gmt',
 			'callback_method' => 'callback_datetime'
@@ -413,142 +373,77 @@ class AEF extends BBP_Converter_Base {
 
 		// Store old User id (Stored in usermeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'id',
+			'from_tablename' => 'user',
+			'from_fieldname' => 'user_id',
 			'to_type'        => 'user',
 			'to_fieldname'   => '_bbp_user_id'
 		);
 
 		// Store old User password (Stored in usermeta serialized with salt)
 		$this->field_map[] = array(
-			'from_tablename'  => 'users',
-			'from_fieldname'  => 'password',
+			'from_tablename'  => 'user',
+			'from_fieldname'  => 'user_password',
 			'to_type'         => 'user',
 			'to_fieldname'    => '_bbp_password',
 			'callback_method' => 'callback_savepass'
 		);
 
-		// Store old User Salt (This is only used for the SELECT row info for the above password save)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'salt',
-			'to_type'        => 'user',
-			'to_fieldname'   => ''
-		);
-
 		// User password verify class (Stored in usermeta for verifying password)
 		$this->field_map[] = array(
-			'to_type'      => 'users',
+			'to_type'      => 'user',
 			'to_fieldname' => '_bbp_class',
-			'default'      => 'AEF'
+			'default'      => 'e107v1'
 		);
 
 		// User name.
 		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'username',
+			'from_tablename' => 'user',
+			'from_fieldname' => 'user_loginname',
 			'to_type'        => 'user',
 			'to_fieldname'   => 'user_login'
 		);
 
 		// User nice name.
 		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'username',
+			'from_tablename' => 'user',
+			'from_fieldname' => 'user_loginname',
 			'to_type'        => 'user',
 			'to_fieldname'   => 'user_nicename'
 		);
 
 		// User email.
 		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'email',
+			'from_tablename' => 'user',
+			'from_fieldname' => 'user_email',
 			'to_type'        => 'user',
 			'to_fieldname'   => 'user_email'
 		);
 
-		// User homepage.
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'www',
-			'to_type'        => 'user',
-			'to_fieldname'   => 'user_url'
-		);
-
 		// User registered.
 		$this->field_map[] = array(
-			'from_tablename'  => 'users',
-			'from_fieldname'  => 'r_time',
+			'from_tablename'  => 'user',
+			'from_fieldname'  => 'user_join',
 			'to_type'         => 'user',
 			'to_fieldname'    => 'user_registered',
 			'callback_method' => 'callback_datetime'
 		);
 
-		// User AIM (Stored in usermeta)
+		// User display name.
 		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'aim',
+			'from_tablename' => 'user',
+			'from_fieldname' => 'user_name',
 			'to_type'        => 'user',
-			'to_fieldname'   => 'aim'
-		);
-
-		// User Yahoo (Stored in usermeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'yim',
-			'to_type'        => 'user',
-			'to_fieldname'   => 'yim'
-		);
-
-		// Store ICQ (Stored in usermeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'icq',
-			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_aef_user_icq'
-		);
-
-		// Store MSN (Stored in usermeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'msn',
-			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_aef_user_msn'
-		);
-
-		// Store Gmail (Stored in usermeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'gmail',
-			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_aef_user_gmail'
+			'to_fieldname'   => 'display_name'
 		);
 
 		// Store Signature (Stored in usermeta)
 		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'sig',
-			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_aef_user_sig',
+			'from_tablename'  => 'user',
+			'from_fieldname'  => 'user_signature',
+			'to_fieldname'    => '_bbp_e107v1_user_sig',
+			'to_type'         => 'user',
 			'callback_method' => 'callback_html'
 		);
-
-		// Store Location (Stored in usermeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'location',
-			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_aef_user_location'
-		);
-
-		// Store PrivateText (Stored in usermeta)
-		$this->field_map[] = array(
-			'from_tablename' => 'users',
-			'from_fieldname' => 'users_text',
-			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_aef_user_private_text'
-		);
-
 	}
 
 	/**
@@ -561,7 +456,7 @@ class AEF extends BBP_Converter_Base {
 	}
 
 	/**
-	 * This method is to save the salt and password together.  That
+	 * This method is to save the salt and password together. That
 	 * way when we authenticate it we can get it out of the database
 	 * as one value. Array values are auto sanitized by WordPress.
 	 */
@@ -582,29 +477,24 @@ class AEF extends BBP_Converter_Base {
 	}
 
 	/**
-	 * Translate the forum status from AEF v1.0.9 numeric's to WordPress's strings.
+	 * Translate the forum type from e107 v1.x numeric's to WordPress's strings.
 	 *
-	 * @param int $status AEF v1.0.9 numeric forum status
+	 * @param int $status e107 v1.x numeric forum type
 	 * @return string WordPress safe
 	 */
-	public function callback_forum_status( $status = 1 ) {
-		switch ( $status ) {
-			case 0 :
-				$status = 'closed';
-				break;
-
-			case 1 :
-			default :
-				$status = 'open';
-				break;
+	public function callback_forum_type( $status = 0 ) {
+		if ( $status == 0 ) {
+			$status = 'category';
+		} else {
+			$status = 'forum';
 		}
 		return $status;
 	}
 
 	/**
-	 * Translate the post status from AEF v1.0.9 numeric's to WordPress's strings.
+	 * Translate the post status from e107 v1.x numeric's to WordPress's strings.
 	 *
-	 * @param int $status AEF v1.0.9 numeric topic status
+	 * @param int $status e107 v1.x numeric topic status
 	 * @return string WordPress safe
 	 */
 	public function callback_topic_status( $status = 1 ) {
@@ -613,7 +503,7 @@ class AEF extends BBP_Converter_Base {
 				$status = 'closed';
 				break;
 
-			case 1  :
+			case 1 :
 			default :
 				$status = 'publish';
 				break;
@@ -622,20 +512,24 @@ class AEF extends BBP_Converter_Base {
 	}
 
 	/**
-	 * Translate the topic sticky status type from AEF 1.x numeric's to WordPress's strings.
+	 * Translate the topic sticky status type from e107 v1.x numeric's to WordPress's strings.
 	 *
-	 * @param int $status AEF 1.x numeric forum type
+	 * @param int $status e107 v1.x numeric forum type
 	 * @return string WordPress safe
 	 */
 	public function callback_sticky_status( $status = 0 ) {
 		switch ( $status ) {
-			case 1 :
-				$status = 'sticky';       // AEF Sticky 't_sticky = 1'
+			case 2 :
+				$status = 'super-sticky'; // e107 Announcement Sticky 'thread_s = 2'
 				break;
 
-			case 0  :
+			case 1 :
+				$status = 'sticky';       // e107 Sticky 'thread_s = 1'
+				break;
+
+			case 0 :
 			default :
-				$status = 'normal';       // AEF normal topic 't_sticky = 0'
+				$status = 'normal';       // e107 normal topic 'thread_s = 0'
 				break;
 		}
 		return $status;
@@ -644,11 +538,88 @@ class AEF extends BBP_Converter_Base {
 	/**
 	 * Verify the topic/reply count.
 	 *
-	 * @param int $count AEF v1.0.9 topic/reply counts
+	 * @param int $count e107 v1.x topic/reply counts
 	 * @return string WordPress safe
 	 */
 	public function callback_topic_reply_count( $count = 1 ) {
 		$count = absint( (int) $count - 1 );
 		return $count;
+	}
+
+	/**
+	 * Override the `callback_user` function in 'converter.php' for custom e107v1 imports
+	 *
+	 * A mini cache system to reduce database calls to user ID's
+	 *
+	 * @param string $field
+	 * @return string
+	 */
+	protected function callback_e107v1_userid( $field ) {
+
+		// Strip only the user id from the topic and reply authors
+		$field = preg_replace( '/(\d+?)+\.[\S\s]+/', '$1', $field );
+
+		if ( !isset( $this->map_userid[$field] ) ) {
+			if ( !empty( $this->sync_table ) ) {
+				$row = $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT value_id, meta_value FROM ' . $this->sync_table_name . ' WHERE meta_key = "_bbp_user_id" AND meta_value = "%s" LIMIT 1', $field ) );
+			} else {
+				$row = $this->wpdb->get_row( $this->wpdb->prepare( 'SELECT user_id AS value_id FROM ' . $this->wpdb->usermeta . ' WHERE meta_key = "_bbp_user_id" AND meta_value = "%s" LIMIT 1', $field ) );
+			}
+
+			if ( !is_null( $row ) ) {
+				$this->map_userid[$field] = $row->value_id;
+			} else {
+				if ( !empty( $_POST['_bbp_converter_convert_users'] ) && ( $_POST['_bbp_converter_convert_users'] == 1 ) ) {
+					$this->map_userid[$field] = 0;
+				} else {
+					$this->map_userid[$field] = $field;
+				}
+			}
+		}
+		return $this->map_userid[$field];
+	}
+
+	/**
+	 * This callback processes any custom parser.php attributes and custom code with preg_replace
+	 */
+	protected function callback_html( $field ) {
+
+		// Strips custom e107v1 'magic_url' and 'bbcode_uid' first from $field before parsing $field to parser.php
+		$e107v1_markup = $field;
+		$e107v1_markup = html_entity_decode( $e107v1_markup );
+
+		// Replace '[blockquote]' with '<blockquote>'
+		$e107v1_markup = preg_replace( '/\[blockquote\]/',   '<blockquote>',  $e107v1_markup );
+		// Replace '[/blockquote]' with '</blockquote>'
+		$e107v1_markup = preg_replace( '/\[\/blockquote\]/', '</blockquote>', $e107v1_markup );
+
+		// Replace '[quote$1=$2]' with '<em>$2 wrote:</em><blockquote>"
+		$e107v1_markup = preg_replace( '/\[quote(.*?)=(.*?)\]/', '<em>@$2 wrote:</em><blockquote>', $e107v1_markup );
+		// Replace '[/quote$1]' with '</blockquote>"
+		$e107v1_markup = preg_replace( '/\[\/quote(.*?)\]/' ,    '</blockquote>',                   $e107v1_markup );
+
+		// Remove '[justify]'
+		$e107v1_markup = preg_replace( '/\[justify\]/',   '', $e107v1_markup );
+		// Remove '[/justify]'
+		$e107v1_markup = preg_replace( '/\[\/justify\]/', '', $e107v1_markup );
+
+		// Replace '[link=(https|http)://$2]$3[/link]' with '<a href="$1://$2">$3</a>'
+		$e107v1_markup = preg_replace( '/\[link\=(https|http)\:\/\/(.*?)\](.*?)\[\/link\]/i',  '<a href="$1://$2">$3</a>',  $e107v1_markup );
+
+		// Replace '[list=(decimal|lower-roman|upper-roman|lower-alpha|upper-alpha)]' with '[list]'
+		$e107v1_markup = preg_replace( '/\[list\=(decimal|lower-roman|upper-roman|lower-alpha|upper-alpha)\]/i',  '[list]',  $e107v1_markup );
+
+		// Replace '[youtube]$1[/youtube]' with '$1"
+		$e107v1_markup = preg_replace( '/\[youtube\](.*?)\[\/youtube\]/', 'https://youtu.be/$1', $e107v1_markup );
+
+		// Now that e107v1 custom HTML has been stripped put the cleaned HTML back in $field
+		$field = $e107v1_markup;
+
+		// Parse out any bbCodes in $field with the BBCode 'parser.php'
+		require_once( bbpress()->admin->admin_dir . 'parser.php' );
+		$bbcode = BBCode::getInstance();
+		$bbcode->enable_smileys = false;
+		$bbcode->smiley_regex   = false;
+		return html_entity_decode( $bbcode->Parse( $field ) );
 	}
 }
