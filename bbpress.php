@@ -5,7 +5,7 @@
  *
  * bbPress is forum software with a twist from the creators of WordPress.
  *
- * $Id: bbpress.php 5286 2014-02-11 19:35:47Z johnjamesjacoby $
+ * $Id: bbpress.php 5345 2014-05-07 12:07:16Z johnjamesjacoby $
  *
  * @package bbPress
  * @subpackage Main
@@ -20,17 +20,18 @@
  * Version:     2.6-alpha
  * Text Domain: bbpress
  * Domain Path: /languages/
+ * License:     GPLv2 or later (license.txt)
  */
 
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
 // Assume you want to load from build
-$bbp_loader = dirname( __FILE__ ) . '/build/bbpress.php';
+$bbp_loader = __DIR__ . '/build/bbpress.php';
 
 // Load from source if no build exists
 if ( ! file_exists( $bbp_loader ) || defined( 'BBP_LOAD_SOURCE' ) ) {
-	$bbp_loader = dirname( __FILE__ ) . '/src/bbpress.php';
+	$bbp_loader = __DIR__ . '/src/bbpress.php';
 }
 
 // Include bbPress
