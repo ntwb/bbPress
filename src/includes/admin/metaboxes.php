@@ -421,6 +421,8 @@ function bbp_topic_metabox() {
 
 	?>
 
+	<hr />
+
 	<p>
 		<strong class="label"><?php esc_html_e( 'Forum:', 'bbpress' ); ?></strong>
 		<label class="screen-reader-text" for="parent_id"><?php esc_html_e( 'Forum', 'bbpress' ); ?></label>
@@ -470,7 +472,23 @@ function bbp_reply_metabox() {
 	// Get some meta
 	$reply_topic_id = bbp_get_reply_topic_id( $post_id );
 	$reply_forum_id = bbp_get_reply_forum_id( $post_id );
-	$reply_to       = bbp_get_reply_to(       $post_id );
+
+
+	/** Status ****************************************************************/
+
+	?>
+
+	<p>
+		<strong class="label"><?php esc_html_e( 'Status:', 'bbpress' ); ?></strong>
+		<label class="screen-reader-text" for="post_status"><?php esc_html_e( 'Select what status to give the reply.', 'bbpress' ); ?></label>
+		<?php bbp_form_reply_status_dropdown( array( 'select_id' => 'post_status', 'reply_id' => $post_id ) ); ?>
+	</p>
+
+	<hr />
+
+	<?php
+
+	/** Forum *****************************************************************/
 
 	// Allow individual manipulation of reply forum
 	if ( current_user_can( 'edit_others_replies' ) || current_user_can( 'moderate' ) ) : ?>
@@ -497,7 +515,11 @@ function bbp_reply_metabox() {
 			) ); ?>
 		</p>
 
-	<?php endif; ?>
+	<?php endif;
+
+	/** Topic *****************************************************************/
+
+	?>
 
 	<p>
 		<strong class="label"><?php esc_html_e( 'Topic:', 'bbpress' ); ?></strong>
@@ -505,10 +527,16 @@ function bbp_reply_metabox() {
 		<input name="parent_id" id="bbp_topic_id" type="text" value="<?php echo esc_attr( $reply_topic_id ); ?>" />
 	</p>
 
+	<?php
+
+	/** Reply To **************************************************************/
+
+	?>
+
 	<p>
 		<strong class="label"><?php esc_html_e( 'Reply To:', 'bbpress' ); ?></strong>
 		<label class="screen-reader-text" for="bbp_reply_to"><?php esc_html_e( 'Reply To', 'bbpress' ); ?></label>
-		<input name="bbp_reply_to" id="bbp_reply_to" type="text" value="<?php echo esc_attr( $reply_to ); ?>" />
+		<?php bbp_reply_to_dropdown( $post_id ); ?>
 	</p>
 
 	<input name="ping_status" type="hidden" id="ping_status" value="open" />
