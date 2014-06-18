@@ -319,7 +319,10 @@ class BBP_Converter {
 		$min   = (int) get_option( '_bbp_converter_start', 0 );
 		$count = (int) ! empty( $_POST['_bbp_converter_rows'] ) ? $_POST['_bbp_converter_rows'] : 100;
 		$max   = ( $min + $count ) - 1;
-		$start = $min;
+		$start = $min;		
+		$date_format = get_option( 'date_format' );
+		$time_format = get_option( 'time_format' );
+		$timex = date( "{$date_format} {$time_format}", current_time( 'timestamp' ) );
 
 		// Bail if platform did not get saved
 		$platform = !empty( $_POST['_bbp_converter_platform' ] ) ? $_POST['_bbp_converter_platform' ] : get_option( '_bbp_converter_platform' );
@@ -343,7 +346,7 @@ class BBP_Converter {
 						}
 					} else {
 						update_option( '_bbp_converter_start', $max + 1 );
-						$this->converter_output( sprintf( __( 'Deleting previously converted data (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+						$this->converter_output( sprintf( __( 'Deleting previously converted data (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 					}
 				} else {
 					update_option( '_bbp_converter_step',  $step + 1 );
@@ -363,7 +366,7 @@ class BBP_Converter {
 						}
 					} else {
 						update_option( '_bbp_converter_start', $max + 1 );
-						$this->converter_output( sprintf(  __( 'Converting users (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+						$this->converter_output( sprintf(  __( 'Converting users (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 					}
 				} else {
 					update_option( '_bbp_converter_step',  $step + 1 );
@@ -383,7 +386,7 @@ class BBP_Converter {
 						}
 					} else {
 						update_option( '_bbp_converter_start', $max + 1 );
-						$this->converter_output( sprintf( __( 'Delete users WordPress default passwords (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+						$this->converter_output( sprintf( __( 'Delete users WordPress default passwords (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 					}
 				} else {
 					update_option( '_bbp_converter_step',  $step + 1 );
@@ -402,7 +405,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Converting forums (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Converting forums (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -417,7 +420,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Calculating forum hierarchy (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Calculating forum hierarchy (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -432,7 +435,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Converting topics (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Converting topics (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -447,7 +450,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Calculating topic stickies (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Calculating topic stickies (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -462,7 +465,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Calculating topic super stickies (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Calculating topic super stickies (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -477,7 +480,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Converting topic tags (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Converting topic tags (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -492,7 +495,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Converting replies (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Converting replies (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
@@ -507,7 +510,7 @@ class BBP_Converter {
 					}
 				} else {
 					update_option( '_bbp_converter_start', $max + 1 );
-					$this->converter_output( sprintf( __( 'Calculating reply_to parents (%1$s - %2$s)', 'bbpress' ), $min, $max ) );
+					$this->converter_output( sprintf( __( 'Calculating reply_to parents (%1$s - %2$s)  %3$s ', 'bbpress' ), $min, $max, $timex ) );
 				}
 
 				break;
