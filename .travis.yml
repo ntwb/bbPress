@@ -21,6 +21,9 @@ env:
 
 # Build matrix options
 matrix:
+  exclude:
+    - php: 5.6
+      env: WP_VERSION=3.7
   include:
     - php: hhvm
       env: WP_VERSION=master
