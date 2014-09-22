@@ -27,11 +27,11 @@
 if ( !defined( 'ABSPATH' ) ) exit;
 
 // Assume you want to load from build
-$bbp_loader = dirname( __FILE__ ) . '/build/bbpress.php';
+$bbp_loader = __DIR__ . '/build/bbpress.php';
 
 // Load from source if no build exists
 if ( ! file_exists( $bbp_loader ) || defined( 'BBP_LOAD_SOURCE' ) ) {
-	$bbp_loader = dirname( __FILE__ ) . '/src/bbpress.php';
+	$bbp_loader = __DIR__ . '/src/bbpress.php';
 }
 
 // Include bbPress
