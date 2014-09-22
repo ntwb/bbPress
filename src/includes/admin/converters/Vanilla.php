@@ -25,13 +25,13 @@ class Vanilla extends BBP_Converter_Base {
 
 		/** Forum Section *****************************************************/
 
-		// Forum id (Stored in postmeta)
+		// Old forum id (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename'  => 'Category',
 			'from_fieldname'  => 'CategoryID',
 			'from_expression' => 'WHERE Category.CategoryID > 0',
 			'to_type'         => 'forum',
-			'to_fieldname'    => '_bbp_forum_id'
+			'to_fieldname'    => '_bbp_old_forum_id'
 		);
 
 		// Forum parent id (If no parent, then 0. Stored in postmeta)
@@ -39,7 +39,7 @@ class Vanilla extends BBP_Converter_Base {
 			'from_tablename'  => 'Category',
 			'from_fieldname'  => 'ParentCategoryID',
 			'to_type'         => 'forum',
-			'to_fieldname'    => '_bbp_forum_parent_id',
+			'to_fieldname'    => '_bbp_old_forum_parent_id',
 			'callback_method' => 'callback_forum_parent'
 		);
 
@@ -109,6 +109,20 @@ class Vanilla extends BBP_Converter_Base {
 			'to_fieldname'   => 'menu_order'
 		);
 
+		// Forum type (Set a default value 'forum', Stored in postmeta)
+		$this->field_map[] = array(
+			'to_type'      => 'forum',
+			'to_fieldname' => '_bbp_forum_type',
+			'default'      => 'forum'
+		);
+
+		// Forum status (Set a default value 'open', Stored in postmeta)
+		$this->field_map[] = array(
+			'to_type'      => 'forum',
+			'to_fieldname' => '_bbp_status',
+			'default'      => 'open'
+		);
+
 		// Forum dates.
 		$this->field_map[] = array(
 			'from_tablename' => 'Category',
@@ -137,12 +151,12 @@ class Vanilla extends BBP_Converter_Base {
 
 		/** Topic Section *****************************************************/
 
-		// Topic id (Stored in postmeta)
+		// Old topic id (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename' => 'Discussion',
 			'from_fieldname' => 'DiscussionID',
 			'to_type'        => 'topic',
-			'to_fieldname'   => '_bbp_topic_id'
+			'to_fieldname'   => '_bbp_old_topic_id'
 		);
 
 		// Topic reply count (Stored in postmeta)
@@ -212,7 +226,7 @@ class Vanilla extends BBP_Converter_Base {
 			'from_tablename'  => 'Discussion',
 			'from_fieldname'  => 'closed',
 			'to_type'         => 'topic',
-			'to_fieldname'    => 'post_status',
+			'to_fieldname'    => '_bbp_old_closed_status_id',
 			'callback_method' => 'callback_topic_status'
 		);
 
@@ -231,6 +245,15 @@ class Vanilla extends BBP_Converter_Base {
 			'to_type'         => 'topic',
 			'to_fieldname'    => 'post_parent',
 			'callback_method' => 'callback_forumid'
+		);
+
+		// Sticky status (Stored in postmeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'Discussion',
+			'from_fieldname'  => 'Announce',
+			'to_type'         => 'topic',
+			'to_fieldname'    => '_bbp_old_sticky_status_id',
+			'callback_method' => 'callback_sticky_status'
 		);
 
 		// Topic dates.
@@ -297,12 +320,12 @@ class Vanilla extends BBP_Converter_Base {
 
 		/** Reply Section *****************************************************/
 
-		// Reply id (Stored in postmeta)
+		// Old reply id (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename'  => 'Comment',
 			'from_fieldname'  => 'CommentID',
 			'to_type'         => 'reply',
-			'to_fieldname'    => '_bbp_post_id'
+			'to_fieldname'    => '_bbp_old_reply_id'
 		);
 
 		// Reply parent topic id (If no parent, then 0. Stored in postmeta)
@@ -323,7 +346,7 @@ class Vanilla extends BBP_Converter_Base {
 			'join_expression' => 'USING (DiscussionID)',
 			'to_type'         => 'reply',
 			'to_fieldname'    => '_bbp_forum_id',
-			'callback_method' => 'callback_topicid_to_forumid'
+			'callback_method' => 'callback_forumid'
 		);
 
 		// Reply author ip (Stored in postmeta)
@@ -389,15 +412,15 @@ class Vanilla extends BBP_Converter_Base {
 
 		/** User Section ******************************************************/
 
-		// Store old User id (Stored in usermeta)
+		// Store old user id (Stored in usermeta)
 		$this->field_map[] = array(
 			'from_tablename'  => 'User',
 			'from_fieldname'  => 'UserID',
 			'to_type'         => 'user',
-			'to_fieldname'    => '_bbp_user_id'
+			'to_fieldname'    => '_bbp_old_user_id'
 		);
 
-		// Store old User password (Stored in usermeta)
+		// Store old user password (Stored in usermeta)
 		$this->field_map[] = array(
 			'from_tablename' => 'User',
 			'from_fieldname' => 'Password',
@@ -469,6 +492,26 @@ class Vanilla extends BBP_Converter_Base {
 			case 0  :
 			default :
 				$status = 'publish';
+				break;
+		}
+		return $status;
+	}
+
+	/**
+	 * Translate the topic sticky status type from Vanilla v2.x numeric's to WordPress's strings.
+	 *
+	 * @param int $status Vanilla v2.x numeric forum type
+	 * @return string WordPress safe
+	 */
+	public function callback_sticky_status( $status = 0 ) {
+		switch ( $status ) {
+			case 1 :
+				$status = 'sticky';       // Vanilla Sticky 'Announce = 1'
+				break;
+
+			case 0  :
+			default :
+				$status = 'normal';       // Vanilla normal topic 'Announce = 0'
 				break;
 		}
 		return $status;

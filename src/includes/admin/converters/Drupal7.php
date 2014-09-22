@@ -25,12 +25,12 @@ class Drupal7 extends BBP_Converter_Base {
 
 		/** Forum Section *****************************************************/
 
-		// Forum id (Stored in postmeta)
+		// Old forum id (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename' => 'taxonomy_term_data',
 			'from_fieldname' => 'tid',
 			'to_type'        => 'forum',
-			'to_fieldname'   => '_bbp_forum_id'
+			'to_fieldname'   => '_bbp_old_forum_id'
 		);
 
 		// Forum parent id (If no parent, then 0, Stored in postmeta)
@@ -42,7 +42,7 @@ class Drupal7 extends BBP_Converter_Base {
 			'join_expression' => 'USING (tid)',
 			'from_expression' => 'LEFT JOIN taxonomy_vocabulary AS taxonomy_vocabulary USING (vid) WHERE module = "forum"',
 			'to_type'         => 'forum',
-			'to_fieldname'    => '_bbp_forum_parent_id'
+			'to_fieldname'    => '_bbp_old_forum_parent_id'
 		);
 
 		// Forum title.
@@ -79,6 +79,20 @@ class Drupal7 extends BBP_Converter_Base {
 			'to_fieldname'   => 'menu_order'
 		);
 
+		// Forum type (Set a default value 'forum', Stored in postmeta)
+		$this->field_map[] = array(
+			'to_type'      => 'forum',
+			'to_fieldname' => '_bbp_forum_type',
+			'default'      => 'forum'
+		);
+
+		// Forum status (Set a default value 'open', Stored in postmeta)
+		$this->field_map[] = array(
+			'to_type'      => 'forum',
+			'to_fieldname' => '_bbp_status',
+			'default'      => 'open'
+		);
+
 		// Forum dates.
 		$this->field_map[] = array(
 			'to_type'      => 'forum',
@@ -103,12 +117,12 @@ class Drupal7 extends BBP_Converter_Base {
 
 		/** Topic Section *****************************************************/
 
-		// Topic id (Stored in postmeta)
+		// Old topic id (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename' => 'forum_index',
 			'from_fieldname' => 'nid',
 			'to_type'        => 'topic',
-			'to_fieldname'   => '_bbp_topic_id'
+			'to_fieldname'   => '_bbp_old_topic_id'
 		);
 
 		// Topic reply count (Stored in postmeta)
@@ -190,12 +204,12 @@ class Drupal7 extends BBP_Converter_Base {
 			'callback_method' => 'callback_forumid'
 		);
 
-		// Sticky status (Stored in postmeta))
+		// Sticky status (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename'  => 'forum_index',
 			'from_fieldname'  => 'sticky',
 			'to_type'         => 'topic',
-			'to_fieldname'    => '_bbp_old_sticky_status',
+			'to_fieldname'    => '_bbp_old_sticky_status_id',
 			'callback_method' => 'callback_sticky_status'
 		);
 
@@ -244,7 +258,7 @@ class Drupal7 extends BBP_Converter_Base {
 			'join_type'       => 'INNER',
 			'join_expression' => 'ON node.nid = forum_index.nid',
 			'to_type'         => 'topic',
-			'to_fieldname'    => 'post_status',
+			'to_fieldname'    => '_bbp_old_closed_status_id',
 			'callback_method' => 'callback_topic_status'
 		);
 
@@ -303,22 +317,18 @@ class Drupal7 extends BBP_Converter_Base {
 
 		/** Reply Section *****************************************************/
 
-		// Reply id (Stored in postmeta)
+		// Old reply id (Stored in postmeta)
 		$this->field_map[] = array(
 			'from_tablename' => 'comment',
 			'from_fieldname' => 'cid',
 			'to_type'        => 'reply',
-			'to_fieldname'   => '_bbp_post_id'
+			'to_fieldname'   => '_bbp_old_reply_id'
 		);
 
 		// Reply parent forum id (If no parent, then 0. Stored in postmeta)
-		// Note: We join the 'forum' table because 'comment' table does not include parent forum id.
 		$this->field_map[] = array(
-			'from_tablename'  => 'forum',
-			'from_fieldname'  => 'tid',
-			'join_tablename'  => 'comment',
-			'join_type'       => 'INNER',
-			'join_expression' => 'ON forum.nid = comment.nid',
+			'from_tablename'  => 'comment',
+			'from_fieldname'  => 'nid',
 			'to_type'         => 'reply',
 			'to_fieldname'    => '_bbp_forum_id',
 			'callback_method' => 'callback_topicid_to_forumid'
@@ -338,7 +348,7 @@ class Drupal7 extends BBP_Converter_Base {
 			'from_tablename'  => 'comment',
 			'from_fieldname'  => 'pid',
 			'to_type'         => 'reply',
-			'to_fieldname'    => '_bbp_reply_to'
+			'to_fieldname'    => '_bbp_old_reply_to_id'
 		);
 
 		// Reply author ip (Stored in postmeta)
@@ -412,15 +422,15 @@ class Drupal7 extends BBP_Converter_Base {
 
 		/** User Section ******************************************************/
 
-		// Store old User id (Stored in usermeta)
+		// Store old user id (Stored in usermeta)
 		$this->field_map[] = array(
 			'from_tablename' => 'users',
 			'from_fieldname' => 'uid',
 			'to_type'        => 'user',
-			'to_fieldname'   => '_bbp_user_id'
+			'to_fieldname'   => '_bbp_old_user_id'
 		);
 
-		// Store old User password (Stored in usermeta serialized with salt)
+		// Store old user password (Stored in usermeta serialized with salt)
 		$this->field_map[] = array(
 			'from_tablename'  => 'users',
 			'from_fieldname'  => 'pass',
@@ -429,7 +439,7 @@ class Drupal7 extends BBP_Converter_Base {
 //			'callback_method' => 'callback_savepass'
 		);
 
-		// Store old User Salt (This is only used for the SELECT row info for the above password save)
+		// Store old user salt (This is only used for the SELECT row info for the above password save)
 		$this->field_map[] = array(
 			'from_tablename' => 'users',
 			'from_fieldname' => 'pass',

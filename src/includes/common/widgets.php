@@ -10,7 +10,7 @@
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * bbPress Login Widget
@@ -409,8 +409,9 @@ class BBP_Search_Widget extends WP_Widget {
 	public function widget( $args, $instance ) {
 
 		// Bail if search is disabled
-		if ( ! bbp_allow_search() )
+		if ( ! bbp_allow_search() ) {
 			return;
+		}
 
 		// Get widget settings
 		$settings = $this->parse_settings( $instance );
@@ -689,7 +690,7 @@ class BBP_Topics_Widget extends WP_Widget {
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_topics_widget_options', array(
 			'classname'   => 'widget_display_topics',
-			'description' => __( 'A list of recent topics, sorted by popularity or freshness.', 'bbpress' )
+			'description' => __( 'A list of recent topics, sorted by: newness, popularity, or recent replies.', 'bbpress' )
 		) );
 
 		parent::__construct( false, __( '(bbPress) Recent Topics', 'bbpress' ), $widget_ops );
