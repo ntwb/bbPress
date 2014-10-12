@@ -197,6 +197,22 @@ class Vanilla extends BBP_Converter_Base {
 			'callback_method' => 'callback_userid'
 		);
 
+		// Topic author name (Stored in postmeta as _bbp_anonymous_name)
+		$this->field_map[] = array(
+			'to_type'      => 'topic',
+			'to_fieldname' => '_bbp_old_topic_author_name_id',
+			'default'      => 'Anonymous'
+		);
+
+		// Is the topic anonymous (Stored in postmeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'Discussion',
+			'from_fieldname'  => 'InsertUserID',
+			'to_type'         => 'topic',
+			'to_fieldname'    => '_bbp_old_is_topic_anonymous_id',
+			'callback_method' => 'callback_check_anonymous'
+		);
+
 		// Topic title.
 		$this->field_map[] = array(
 			'from_tablename' => 'Discussion',
@@ -365,6 +381,22 @@ class Vanilla extends BBP_Converter_Base {
 			'to_type'         => 'reply',
 			'to_fieldname'    => 'post_author',
 			'callback_method' => 'callback_userid'
+		);
+
+		// Reply author name (Stored in postmeta as _bbp_anonymous_name)
+		$this->field_map[] = array(
+			'to_type'      => 'reply',
+			'to_fieldname' => '_bbp_old_reply_author_name_id',
+			'default'      => 'Anonymous'
+		);
+
+		// Is the reply anonymous (Stored in postmeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'Comment',
+			'from_fieldname'  => 'InsertUserID',
+			'to_type'         => 'reply',
+			'to_fieldname'    => '_bbp_old_is_reply_anonymous_id',
+			'callback_method' => 'callback_check_anonymous'
 		);
 
 		// Reply content.

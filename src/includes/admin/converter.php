@@ -603,7 +603,7 @@ class BBP_Converter {
 					value_type varchar(25) null,
 					value_id bigint(20) unsigned not null default '0',
 					meta_key varchar(255) null,
-					meta_value varchar(25) null,
+					meta_value varchar(255) null,
 				PRIMARY KEY  (meta_id),
 					KEY value_id (value_id),
 					KEY meta_join (meta_key, meta_value) ) {$charset_collate};";
@@ -1568,6 +1568,25 @@ abstract class BBP_Converter_Base {
 			}
 		}
 		return $this->map_userid[$field];
+	}
+
+	/**
+	 * Check if the topic or reply author is anonymous
+	 *
+	 * @since  (r5544)
+	 *
+	 * @param  string $field
+	 * @return string
+	 */
+	private function callback_check_anonymous( $field ) {
+
+		if ( $this->callback_userid( $field ) == 0 ) {
+			$field = 'true';
+		} else {
+			$field = 'false';
+		}
+
+		return $field;
 	}
 
 	/**
