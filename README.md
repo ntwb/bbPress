@@ -54,13 +54,18 @@ First we need to install Grunt's command line interface (CLI).
 
 You can use SVN or Git to contribute to bbPress, the choice is yours. so first you need to get a copy of our source
 
+* [Installing SVN on a Mac](https://make.wordpress.org/core/handbook/installing-a-version-control-system/installing-svn-on-a-mac/)
+* [Installing TortoiseSVN on Windows](https://make.wordpress.org/core/handbook/installing-a-version-control-system/installing-tortoisesvn/)
+* [Installing GitHub for Mac](https://mac.github.com/)
+* [Installing GitHub for Windows](https://windows.github.com/)
+
 Once you've made that choice checkout of clone our repo If you’re fixing a bug, start by checking out bbPress' repository on your computer.
 
 * `svn checkout http://bbpress.svn.wordpress.org/trunk`
 * `git clone git://bbpress.git.wordpress.org/`
 * `git clone https://github.com/bbpress/bbPress.git`
 
-Note: Our GitHub mirror repo is *not* setup at this stage, soon, just not yet.
+Note: Our GitHub mirror repo is *not* setup at this stage, soon, just not yet. See [Meta #637](https://meta.trac.wordpress.org/ticket/637)
 
 ## Installing Node.js dependancies with Node Package Manager (NPM)
 
@@ -125,6 +130,12 @@ The build release task `grunt build-release` tasks prepares everything we need t
 * `grunt watch` or `grunt watch:all` Watches for file changes in the `/src` directory and automatically copy the updated file to the `/build` directory with any minification or RTL tasks included if nessecsary
 
 ## Patch All the Things! Creating and Submitting Patches
+
+* [WordPress Core Handbook - Working with Patches](https://make.wordpress.org/core/handbook/working-with-patches/)
+* [WordPress Core Handbook - Working with Patches](https://make.wordpress.org/core/handbook/working-with-patches/create-a-patch-using-tortoisesvn/)
+* [WordPress Core Handbook - Working with Patches](https://make.wordpress.org/core/handbook/working-with-patches/apply-a-patch-using-tortoisesvn/)
+* [WordPress Core Handbook - Working with Patches](https://make.wordpress.org/core/handbook/working-with-patches/patches-with-command-line/)
+* [WordPress Core Blog - Git mirrors - Creating a patch with Git](https://make.wordpress.org/core/2014/01/15/git-mirrors-for-wordpress/)
 
 ### Bug Zapping
 
