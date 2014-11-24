@@ -3,6 +3,10 @@
 # Tell Travis CI we're using PHP
 language: php
 
+cache:
+  directories:
+    - $BBP_DEVELOP_DIR/node_modules
+
 # PHP version used in first build configuration.
 php:
     - 5.2
