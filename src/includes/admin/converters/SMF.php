@@ -143,6 +143,27 @@ class SMF extends BBP_Converter_Base {
 			'default'      => date('Y-m-d H:i:s')
 		);
 
+		/** Forum Subscriptions Section ***************************************/
+
+		// Subscribed forum ID (Stored in usermeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'log_notify',
+			'from_fieldname'  => 'id_board',
+			'from_expression' => 'WHERE log_notify.id_board != 0',
+			'to_type'         => 'forum_subscriptions',
+			'to_fieldname'    => '_bbp_forum_subscriptions'
+		);
+
+		// Subscribed user ID (Stored in usermeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'log_notify',
+			'from_fieldname'  => 'id_member',
+			'from_expression' => 'WHERE log_notify.id_board != 0',
+			'to_type'         => 'forum_subscriptions',
+			'to_fieldname'    => 'user_id',
+			'callback_method' => 'callback_userid'
+		);
+
 		/** Topic Section ******************************************************/
 
 		// Old topic id (Stored in postmeta)
@@ -341,7 +362,28 @@ class SMF extends BBP_Converter_Base {
 		 * SMF v2.0.4 Forums do not support topic tags out of the box
 		 */
 
-		/** Reply Section ******************************************************/
+		/** Topic Subscriptions Section ***************************************/
+
+		// Subscribed topic ID (Stored in usermeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'log_notify',
+			'from_fieldname'  => 'id_topic',
+			'from_expression' => 'WHERE log_notify.id_topic != 0',
+			'to_type'         => 'topic_subscriptions',
+			'to_fieldname'    => '_bbp_subscriptions'
+		);
+
+		// Subscribed user ID (Stored in usermeta)
+		$this->field_map[] = array(
+			'from_tablename'  => 'log_notify',
+			'from_fieldname'  => 'id_member',
+			'from_expression' => 'WHERE log_notify.id_topic != 0',
+			'to_type'         => 'topic_subscriptions',
+			'to_fieldname'    => 'user_id',
+			'callback_method' => 'callback_userid'
+		);
+
+		/** Reply Section *****************************************************/
 
 		// Old reply id (Stored in postmeta)
 		$this->field_map[] = array(
@@ -728,9 +770,9 @@ class SMF extends BBP_Converter_Base {
 		$SMF_markup = preg_replace( '/\[\/td\]/', '</td>', $SMF_markup );
 
 		// Replace '[list]' with '<ul>'
-		$phpbb_uid = preg_replace( '/\[list\]/',     '<ul>',          $phpbb_uid );
+		$SMF_markup = preg_replace( '/\[list\]/',     '<ul>',                      $SMF_markup );
 		// Replace '[liist type=decimal]' with '<ol type="a">'
-		$phpbb_uid = preg_replace( '/\[list\ type=decimal\]/',   '<ol type="a">', $phpbb_uid );
+		$SMF_markup = preg_replace( '/\[list\ type=decimal\]/',   '<ol type="a">', $SMF_markup );
 		// Replace '[li]' with '<li>'
 		$SMF_markup = preg_replace( '/\[li\]/',   '<li>',  $SMF_markup );
 		// Replace '[/li]' with '</li>'

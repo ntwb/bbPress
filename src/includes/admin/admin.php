@@ -571,7 +571,7 @@ class BBP_Admin {
 				case bbp_get_topic_post_type() :
 
 					// Enqueue the common JS
-					wp_enqueue_script( 'bbp-admin-common-js', $this->js_url . 'common' . $suffix . '.js', array( 'jquery' ), $version );
+					wp_enqueue_script( 'bbp-admin-common-js', $this->js_url . 'common' . $suffix . '.js', array( 'jquery', 'suggest' ), $version );
 
 					// Topics admin
 					if ( bbp_get_topic_post_type() === get_current_screen()->post_type ) {
@@ -579,7 +579,7 @@ class BBP_Admin {
 
 					// Replies admin
 					} elseif ( bbp_get_reply_post_type() === get_current_screen()->post_type ) {
-						wp_enqueue_script( 'bbp-admin-replies-js', $this->js_url . 'replies' . $suffix . '.js', array( 'jquery' ), $version );
+						wp_enqueue_script( 'bbp-admin-replies-js', $this->js_url . 'replies' . $suffix . '.js', array( 'jquery', 'suggest' ), $version );
 					}
 
 					break;
@@ -696,10 +696,19 @@ class BBP_Admin {
 	 * @uses bbp_get_topic_title()
 	 */
 	public function suggest_topic() {
+		global $wpdb;
+
+		// Bail early if no request
+		if ( empty( $_REQUEST['q'] ) ) {
+			wp_die( '0' );
+		}
+
+		// Check the ajax nonce
+		check_ajax_referer( 'bbp_suggest_topic_nonce' );
 
 		// Try to get some topics
 		$topics = get_posts( array(
-			's'         => like_escape( $_REQUEST['q'] ),
+			's'         => $wpdb->esc_like( $_REQUEST['q'] ),
 			'post_type' => bbp_get_topic_post_type()
 		) );
 
@@ -718,10 +727,19 @@ class BBP_Admin {
 	 * @since bbPress (r5014)
 	 */
 	public function suggest_user() {
+		global $wpdb;
+
+		// Bail early if no request
+		if ( empty( $_REQUEST['q'] ) ) {
+			wp_die( '0' );
+		}
+
+		// Check the ajax nonce
+		check_ajax_referer( 'bbp_suggest_user_nonce' );
 
 		// Try to get some users
 		$users_query = new WP_User_Query( array(
-			'search'         => '*' . like_escape( $_REQUEST['q'] ) . '*',
+			'search'         => '*' . $wpdb->esc_like( $_REQUEST['q'] ) . '*',
 			'fields'         => array( 'ID', 'user_nicename' ),
 			'search_columns' => array( 'ID', 'user_nicename', 'user_email' ),
 			'orderby'        => 'ID'

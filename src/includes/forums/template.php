@@ -2065,8 +2065,8 @@ function bbp_single_forum_description( $args = '' ) {
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
 			'forum_id'  => 0,
-			'before'    => '<div class="bbp-template-notice info"><p class="bbp-forum-description">',
-			'after'     => '</p></div>',
+			'before'    => '<div class="bbp-template-notice info"><ul><li class="bbp-forum-description">',
+			'after'     => '</li></ul></div>',
 			'size'      => 14,
 			'feed'      => true
 		), 'get_single_forum_description' );
@@ -2184,7 +2184,7 @@ function bbp_form_forum_title() {
 	function bbp_get_form_forum_title() {
 
 		// Get _POST data
-		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_title'] ) ) {
+		if ( bbp_is_forum_form_post_request() && isset( $_POST['bbp_forum_title'] ) ) {
 			$forum_title = $_POST['bbp_forum_title'];
 
 		// Get edit data
@@ -2221,8 +2221,8 @@ function bbp_form_forum_content() {
 	function bbp_get_form_forum_content() {
 
 		// Get _POST data
-		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_content'] ) ) {
-			$forum_content = stripslashes( $_POST['bbp_forum_content'] );
+		if ( bbp_is_forum_form_post_request() && isset( $_POST['bbp_forum_content'] ) ) {
+			$forum_content = wp_unslash( $_POST['bbp_forum_content'] );
 
 		// Get edit data
 		} elseif ( bbp_is_forum_edit() ) {
@@ -2259,7 +2259,7 @@ function bbp_form_forum_parent() {
 	function bbp_get_form_forum_parent() {
 
 		// Get _POST data
-		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_id'] ) ) {
+		if ( bbp_is_forum_form_post_request() && isset( $_POST['bbp_forum_id'] ) ) {
 			$forum_parent = $_POST['bbp_forum_id'];
 
 		// Get edit data
@@ -2297,7 +2297,7 @@ function bbp_form_forum_type() {
 	function bbp_get_form_forum_type() {
 
 		// Get _POST data
-		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_type'] ) ) {
+		if ( bbp_is_forum_form_post_request() && isset( $_POST['bbp_forum_type'] ) ) {
 			$forum_type = $_POST['bbp_forum_type'];
 
 		// Get edit data
@@ -2335,7 +2335,7 @@ function bbp_form_forum_visibility() {
 	function bbp_get_form_forum_visibility() {
 
 		// Get _POST data
-		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_visibility'] ) ) {
+		if ( bbp_is_forum_form_post_request() && isset( $_POST['bbp_forum_visibility'] ) ) {
 			$forum_visibility = $_POST['bbp_forum_visibility'];
 
 		// Get edit data
@@ -2377,7 +2377,7 @@ function bbp_form_forum_subscribed() {
 	function bbp_get_form_forum_subscribed() {
 
 		// Get _POST data
-		if ( bbp_is_post_request() && isset( $_POST['bbp_forum_subscription'] ) ) {
+		if ( bbp_is_forum_form_post_request() && isset( $_POST['bbp_forum_subscription'] ) ) {
 			$forum_subscribed = (bool) $_POST['bbp_forum_subscription'];
 
 		// Get edit data
@@ -2419,7 +2419,7 @@ function bbp_form_forum_subscribed() {
  *
  * @param $args This function supports these arguments:
  *  - select_id: Select id. Defaults to bbp_forum_type
- *  - tab: Tabindex
+ *  - tab: Deprecated. Tabindex
  *  - forum_id: Forum id
  *  - selected: Override the selected option
  * @uses bbp_get_form_forum_type() To get the topic's forum id
@@ -2434,7 +2434,7 @@ function bbp_form_forum_type_dropdown( $args = '' ) {
 	 *
 	 * @param $args This function supports these arguments:
 	 *  - select_id: Select id. Defaults to bbp_forum_type
-	 *  - tab: Tabindex
+	 *  - tab: Deprecated. Tabindex
 	 *  - forum_id: Forum id
 	 *  - selected: Override the selected option
 	 * @uses bbp_is_topic_edit() To check if it's the topic edit page
@@ -2455,7 +2455,7 @@ function bbp_form_forum_type_dropdown( $args = '' ) {
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
 			'select_id'    => 'bbp_forum_type',
-			'tab'          => bbp_get_tab_index(),
+			'tab'          => false,
 			'forum_id'     => $forum_id,
 			'selected'     => false
 		), 'forum_type_select' );
@@ -2464,7 +2464,7 @@ function bbp_form_forum_type_dropdown( $args = '' ) {
 		if ( empty( $r['selected'] ) ) {
 
 			// Post value is passed
-			if ( bbp_is_post_request() && isset( $_POST[ $r['select_id'] ] ) ) {
+			if ( bbp_is_forum_form_post_request() && isset( $_POST[ $r['select_id'] ] ) ) {
 				$r['selected'] = $_POST[ $r['select_id'] ];
 
 			// No Post value was passed
@@ -2511,7 +2511,7 @@ function bbp_form_forum_type_dropdown( $args = '' ) {
  *
  * @param $args This function supports these arguments:
  *  - select_id: Select id. Defaults to bbp_forum_status
- *  - tab: Tabindex
+ *  - tab: Deprecated. Tabindex
  *  - forum_id: Forum id
  *  - selected: Override the selected option
  * @uses bbp_get_form_forum_status() To get the topic's forum id
@@ -2526,7 +2526,7 @@ function bbp_form_forum_status_dropdown( $args = '' ) {
 	 *
 	 * @param $args This function supports these arguments:
 	 *  - select_id: Select id. Defaults to bbp_forum_status
-	 *  - tab: Tabindex
+	 *  - tab: Deprecated. Tabindex
 	 *  - forum_id: Forum id
 	 *  - selected: Override the selected option
 	 * @uses bbp_is_topic_edit() To check if it's the topic edit page
@@ -2547,7 +2547,7 @@ function bbp_form_forum_status_dropdown( $args = '' ) {
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
 			'select_id'    => 'bbp_forum_status',
-			'tab'          => bbp_get_tab_index(),
+			'tab'          => false,
 			'forum_id'     => $forum_id,
 			'selected'     => false
 		), 'forum_status_select' );
@@ -2556,7 +2556,7 @@ function bbp_form_forum_status_dropdown( $args = '' ) {
 		if ( empty( $r['selected'] ) ) {
 
 			// Post value is passed
-			if ( bbp_is_post_request() && isset( $_POST[ $r['select_id'] ] ) ) {
+			if ( bbp_is_forum_form_post_request() && isset( $_POST[ $r['select_id'] ] ) ) {
 				$r['selected'] = $_POST[ $r['select_id'] ];
 
 			// No Post value was passed
@@ -2603,7 +2603,7 @@ function bbp_form_forum_status_dropdown( $args = '' ) {
  *
  * @param $args This function supports these arguments:
  *  - select_id: Select id. Defaults to bbp_forum_visibility
- *  - tab: Tabindex
+ *  - tab: Deprecated. Tabindex
  *  - forum_id: Forum id
  *  - selected: Override the selected option
  * @uses bbp_get_form_forum_visibility() To get the topic's forum id
@@ -2618,7 +2618,7 @@ function bbp_form_forum_visibility_dropdown( $args = '' ) {
 	 *
 	 * @param $args This function supports these arguments:
 	 *  - select_id: Select id. Defaults to bbp_forum_visibility
-	 *  - tab: Tabindex
+	 *  - tab: Deprecated. Tabindex
 	 *  - forum_id: Forum id
 	 *  - selected: Override the selected option
 	 * @uses bbp_is_topic_edit() To check if it's the topic edit page
@@ -2639,7 +2639,7 @@ function bbp_form_forum_visibility_dropdown( $args = '' ) {
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
 			'select_id'    => 'bbp_forum_visibility',
-			'tab'          => bbp_get_tab_index(),
+			'tab'          => false,
 			'forum_id'     => $forum_id,
 			'selected'     => false
 		), 'forum_type_select' );
@@ -2648,7 +2648,7 @@ function bbp_form_forum_visibility_dropdown( $args = '' ) {
 		if ( empty( $r['selected'] ) ) {
 
 			// Post value is passed
-			if ( bbp_is_post_request() && isset( $_POST[ $r['select_id'] ] ) ) {
+			if ( bbp_is_forum_form_post_request() && isset( $_POST[ $r['select_id'] ] ) ) {
 				$r['selected'] = $_POST[ $r['select_id'] ];
 
 			// No Post value was passed
@@ -2687,6 +2687,37 @@ function bbp_form_forum_visibility_dropdown( $args = '' ) {
 		// Return the results
 		return apply_filters( 'bbp_get_form_forum_type_dropdown', ob_get_clean(), $r );
 	}
+
+/**
+ * Verify if a POST request came from a failed forum attempt.
+ *
+ * Used to avoid cross-site request forgeries when checking posted forum form
+ * content.
+ *
+ * @see bbp_forum_form_fields()
+ *
+ * @since bbPress (r5558)
+ * @return boolean True if is a post request with valid nonce
+ */
+function bbp_is_forum_form_post_request() {
+
+	// Bail if not a post request
+	if ( ! bbp_is_post_request() ) {
+		return false;
+	}
+
+	// Creating a new topic
+	if ( bbp_verify_nonce_request( 'bbp-new-forum' ) ) {
+		return true;
+	}
+
+	// Editing an existing topic
+	if ( bbp_verify_nonce_request( 'bbp-edit-forum' ) ) {
+		return true;
+	}
+
+	return false;
+}
 
 /** Feeds *********************************************************************/
 
