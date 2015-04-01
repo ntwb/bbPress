@@ -103,12 +103,19 @@ function bbp_insert_topic( $topic_data = array(), $topic_meta = array() ) {
  * @uses apply_filters() Calls 'bbp_new_topic_pre_content' with the content
  * @uses bbPress::errors::get_error_codes() To get the {@link WP_Error} errors
  * @uses wp_insert_post() To insert the topic
+ * @uses get_post_field() To get the post status
+ * @uses bbp_get_closed_status_id() To get the closed status id
+ * @uses bbp_close_topic() To close topics
+ * @uses bbp_get_trash_status_id() To get the trash status id
+ * @uses wp_trash_post() To trash topics
+ * @uses bbp_get_spam_status_id() To get the spam status id
+ * @uses add_post_meta() To add spam status meta to spam topics
  * @uses do_action() Calls 'bbp_new_topic' with the topic id, forum id,
  *                    anonymous data and reply author
  * @uses bbp_stick_topic() To stick or super stick the topic
  * @uses bbp_unstick_topic() To unstick the topic
  * @uses bbp_get_topic_permalink() To get the topic permalink
- * @uses wp_safe_redirect() To redirect to the topic link
+ * @uses bbp_redirect() To redirect to the topic link
  * @uses bbPress::errors::get_error_messages() To get the {@link WP_Error} error
  *                                              messages
  */
@@ -340,13 +347,22 @@ function bbp_new_topic_handler( $action = '' ) {
 
 	if ( ! empty( $topic_id ) && ! is_wp_error( $topic_id ) ) {
 
+		/** Close Check *******************************************************/
+
+		// If the topic is closed, close it properly
+		if ( ( get_post_field( 'post_status', $topic_id ) === bbp_get_closed_status_id() ) || ( $topic_data['post_status'] === bbp_get_closed_status_id() ) ) {
+
+			// Close the topic
+			bbp_close_topic( $topic_id );
+		}
+
 		/** Trash Check *******************************************************/
 
 		// If the forum is trash, or the topic_status is switched to
-		// trash, trash it properly
+		// trash, trash the topic properly
 		if ( ( get_post_field( 'post_status', $forum_id ) === bbp_get_trash_status_id() ) || ( $topic_data['post_status'] === bbp_get_trash_status_id() ) ) {
 
-			// Trash the reply
+			// Trash the topic
 			wp_trash_post( $topic_id );
 
 			// Force view=all
@@ -355,7 +371,7 @@ function bbp_new_topic_handler( $action = '' ) {
 
 		/** Spam Check ********************************************************/
 
-		// If reply or topic are spam, officially spam this reply
+		// If the topic is spam, officially spam this topic
 		if ( $topic_data['post_status'] === bbp_get_spam_status_id() ) {
 			add_post_meta( $topic_id, '_bbp_spam_meta_status', bbp_get_public_status_id() );
 
@@ -427,10 +443,7 @@ function bbp_new_topic_handler( $action = '' ) {
 		/** Successful Save ***************************************************/
 
 		// Redirect back to new topic
-		wp_safe_redirect( $redirect_url );
-
-		// For good measure
-		exit();
+		bbp_redirect( $redirect_url );
 
 	// Errors
 	} else {
@@ -470,7 +483,7 @@ function bbp_new_topic_handler( $action = '' ) {
  * @uses bbp_move_topic_handler() To handle movement of a topic from one forum
  *                                 to another
  * @uses bbp_get_topic_permalink() To get the topic permalink
- * @uses wp_safe_redirect() To redirect to the topic link
+ * @uses bbp_redirect() To redirect to the topic link
  * @uses bbPress::errors::get_error_messages() To get the {@link WP_Error} error
  *                                              messages
  */
@@ -791,10 +804,7 @@ function bbp_edit_topic_handler( $action = '' ) {
 		/** Successful Edit ***************************************************/
 
 		// Redirect back to new topic
-		wp_safe_redirect( $topic_url );
-
-		// For good measure
-		exit();
+		bbp_redirect( $topic_url );
 
 	/** Errors ****************************************************************/
 
@@ -1148,7 +1158,7 @@ function bbp_move_topic_handler( $topic_id, $old_forum_id, $new_forum_id ) {
  * @uses do_action() Calls 'bbp_merged_topic' with the destination and source
  *                    topic ids and source topic's forum id
  * @uses bbp_get_topic_permalink() To get the topic permalink
- * @uses wp_safe_redirect() To redirect to the topic link
+ * @uses bbp_redirect() To redirect to the topic link
  */
 function bbp_merge_topic_handler( $action = '' ) {
 
@@ -1361,10 +1371,7 @@ function bbp_merge_topic_handler( $action = '' ) {
 	do_action( 'bbp_merged_topic', $destination_topic->ID, $source_topic->ID, $source_topic->post_parent );
 
 	// Redirect back to new topic
-	wp_safe_redirect( bbp_get_topic_permalink( $destination_topic->ID ) );
-
-	// For good measure
-	exit();
+	bbp_redirect( bbp_get_topic_permalink( $destination_topic->ID ) );
 }
 
 /**
@@ -1448,7 +1455,7 @@ function bbp_merge_topic_count( $destination_topic_id, $source_topic_id, $source
  * @uses do_action() Calls 'bbp_post_split_topic' with the destination and
  *                    source topic ids and source topic's forum id
  * @uses bbp_get_topic_permalink() To get the topic permalink
- * @uses wp_safe_redirect() To redirect to the topic link
+ * @uses bbp_redirect() To redirect to the topic link
  */
 function bbp_split_topic_handler( $action = '' ) {
 
@@ -1744,10 +1751,7 @@ function bbp_split_topic_handler( $action = '' ) {
 	do_action( 'bbp_post_split_topic', $from_reply->ID, $source_topic->ID, $destination_topic->ID );
 
 	// Redirect back to the topic
-	wp_safe_redirect( bbp_get_topic_permalink( $destination_topic->ID ) );
-
-	// For good measure
-	exit();
+	bbp_redirect( bbp_get_topic_permalink( $destination_topic->ID ) );
 }
 
 /**
@@ -1810,7 +1814,7 @@ function bbp_split_topic_count( $from_reply_id, $source_topic_id, $destination_t
  * @uses home_url() To get the blog's home page url
  * @uses do_action() Calls actions based on the actions with associated args
  * @uses is_wp_error() To check if the value retrieved is a {@link WP_Error}
- * @uses wp_safe_redirect() To redirect to the url
+ * @uses bbp_redirect() To redirect to the url
  */
 function bbp_edit_topic_tag_handler( $action = '' ) {
 
@@ -1979,10 +1983,7 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 
 	// Redirect back
 	$redirect = ( ! empty( $redirect ) && ! is_wp_error( $redirect ) ) ? $redirect : home_url();
-	wp_safe_redirect( $redirect );
-
-	// For good measure
-	exit();
+	bbp_redirect( $redirect );
 }
 
 /** Helpers *******************************************************************/
@@ -2086,7 +2087,7 @@ function bbp_get_super_stickies() {
  * @uses bbp_get_forum_permalink() To get the forum link
  * @uses bbp_get_topic_permalink() To get the topic link
  * @uses add_query_arg() To add args to the url
- * @uses wp_safe_redirect() To redirect to the topic
+ * @uses bbp_redirect() To redirect to the topic
  * @uses bbPress::errors:add() To log the error messages
  */
 function bbp_toggle_topic_handler( $action = '' ) {
@@ -2231,10 +2232,7 @@ function bbp_toggle_topic_handler( $action = '' ) {
 			$redirect  = bbp_add_view_all( $permalink, $view_all );
 		}
 
-		wp_safe_redirect( $redirect );
-
-		// For good measure
-		exit();
+		bbp_redirect( $redirect );
 
 	// Handle errors
 	} else {
@@ -2763,10 +2761,17 @@ function bbp_update_topic_revision_log( $args = '' ) {
  *
  * @param int $topic_id Topic id
  * @uses bbp_get_topic() To get the topic
+ * @uses get_post_meta() To get the topic status meta
+ * @uses bbp_get_closed_status_id() to get the closed status
+ * @uses bbp_get_public_status_id() to get the public status
  * @uses do_action() Calls 'bbp_close_topic' with the topic id
  * @uses add_post_meta() To add the previous status to a meta
+ * @uses post_type_supports() To check if revisions are enabled
+ * @uses bbp_get_topic_post_type() To get the topic post type
+ * @uses remove_post_type_support() To temporarily remove topic revisions
  * @uses wp_update_post() To update the topic with the new status
- * @uses do_action() Calls 'bbp_opened_topic' with the topic id
+ * @uses add_post_type_support() To restore topic revisions
+ * @uses do_action() Calls 'bbp_closed_topic' with the topic id
  * @return mixed False or {@link WP_Error} on failure, topic id on success
  */
 function bbp_close_topic( $topic_id = 0 ) {
@@ -2777,25 +2782,40 @@ function bbp_close_topic( $topic_id = 0 ) {
 		return $topic;
 	}
 
-	// Bail if already closed
-	if ( bbp_get_closed_status_id() === $topic->post_status ) {
+	// Get previous topic status meta
+	$topic_status = get_post_meta( $topic_id, '_bbp_status', true );
+
+	// Bail if already closed and topic status meta exists
+	if ( bbp_get_closed_status_id() === $topic->post_status && ! empty( $topic_status ) ) {
 		return false;
 	}
+
+	// Set status meta public
+	$topic_status = bbp_get_public_status_id();
 
 	// Execute pre close code
 	do_action( 'bbp_close_topic', $topic_id );
 
 	// Add pre close status
-	add_post_meta( $topic_id, '_bbp_status', $topic->post_status );
+	add_post_meta( $topic_id, '_bbp_status', $topic_status );
 
 	// Set closed status
 	$topic->post_status = bbp_get_closed_status_id();
 
-	// No revisions
-	remove_action( 'pre_post_update', 'wp_save_post_revision' );
+	// Toggle revisions off as we are not altering content
+	if ( post_type_supports( bbp_get_topic_post_type(), 'revisions' ) ) {
+		$revisions_removed = true;
+		remove_post_type_support( bbp_get_topic_post_type(), 'revisions' );
+	}
 
 	// Update topic
 	$topic_id = wp_update_post( $topic );
+
+	// Toggle revisions back on
+	if ( true === $revisions_removed ) {
+		$revisions_removed = false;
+		add_post_type_support( bbp_get_topic_post_type(), 'revisions' );
+	}
 
 	// Execute post close code
 	do_action( 'bbp_closed_topic', $topic_id );
@@ -2814,7 +2834,11 @@ function bbp_close_topic( $topic_id = 0 ) {
  * @uses do_action() Calls 'bbp_open_topic' with the topic id
  * @uses get_post_meta() To get the previous status
  * @uses delete_post_meta() To delete the previous status meta
+ * @uses post_type_supports() To check if revisions are enabled
+ * @uses bbp_get_topic_post_type() To get the topic post type
+ * @uses remove_post_type_support() To temporarily remove topic revisions
  * @uses wp_update_post() To update the topic with the new status
+ * @uses add_post_type_support() To restore topic revisions
  * @uses do_action() Calls 'bbp_opened_topic' with the topic id
  * @return mixed False or {@link WP_Error} on failure, topic id on success
  */
@@ -2848,11 +2872,20 @@ function bbp_open_topic( $topic_id = 0 ) {
 	// Remove old status meta
 	delete_post_meta( $topic_id, '_bbp_status' );
 
-	// No revisions
-	remove_action( 'pre_post_update', 'wp_save_post_revision' );
+	// Toggle revisions off as we are not altering content
+	if ( post_type_supports( bbp_get_topic_post_type(), 'revisions' ) ) {
+		$revisions_removed = true;
+		remove_post_type_support( bbp_get_topic_post_type(), 'revisions' );
+	}
 
 	// Update topic
 	$topic_id = wp_update_post( $topic );
+
+	// Toggle revisions back on
+	if ( true === $revisions_removed ) {
+		$revisions_removed = false;
+		add_post_type_support( bbp_get_topic_post_type(), 'revisions' );
+	}
 
 	// Execute post open code
 	do_action( 'bbp_opened_topic', $topic_id );
@@ -3712,7 +3745,7 @@ function bbp_display_topics_feed_rss2( $topics_query = array() ) {
 		<link><?php self_link(); ?></link>
 		<description><?php //?></description>
 		<pubDate><?php echo mysql2date( 'D, d M Y H:i:s O', current_time( 'mysql' ), false ); ?></pubDate>
-		<generator>http://bbpress.org/?v=<?php bbp_version(); ?></generator>
+		<generator>https://bbpress.org/?v=<?php bbp_version(); ?></generator>
 		<language><?php bloginfo_rss( 'language' ); ?></language>
 
 		<?php do_action( 'bbp_feed_head' ); ?>
@@ -3767,7 +3800,7 @@ function bbp_display_topics_feed_rss2( $topics_query = array() ) {
  * @uses bbp_is_topic_edit()
  * @uses current_user_can()
  * @uses bbp_get_topic_id()
- * @uses wp_safe_redirect()
+ * @uses bbp_redirect()
  * @uses bbp_get_topic_permalink()
  */
 function bbp_check_topic_edit() {
@@ -3779,8 +3812,7 @@ function bbp_check_topic_edit() {
 
 	// User cannot edit topic, so redirect back to topic
 	if ( ! current_user_can( 'edit_topic', bbp_get_topic_id() ) ) {
-		wp_safe_redirect( bbp_get_topic_permalink() );
-		exit();
+		bbp_redirect( bbp_get_topic_permalink() );
 	}
 }
 
@@ -3792,7 +3824,7 @@ function bbp_check_topic_edit() {
  * @uses bbp_is_topic_tag_edit()
  * @uses current_user_can()
  * @uses bbp_get_topic_tag_id()
- * @uses wp_safe_redirect()
+ * @uses bbp_redirect()
  * @uses bbp_get_topic_tag_link()
  */
 function bbp_check_topic_tag_edit() {
@@ -3804,7 +3836,6 @@ function bbp_check_topic_tag_edit() {
 
 	// Bail if current user cannot edit topic tags
 	if ( ! current_user_can( 'edit_topic_tags', bbp_get_topic_tag_id() ) ) {
-		wp_safe_redirect( bbp_get_topic_tag_link() );
-		exit();
+		bbp_redirect( bbp_get_topic_tag_link() );
 	}
 }

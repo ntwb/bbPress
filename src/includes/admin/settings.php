@@ -375,7 +375,7 @@ function bbp_admin_get_settings_fields() {
 
 			// Subscriptions slug setting
 			'_bbp_user_subs_slug' => array(
-				'title'             => __( 'Topic Subscriptions', 'bbpress' ),
+				'title'             => __( 'Subscriptions', 'bbpress' ),
 				'callback'          => 'bbp_admin_setting_callback_user_subs_slug',
 				'sanitize_callback' => 'bbp_sanitize_slug',
 				'args'              => array()
@@ -1591,8 +1591,8 @@ function bbp_admin_settings_help() {
 	// Help Sidebar
 	$current_screen->set_help_sidebar(
 		'<p><strong>' . __( 'For more information:', 'bbpress' ) . '</strong></p>' .
-		'<p>' . __( '<a href="http://codex.bbpress.org" target="_blank">bbPress Documentation</a>',    'bbpress' ) . '</p>' .
-		'<p>' . __( '<a href="http://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>', 'bbpress' ) . '</p>'
+		'<p>' . __( '<a href="https://codex.bbpress.org" target="_blank">bbPress Documentation</a>',    'bbpress' ) . '</p>' .
+		'<p>' . __( '<a href="https://bbpress.org/forums/" target="_blank">bbPress Support Forums</a>', 'bbpress' ) . '</p>'
 	);
 }
 

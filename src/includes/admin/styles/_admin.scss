@@ -357,10 +357,10 @@ ul#adminmenu > li.current > a.current:after {
 	background: $adminbar-input-background;
 }
 
-#wpadminbar #adminbarsearch .adminbar-input::-webkit-input-placeholder { color: $menu-text; opacity: .7; }
-#wpadminbar #adminbarsearch .adminbar-input:-moz-placeholder { color: $menu-text; opacity: .7; }
-#wpadminbar #adminbarsearch .adminbar-input::-moz-placeholder { color: $menu-text; opacity: .7; }
-#wpadminbar #adminbarsearch .adminbar-input:-ms-input-placeholder { color: $menu-text; opacity: .7; }
+#wpadminbar #adminbarsearch .adminbar-input::-webkit-input-placeholder { color: $menu-text; opacity: 0.7; }
+#wpadminbar #adminbarsearch .adminbar-input:-moz-placeholder { color: $menu-text; opacity: 0.7; }
+#wpadminbar #adminbarsearch .adminbar-input::-moz-placeholder { color: $menu-text; opacity: 0.7; }
+#wpadminbar #adminbarsearch .adminbar-input:-ms-input-placeholder { color: $menu-text; opacity: 0.7; }
 
 
 /* Admin Bar: my account */
@@ -493,17 +493,6 @@ body.more-filters-opened .more-filters:focus:before {
 	background: $button-color;
 	border-color: darken( $button-color, 10% );
 	box-shadow: inset 0 1px 0 lighten( $button-color, 15% ), 0 1px 0 rgba(0,0,0,.15);
-}
-
-/* Thickbox: Plugin information */
-
-#sidemenu a.current {
-	background: $body-background;
-	border-bottom-color: $body-background;
-}
-
-#plugin-information .action-button {
-	background: $button-color;
 }
 
 /* Responsive Component */
