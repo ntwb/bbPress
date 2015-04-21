@@ -42,7 +42,7 @@ matrix:
 
 cache:
   directories:
-    - tmp/wordpress/src/wp-content/bbpress/node_modules
+    - /tmp/wordpress/src/wp-content/bbpress/node_modules
 
 # before_install: Failures in this section will result in build status 'errored'
 before_install:
@@ -80,8 +80,6 @@ before_script:
 # Run tests
 script:
   - grunt travis
-  # grunt phpunit:default
-  # grunt phpunit:multisite
 
 notifications:
     email: false
