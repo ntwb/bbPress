@@ -28,9 +28,11 @@ env:
 # Build matrix options
 matrix:
   include:
+    - php: 7.0
+      env: WP_VERSION=master
     - php: hhvm
       env: WP_VERSION=master
-    - php: nightly
+    - php: hhvm-nightly
       env: WP_VERSION=master
   allow_failures:
     - php: hhvm
