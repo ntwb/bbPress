@@ -51,6 +51,8 @@ before_install:
     - mkdir -p $WP_DEVELOP_DIR
     # clone the WordPress develop repo
     - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
+    # clone the BuddyPress develop repo
+    - git clone --depth=1 git://buddypress.git.wordpress.org/ $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
     - plugin_slug=$(basename $(pwd))
     - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
     - cd ..
@@ -77,9 +79,9 @@ before_script:
 
 # Run tests
 script:
-  # grunt travis <- Restore this later with BuddyPress test suite configuration
-  - grunt phpunit:default
-  - grunt phpunit:multisite
+  - grunt travis
+  # grunt phpunit:default
+  # grunt phpunit:multisite
 
 notifications:
     email: false
