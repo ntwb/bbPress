@@ -392,7 +392,7 @@ class BBP_Admin {
 	 * @param array $caps Capabilities for meta capability
 	 * @param string $cap Capability name
 	 * @param int $user_id User id
-	 * @param mixed $args Arguments
+	 * @param array $args Arguments
 	 * @uses get_post() To get the post
 	 * @uses apply_filters() Calls 'bbp_map_meta_caps' with caps, cap, user id and
 	 *                        args
@@ -516,12 +516,12 @@ class BBP_Admin {
 
 		// Settings page link
 		if ( current_user_can( 'bbp_settings_page' ) ) {
-			$new_links['settings'] = '<a href="' . add_query_arg( array( 'page' => 'bbpress'   ), admin_url( 'options-general.php' ) ) . '">' . esc_html__( 'Settings', 'bbpress' ) . '</a>';
+			$new_links['settings'] = '<a href="' . esc_url( add_query_arg( array( 'page' => 'bbpress'   ), admin_url( 'options-general.php' ) ) ) . '">' . esc_html__( 'Settings', 'bbpress' ) . '</a>';
 		}
 
 		// About page link
 		if ( current_user_can( 'bbp_about_page' ) ) {
-			$new_links['about']    = '<a href="' . add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php'           ) ) . '">' . esc_html__( 'About',    'bbpress' ) . '</a>';
+			$new_links['about']    = '<a href="' . esc_url( add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php'           ) ) ) . '">' . esc_html__( 'About',    'bbpress' ) . '</a>';
 		}
 
 		// Add a few links to the existing links array
@@ -536,9 +536,7 @@ class BBP_Admin {
 	 * @param WP_Admin_Bar $wp_admin_bar
 	 */
 	public function admin_bar_about_link( $wp_admin_bar ) {
-
 		if ( is_user_logged_in() ) {
-
 			$wp_admin_bar->add_menu( array(
 				'parent' => 'wp-logo',
 				'id'     => 'bbp-about',

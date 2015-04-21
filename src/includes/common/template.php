@@ -1190,34 +1190,51 @@ function is_bbpress() {
  *
  * @since bbPress (r2815)
  *
- * @param mixed $args This function supports these arguments:
+ * @param array $args This function supports these arguments:
  *  - action: The action being taken
  *  - context: The context the action is being taken from
  * @uses add_query_arg() To add a arg to the url
  * @uses site_url() Toget the site url
  * @uses apply_filters() Calls 'bbp_wp_login_action' with the url and args
  */
-function bbp_wp_login_action( $args = '' ) {
-
-	// Parse arguments against default values
-	$r = bbp_parse_args( $args, array(
-		'action'  => '',
-		'context' => ''
-	), 'login_action' );
-
-	// Add action as query arg
-	if ( !empty( $r['action'] ) ) {
-		$login_url = add_query_arg( array( 'action' => $r['action'] ), 'wp-login.php' );
-
-	// No query arg
-	} else {
-		$login_url = 'wp-login.php';
-	}
-
-	$login_url = site_url( $login_url, $r['context'] );
-
-	echo apply_filters( 'bbp_wp_login_action', $login_url, $r );
+function bbp_wp_login_action( $args = array() ) {
+	echo esc_url( bbp_get_wp_login_action( $args ) );
 }
+
+	/**
+	 * Return the login form action url
+	 *
+	 * @since bbPress (r5684)
+	 *
+	 * @param array $args This function supports these arguments:
+	 *  - action: The action being taken
+	 *  - context: The context the action is being taken from
+	 * @uses add_query_arg() To add a arg to the url
+	 * @uses site_url() Toget the site url
+	 * @uses apply_filters() Calls 'bbp_wp_login_action' with the url and args
+	 */
+	function bbp_get_wp_login_action( $args = array() ) {
+
+		// Parse arguments against default values
+		$r = bbp_parse_args( $args, array(
+			'action'  => '',
+			'context' => '',
+			'url'     => 'wp-login.php'
+		), 'login_action' );
+
+		// Add action as query arg
+		if ( ! empty( $r['action'] ) ) {
+			$login_url = add_query_arg( array( 'action' => $r['action'] ), $r['url'] );
+
+		// No query arg
+		} else {
+			$login_url = $r['url'];
+		}
+
+		$login_url = site_url( $login_url, $r['context'] );
+
+		return apply_filters( 'bbp_get_wp_login_action', $login_url, $r, $args );
+	}
 
 /**
  * Output hidden request URI field for user forms.
@@ -1362,9 +1379,9 @@ function bbp_tab_index( $auto_increment = true ) {
  *
  * @since bbPress (r2746)
  *
- * @param mixed $args See {@link bbp_get_dropdown()} for arguments
+ * @param array $args See {@link bbp_get_dropdown()} for arguments
  */
-function bbp_dropdown( $args = '' ) {
+function bbp_dropdown( $args = array() ) {
 	echo bbp_get_dropdown( $args );
 }
 	/**
@@ -1373,7 +1390,7 @@ function bbp_dropdown( $args = '' ) {
 	 *
 	 * @since bbPress (r2746)
 	 *
-	 * @param mixed $args The function supports these args:
+	 * @param array $args The function supports these args:
 	 *  - post_type: Post type, defaults to bbp_get_forum_post_type() (bbp_forum)
 	 *  - selected: Selected ID, to not have any value as selected, pass
 	 *               anything smaller than 0 (due to the nature of select
@@ -1408,7 +1425,7 @@ function bbp_dropdown( $args = '' ) {
 	 *                        and args
 	 * @return string The dropdown
 	 */
-	function bbp_get_dropdown( $args = '' ) {
+	function bbp_get_dropdown( $args = array() ) {
 
 		// Setup return value
 		$retval = '';
@@ -1430,6 +1447,7 @@ function bbp_dropdown( $args = '' ) {
 
 			// Output-related
 			'select_id'          => 'bbp_forum_id',
+			'select_class'       => 'bbp_dropdown',
 			'tab'                => false,
 			'options_only'       => false,
 			'show_none'          => false,
@@ -1483,7 +1501,7 @@ function bbp_dropdown( $args = '' ) {
 			$tab       = !empty( $r['tab'] ) ? ' tabindex="' . intval( $r['tab'] ) . '"' : '';
 
 			// Open the select tag
-			$retval   .= '<select name="' . esc_attr( $r['select_id'] ) . '" id="' . esc_attr( $r['select_id'] ) . '"' . $disabled . $tab . '>' . "\n";
+			$retval   .= '<select name="' . esc_attr( $r['select_id'] ) . '" id="' . esc_attr( $r['select_id'] ) . '" class="' . esc_attr( $r['select_class'] ) . '"' . $disabled . $tab . '>' . "\n";
 		}
 
 		// Display a leading 'no-value' option, with or without custom text
@@ -2395,6 +2413,8 @@ function bbp_breadcrumb( $args = array() ) {
 		// Wrap the separator in before/after before padding and filter
 		if ( ! empty( $r['sep'] ) ) {
 			$sep = $r['sep_before'] . $r['sep'] . $r['sep_after'];
+		} else {
+			$sep = '';
 		}
 
 		// Pad the separator
