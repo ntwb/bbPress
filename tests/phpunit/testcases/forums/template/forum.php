@@ -157,38 +157,25 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	/**
 	 * @covers ::bbp_forum_subscription_link
 	 * @covers ::bbp_get_forum_subscription_link
+	 * @todo   Implement bbp_get_forum_subscription_link().
 	 */
 	public function test_bbp_get_forum_subscription_link() {
-		$f = $this->factory->forum->create();
-
-		bbp_update_forum( array(
-			'forum_id' => $f,
-		) );
-
-		$link = bbp_get_forum_subscription_link( array(
-			'forum_id' => $f,
-		) );
-
-		$this->assertSame( 'http://todo', $link );
+		// Remove the following lines when you implement this test.
+		$this->markTestIncomplete(
+			'This test has not been implemented yet.'
+		);
 	}
 
 	/**
 	 * @covers ::bbp_forum_topics_link
 	 * @covers ::bbp_get_forum_topics_link
+	 * @todo   Implement bbp_get_forum_topics_link().
 	 */
 	public function test_bbp_get_forum_topics_link() {
-		$f = $this->factory->forum->create();
-
-		$t = $this->factory->topic->create( array(
-			'post_parent' => $f,
-		) );
-
-		bbp_update_forum( array(
-			'forum_id' => $f,
-		) );
-
-		$forum = bbp_get_forum_topics_link( $f );
-		$this->assertSame( 'http://todo', $forum );
+		// Remove the following lines when you implement this test.
+		$this->markTestIncomplete(
+			'This test has not been implemented yet.'
+		);
 	}
 
 	/**
