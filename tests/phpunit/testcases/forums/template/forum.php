@@ -193,23 +193,18 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	 * @covers ::bbp_get_forum_class
 	 */
 	public function test_bbp_get_forum_class() {
+		$f = $this->factory->forum->create();
 
-		$this->forum_id = $this->factory->forum->create();
+		$forum = bbp_get_forum_class( $f );
+		$this->assertContains( 'bbp-forum-status-open', $forum );
 
-		$found = bbp_get_forum_class( $this->forum_id );
+		bbp_categorize_forum( $f );
+		$forum = bbp_get_forum_class( $f );
+		$this->assertContains( 'status-category', $forum );
 
-		$this->assertContains( 'bbp-forum-status-open', $found );
-		$this->assertNotContains( 'bbp-has-subforums', $found );
-		$this->assertNotContains( 'status-category', $found );
-
-		bbp_categorize_forum( $this->forum_id );
-		$found = bbp_get_forum_class( $this->forum_id );
-		$this->assertContains( 'status-category', $found );
-		$this->assertNotContains( 'bbp-forum-visibility-private', $found );
-
-		bbp_privatize_forum( $this->forum_id );
-		$found = bbp_get_forum_class( $this->forum_id );
-		$this->assertContains( 'bbp-forum-visibility-private', $found );
+		bbp_privatize_forum( $f );
+		$forum = bbp_get_forum_class( $f );
+		$this->assertContains( 'bbp-forum-visibility-private', $forum );
 	}
 
 	/**
