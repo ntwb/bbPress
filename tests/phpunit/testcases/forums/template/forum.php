@@ -36,6 +36,11 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	 * @covers ::bbp_get_forum_permalink
 	 */
 	public function test_bbp_get_forum_permalink() {
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Skipping URL tests in multiste for now.' );
+		}
+
 		$f = $this->factory->forum->create();
 
 		$forum_permalink = bbp_get_forum_permalink( $f );
@@ -86,6 +91,11 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	 * @covers ::bbp_get_forum_freshness_link
 	 */
 	public function test_bbp_get_forum_freshness_link() {
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Skipping URL tests in multiste for now.' );
+		}
+
 		$f = $this->factory->forum->create();
 
 		$fresh_link = bbp_get_forum_freshness_link( $f );
@@ -157,7 +167,7 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	/**
 	 * @covers ::bbp_forum_subscription_link
 	 * @covers ::bbp_get_forum_subscription_link
-	 * @todo   Implement bbp_get_forum_subscription_link().
+	 * @todo   Implement test_bbp_get_forum_subscription_link().
 	 */
 	public function test_bbp_get_forum_subscription_link() {
 		// Remove the following lines when you implement this test.
@@ -169,7 +179,7 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	/**
 	 * @covers ::bbp_forum_topics_link
 	 * @covers ::bbp_get_forum_topics_link
-	 * @todo   Implement bbp_get_forum_topics_link().
+	 * @todo   Implement test_bbp_get_forum_topics_link().
 	 */
 	public function test_bbp_get_forum_topics_link() {
 		// Remove the following lines when you implement this test.
