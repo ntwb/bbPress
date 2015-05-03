@@ -186,7 +186,18 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 		$f = $this->factory->forum->create();
 
 		$forum = bbp_get_forum_class( $f );
-		$this->assertSame( 'class="loop-item--1 even bbp-forum-status-open bbp-forum-visibility-publish post-' . bbp_get_forum_id( $f ) . ' forum type-forum status-publish hentry"', $forum );
+		$this->assertContains( 'bbp-forum-status-open', $forum );
+		$this->assertNotContains( 'bbp-has-subforums', $forum );
+		$this->assertNotContains( 'status-category', $forum );
+
+		bbp_categorize_forum( $f );
+		$forum = bbp_get_forum_class( $f );
+		$this->assertContains( 'status-category', $forum );
+		$this->assertNotContains( 'bbp-forum-visibility-private', $forum );
+
+		bbp_privatize_forum( $f );
+		$forum = bbp_get_forum_class( $f );
+		$this->assertContains( 'bbp-forum-visibility-private', $forum );
 	}
 
 	/**
