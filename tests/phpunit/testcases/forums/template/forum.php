@@ -191,20 +191,13 @@ class BBP_Tests_Forums_Template_Forum extends BBP_UnitTestCase {
 	/**
 	 * @covers ::bbp_forum_class
 	 * @covers ::bbp_get_forum_class
+	 * @todo   Implement test_bbp_get_forum_class().
 	 */
 	public function test_bbp_get_forum_class() {
-		$f = $this->factory->forum->create();
-
-		$forum = bbp_get_forum_class( $f );
-		$this->assertContains( 'bbp-forum-status-open', $forum );
-
-		bbp_categorize_forum( $f );
-		$forum = bbp_get_forum_class( $f );
-		$this->assertContains( 'status-category', $forum );
-
-		bbp_privatize_forum( $f );
-		$forum = bbp_get_forum_class( $f );
-		$this->assertContains( 'bbp-forum-visibility-private', $forum );
+		// Remove the following lines when you implement this test.
+		$this->markTestIncomplete(
+			'This test has not been implemented yet.'
+		);
 	}
 
 	/**
