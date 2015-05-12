@@ -1031,6 +1031,11 @@ function bbp_move_topic_handler( $topic_id, $old_forum_id, $new_forum_id ) {
 	$old_forum_id = bbp_get_forum_id( $old_forum_id );
 	$new_forum_id = bbp_get_forum_id( $new_forum_id );
 
+	// Clean old and new forum caches before proceeding, to ensure subsequent
+	// calls to forum objects are using updated data.
+	bbp_clean_post_cache( $old_forum_id );
+	bbp_clean_post_cache( $new_forum_id );
+
 	// Update topic forum's ID
 	bbp_update_topic_forum_id( $topic_id, $new_forum_id );
 
@@ -2330,15 +2335,21 @@ function bbp_remove_topic_from_all_subscriptions( $topic_id = 0 ) {
  */
 function bbp_bump_topic_reply_count( $topic_id = 0, $difference = 1 ) {
 
+	// Bail if no bump
+	if ( empty( $difference ) ) {
+		return false;
+	}
+
 	// Get counts
 	$topic_id    = bbp_get_topic_id( $topic_id );
 	$reply_count = bbp_get_topic_reply_count( $topic_id, true );
-	$new_count   = (int) $reply_count + (int) $difference;
+	$difference  = (int) $difference;
+	$new_count   = (int) ( $reply_count + $difference );
 
 	// Update this topic id's reply count
-	update_post_meta( $topic_id, '_bbp_reply_count', (int) $new_count );
+	update_post_meta( $topic_id, '_bbp_reply_count', $new_count );
 
-	return (int) apply_filters( 'bbp_bump_topic_reply_count', (int) $new_count, $topic_id, (int) $difference );
+	return (int) apply_filters( 'bbp_bump_topic_reply_count', $new_count, $topic_id, $difference );
 }
 
 /**
@@ -2357,15 +2368,21 @@ function bbp_bump_topic_reply_count( $topic_id = 0, $difference = 1 ) {
  */
 function bbp_bump_topic_reply_count_hidden( $topic_id = 0, $difference = 1 ) {
 
+	// Bail if no bump
+	if ( empty( $difference ) ) {
+		return false;
+	}
+
 	// Get counts
 	$topic_id    = bbp_get_topic_id( $topic_id );
 	$reply_count = bbp_get_topic_reply_count_hidden( $topic_id, true );
-	$new_count   = (int) $reply_count + (int) $difference;
+	$difference  = (int) $difference;
+	$new_count   = (int) ( $reply_count + $difference );
 
 	// Update this topic id's hidder reply count
-	update_post_meta( $topic_id, '_bbp_reply_count_hidden', (int) $new_count );
+	update_post_meta( $topic_id, '_bbp_reply_count_hidden', $new_count );
 
-	return (int) apply_filters( 'bbp_bump_topic_reply_count_hidden', (int) $new_count, $topic_id, (int) $difference );
+	return (int) apply_filters( 'bbp_bump_topic_reply_count_hidden', $new_count, $topic_id, $difference );
 }
 
 /** Topic Updaters ************************************************************/
