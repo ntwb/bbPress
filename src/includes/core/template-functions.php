@@ -102,7 +102,7 @@ function bbp_locate_template( $template_names, $load = false, $require_once = tr
 	do_action( 'bbp_locate_template', $located, $template_name, $template_names, $template_locations, $load, $require_once );
 
 	// Maybe load the template if one was located
-	if ( ( defined( 'WP_USE_THEMES' ) && WP_USE_THEMES ) && ( true === $load ) && !empty( $located ) ) {
+	if ( ( defined( 'WP_USE_THEMES' ) && WP_USE_THEMES ) && ( true === $load ) && ! empty( $located ) ) {
 		load_template( $located, $require_once );
 	}
 
@@ -157,7 +157,7 @@ function bbp_enqueue_style( $handle = '', $file = '', $deps = array(), $ver = fa
 	}
 
 	// Enqueue if located
-	if ( !empty( $located ) ) {
+	if ( ! empty( $located ) ) {
 
 		$content_dir = constant( 'WP_CONTENT_DIR' );
 
@@ -225,7 +225,7 @@ function bbp_enqueue_script( $handle = '', $file = '', $deps = array(), $ver = f
 	}
 
 	// Enqueue if located
-	if ( !empty( $located ) ) {
+	if ( ! empty( $located ) ) {
 
 		$content_dir = constant( 'WP_CONTENT_DIR' );
 
@@ -468,8 +468,7 @@ function bbp_add_template_stack_locations( $stacks = array() ) {
  * @param WP_Query $posts_query
  *
  * @uses get_query_var() To get {@link WP_Query} query var
- * @uses is_email() To check if the string is an email
- * @uses get_user_by() To try to get the user by email and nicename
+ * @uses get_user_by() To try to get the user by nicename or id
  * @uses get_userdata() to get the user data
  * @uses current_user_can() To check if the current user can edit the user
  * @uses is_user_member_of_blog() To check if user profile page exists
@@ -504,28 +503,19 @@ function bbp_parse_query( $posts_query ) {
 	$is_edit  = $posts_query->get( bbp_get_edit_rewrite_id() );
 
 	// It is a user page - We'll also check if it is user edit
-	if ( !empty( $bbp_user ) ) {
+	if ( ! empty( $bbp_user ) ) {
 
 		/** Find User *********************************************************/
 
 		// Setup the default user variable
 		$the_user = false;
 
-		// If using pretty permalinks, use the email or slug
+		// If using pretty permalinks, always use slug
 		if ( get_option( 'permalink_structure' ) ) {
+			$the_user = get_user_by( 'slug', $bbp_user );
 
-			// Email was passed
-			if ( is_email( $bbp_user ) ) {
-				$the_user = get_user_by( 'email', $bbp_user );
-
-			// Try nicename
-			} else {
-				$the_user = get_user_by( 'slug', $bbp_user );
-			}
-		}
-
-		// No user found by slug/email, so try the ID if it's numeric
-		if ( empty( $the_user ) && is_numeric( $bbp_user ) ) {
+		// If not using pretty permalinks, always use numeric ID
+		} elseif ( is_numeric( $bbp_user ) ) {
 			$the_user = get_user_by( 'id', $bbp_user );
 		}
 
@@ -543,7 +533,7 @@ function bbp_parse_query( $posts_query ) {
 		$is_replies = $posts_query->get( bbp_get_user_replies_rewrite_id()       );
 
 		// View or edit?
-		if ( !empty( $is_edit ) ) {
+		if ( ! empty( $is_edit ) ) {
 
 			// We are editing a profile
 			$posts_query->bbp_is_single_user_edit = true;
@@ -611,7 +601,7 @@ function bbp_parse_query( $posts_query ) {
 		bbpress()->displayed_user = $the_user;
 
 	// View Page
-	} elseif ( !empty( $bbp_view ) ) {
+	} elseif ( ! empty( $bbp_view ) ) {
 
 		// Check if the view exists by checking if there are query args are set
 		$view_args = bbp_get_view_query_args( $bbp_view );
@@ -633,7 +623,7 @@ function bbp_parse_query( $posts_query ) {
 
 		// Check if there are search query args set
 		$search_terms = bbp_get_search_terms();
-		if ( !empty( $search_terms ) ) {
+		if ( ! empty( $search_terms ) ) {
 			$posts_query->bbp_search_terms = $search_terms;
 		}
 
@@ -644,13 +634,13 @@ function bbp_parse_query( $posts_query ) {
 		$posts_query->bbp_is_search = true;
 
 	// Forum/Topic/Reply Edit Page
-	} elseif ( !empty( $is_edit ) ) {
+	} elseif ( ! empty( $is_edit ) ) {
 
 		// Get the post type from the main query loop
 		$post_type = $posts_query->get( 'post_type' );
 
 		// Check which post_type we are editing, if any
-		if ( !empty( $post_type ) ) {
+		if ( ! empty( $post_type ) ) {
 			switch( $post_type ) {
 
 				// We are editing a forum

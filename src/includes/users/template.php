@@ -335,8 +335,7 @@ function bbp_user_profile_url( $user_id = 0, $user_nicename = '' ) {
 	 * @param int $user_id Optional. User id
 	 * @param string $user_nicename Optional. User nicename
 	 * @uses bbp_get_user_id() To get user id
-	 * @uses WP_Rewrite::using_permalinks() To check if the blog is using
-	 *                                       permalinks
+	 * @uses bbp_use_pretty_urls() To check if the site is using pretty URLs
 	 * @uses add_query_arg() To add custom args to the url
 	 * @uses home_url() To get blog home url
 	 * @uses apply_filters() Calls 'bbp_get_user_profile_url' with the user
@@ -344,7 +343,6 @@ function bbp_user_profile_url( $user_id = 0, $user_nicename = '' ) {
 	 * @return string User profile url
 	 */
 	function bbp_get_user_profile_url( $user_id = 0, $user_nicename = '' ) {
-		global $wp_rewrite;
 
 		// Use displayed user ID if there is one, and one isn't requested
 		$user_id = bbp_get_user_id( $user_id );
@@ -353,26 +351,28 @@ function bbp_user_profile_url( $user_id = 0, $user_nicename = '' ) {
 		}
 
 		// Allow early overriding of the profile URL to cut down on processing
-		$early_profile_url = apply_filters( 'bbp_pre_get_user_profile_url', (int) $user_id );
+		$early_profile_url = apply_filters( 'bbp_pre_get_user_profile_url', $user_id );
 		if ( is_string( $early_profile_url ) ) {
 			return $early_profile_url;
 		}
 
 		// Pretty permalinks
-		if ( $wp_rewrite->using_permalinks() ) {
-			$url = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%';
+		if ( bbp_use_pretty_urls() ) {
 
 			// Get username if not passed
 			if ( empty( $user_nicename ) ) {
 				$user_nicename = bbp_get_user_nicename( $user_id );
 			}
 
-			$url = str_replace( '%' . bbp_get_user_rewrite_id() . '%', $user_nicename, $url );
-			$url = home_url( user_trailingslashit( $url ) );
+			$url = trailingslashit( bbp_get_root_url() . bbp_get_user_slug() ) . $user_nicename;
+			$url = user_trailingslashit( $url );
+			$url = home_url( $url );
 
 		// Unpretty permalinks
 		} else {
-			$url = add_query_arg( array( bbp_get_user_rewrite_id() => $user_id ), home_url( '/' ) );
+			$url = add_query_arg( array(
+				bbp_get_user_rewrite_id() => $user_id
+			), home_url( '/' ) );
 		}
 
 		return apply_filters( 'bbp_get_user_profile_url', $url, $user_id, $user_nicename );
@@ -435,8 +435,8 @@ function bbp_user_profile_edit_url( $user_id = 0, $user_nicename = '' ) {
 	 * @param int $user_id Optional. User id
 	 * @param string $user_nicename Optional. User nicename
 	 * @uses bbp_get_user_id() To get user id
-	 * @uses WP_Rewrite::using_permalinks() To check if the blog is using
-	 *                                       permalinks
+	 * @uses bbp_get_user_profile_url() To get the user profile url
+	 * @uses bbp_use_pretty_urls() To check if the site is using pretty URLs
 	 * @uses add_query_arg() To add custom args to the url
 	 * @uses home_url() To get blog home url
 	 * @uses apply_filters() Calls 'bbp_get_user_edit_profile_url' with the
@@ -444,32 +444,32 @@ function bbp_user_profile_edit_url( $user_id = 0, $user_nicename = '' ) {
 	 * @return string
 	 */
 	function bbp_get_user_profile_edit_url( $user_id = 0, $user_nicename = '' ) {
-		global $wp_rewrite;
 
-		$bbp     = bbpress();
 		$user_id = bbp_get_user_id( $user_id );
 		if ( empty( $user_id ) ) {
 			return false;
 		}
 
+		// Allow early overriding of the profile edit URL to cut down on processing
+		$early_profile_url = apply_filters( 'bbp_pre_get_user_profile_edit_url', $user_id );
+		if ( is_string( $early_profile_url ) ) {
+			return $early_profile_url;
+		}
+
+		// Get user profile URL
+		$profile_url = bbp_get_user_profile_url( $user_id, $user_nicename );
+
 		// Pretty permalinks
-		if ( $wp_rewrite->using_permalinks() ) {
-			$url = $wp_rewrite->root . bbp_get_user_slug() . '/%' . $bbp->user_id . '%/' . $bbp->edit_id;
-
-			// Get username if not passed
-			if ( empty( $user_nicename ) ) {
-				$user = get_userdata( $user_id );
-				if ( ! empty( $user->user_nicename ) ) {
-					$user_nicename = $user->user_nicename;
-				}
-			}
-
-			$url = str_replace( '%' . $bbp->user_id . '%', $user_nicename, $url );
-			$url = home_url( user_trailingslashit( $url ) );
+		if ( bbp_use_pretty_urls() ) {
+			$url = trailingslashit( $profile_url ) . 'edit';
+			$url = user_trailingslashit( $url );
+			$url = home_url( $url );
 
 		// Unpretty permalinks
 		} else {
-			$url = add_query_arg( array( $bbp->user_id => $user_id, $bbp->edit_id => '1' ), home_url( '/' ) );
+			$url = add_query_arg( array(
+				bbp_get_edit_rewrite_id() => '1'
+			), $profile_url );
 		}
 
 		return apply_filters( 'bbp_get_user_edit_profile_url', $url, $user_id, $user_nicename );
@@ -815,7 +815,6 @@ function bbp_favorites_permalink( $user_id = 0 ) {
 	 * @return string Permanent link to user profile page
 	 */
 	function bbp_get_favorites_permalink( $user_id = 0 ) {
-		global $wp_rewrite;
 
 		// Use displayed user ID if there is one, and one isn't requested
 		$user_id = bbp_get_user_id( $user_id );
@@ -824,30 +823,25 @@ function bbp_favorites_permalink( $user_id = 0 ) {
 		}
 
 		// Allow early overriding of the profile URL to cut down on processing
-		$early_profile_url = apply_filters( 'bbp_pre_get_favorites_permalink', (int) $user_id );
+		$early_profile_url = apply_filters( 'bbp_pre_get_favorites_permalink', $user_id );
 		if ( is_string( $early_profile_url ) ) {
 			return $early_profile_url;
 		}
 
+		// Get user profile URL
+		$profile_url = bbp_get_user_profile_url( $user_id );
+
 		// Pretty permalinks
-		if ( $wp_rewrite->using_permalinks() ) {
-			$url = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/%' . bbp_get_user_favorites_rewrite_id() . '%';
-			$user = get_userdata( $user_id );
-			if ( ! empty( $user->user_nicename ) ) {
-				$user_nicename = $user->user_nicename;
-			} else {
-				$user_nicename = $user->user_login;
-			}
-			$url = str_replace( '%' . bbp_get_user_rewrite_id() . '%', $user_nicename, $url );
-			$url = str_replace( '%' . bbp_get_user_favorites_rewrite_id() . '%', bbp_get_user_favorites_slug(), $url );
-			$url = home_url( user_trailingslashit( $url ) );
+		if ( bbp_use_pretty_urls() ) {
+			$url = trailingslashit( $profile_url ) . bbp_get_user_favorites_rewrite_id();
+			$url = user_trailingslashit( $url );
+			$url = home_url( $url );
 
 		// Unpretty permalinks
 		} else {
 			$url = add_query_arg( array(
-				bbp_get_user_rewrite_id()           => $user_id,
 				bbp_get_user_favorites_rewrite_id() => bbp_get_user_favorites_slug(),
-			), home_url( '/' ) );
+			), $profile_url );
 		}
 
 		return apply_filters( 'bbp_get_favorites_permalink', $url, $user_id );
@@ -918,7 +912,7 @@ function bbp_user_favorites_link( $args = array(), $user_id = 0, $wrap = true ) 
 		}
 
 		// No link if you can't edit yourself
-		if ( ! current_user_can( 'edit_user', (int) $user_id ) ) {
+		if ( ! current_user_can( 'edit_user', $user_id ) ) {
 			return false;
 		}
 
@@ -980,7 +974,6 @@ function bbp_subscriptions_permalink( $user_id = 0 ) {
 	 * @return string Permanent link to user subscriptions page
 	 */
 	function bbp_get_subscriptions_permalink( $user_id = 0 ) {
-		global $wp_rewrite;
 
 		// Use displayed user ID if there is one, and one isn't requested
 		$user_id = bbp_get_user_id( $user_id );
@@ -989,30 +982,25 @@ function bbp_subscriptions_permalink( $user_id = 0 ) {
 		}
 
 		// Allow early overriding of the profile URL to cut down on processing
-		$early_profile_url = apply_filters( 'bbp_pre_get_subscriptions_permalink', (int) $user_id );
+		$early_profile_url = apply_filters( 'bbp_pre_get_subscriptions_permalink', $user_id );
 		if ( is_string( $early_profile_url ) ) {
 			return $early_profile_url;
 		}
 
+		// Get user profile URL
+		$profile_url = bbp_get_user_profile_url( $user_id );
+
 		// Pretty permalinks
-		if ( $wp_rewrite->using_permalinks() ) {
-			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/%' . bbp_get_user_subscriptions_rewrite_id() . '%';
-			$user = get_userdata( $user_id );
-			if ( ! empty( $user->user_nicename ) ) {
-				$user_nicename = $user->user_nicename;
-			} else {
-				$user_nicename = $user->user_login;
-			}
-			$url = str_replace( '%' . bbp_get_user_rewrite_id()               . '%', $user_nicename,                    $url );
-			$url = str_replace( '%' . bbp_get_user_subscriptions_rewrite_id() . '%', bbp_get_user_subscriptions_slug(), $url );
-			$url = home_url( user_trailingslashit( $url ) );
+		if ( bbp_use_pretty_urls() ) {
+			$url = trailingslashit( $profile_url ) . bbp_get_user_subscriptions_slug();
+			$url = user_trailingslashit( $url );
+			$url = home_url( $url );
 
 		// Unpretty permalinks
 		} else {
 			$url = add_query_arg( array(
-				bbp_get_user_rewrite_id()           => $user_id,
 				bbp_get_user_subscriptions_rewrite_id() => bbp_get_user_subscriptions_slug(),
-			), home_url( '/' ) );
+			), $profile_url );
 		}
 
 		return apply_filters( 'bbp_get_subscriptions_permalink', $url, $user_id );
@@ -1086,7 +1074,7 @@ function bbp_user_subscribe_link( $args = array(), $user_id = 0, $wrap = true ) 
 		}
 
 		// No link if you can't edit yourself
-		if ( ! current_user_can( 'edit_user', (int) $user_id ) ) {
+		if ( ! current_user_can( 'edit_user', $user_id ) ) {
 			return false;
 		}
 
@@ -1426,7 +1414,6 @@ function bbp_user_topics_created_url( $user_id = 0 ) {
 	 * @return string Permanent link to user profile page
 	 */
 	function bbp_get_user_topics_created_url( $user_id = 0 ) {
-		global $wp_rewrite;
 
 		// Use displayed user ID if there is one, and one isn't requested
 		$user_id = bbp_get_user_id( $user_id );
@@ -1435,29 +1422,25 @@ function bbp_user_topics_created_url( $user_id = 0 ) {
 		}
 
 		// Allow early overriding of the profile URL to cut down on processing
-		$early_url = apply_filters( 'bbp_pre_get_user_topics_created_url', (int) $user_id );
+		$early_url = apply_filters( 'bbp_pre_get_user_topics_created_url', $user_id );
 		if ( is_string( $early_url ) ) {
 			return $early_url;
 		}
 
+		// Get user profile URL
+		$profile_url = bbp_get_user_profile_url( $user_id );
+
 		// Pretty permalinks
-		if ( $wp_rewrite->using_permalinks() ) {
-			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/' . bbp_get_topic_archive_slug();
-			$user = get_userdata( $user_id );
-			if ( ! empty( $user->user_nicename ) ) {
-				$user_nicename = $user->user_nicename;
-			} else {
-				$user_nicename = $user->user_login;
-			}
-			$url = str_replace( '%' . bbp_get_user_rewrite_id() . '%', $user_nicename, $url );
-			$url = home_url( user_trailingslashit( $url ) );
+		if ( bbp_use_pretty_urls() ) {
+			$url = trailingslashit( $profile_url ) . bbp_get_topic_archive_slug();
+			$url = user_trailingslashit( $url );
+			$url = home_url( $url );
 
 		// Unpretty permalinks
 		} else {
 			$url = add_query_arg( array(
-				bbp_get_user_rewrite_id()        => $user_id,
 				bbp_get_user_topics_rewrite_id() => '1',
-			), home_url( '/' ) );
+			), $profile_url );
 		}
 
 		return apply_filters( 'bbp_get_user_topics_created_url', $url, $user_id );
@@ -1488,7 +1471,6 @@ function bbp_user_replies_created_url( $user_id = 0 ) {
 	 * @return string Permanent link to user profile page
 	 */
 	function bbp_get_user_replies_created_url( $user_id = 0 ) {
-		global $wp_rewrite;
 
 		// Use displayed user ID if there is one, and one isn't requested
 		$user_id = bbp_get_user_id( $user_id );
@@ -1497,29 +1479,25 @@ function bbp_user_replies_created_url( $user_id = 0 ) {
 		}
 
 		// Allow early overriding of the profile URL to cut down on processing
-		$early_url = apply_filters( 'bbp_pre_get_user_replies_created_url', (int) $user_id );
+		$early_url = apply_filters( 'bbp_pre_get_user_replies_created_url', $user_id );
 		if ( is_string( $early_url ) ) {
 			return $early_url;
 		}
 
+		// Get user profile URL
+		$profile_url = bbp_get_user_profile_url( $user_id );
+
 		// Pretty permalinks
-		if ( $wp_rewrite->using_permalinks() ) {
-			$url  = $wp_rewrite->root . bbp_get_user_slug() . '/%' . bbp_get_user_rewrite_id() . '%/' . bbp_get_reply_archive_slug();
-			$user = get_userdata( $user_id );
-			if ( ! empty( $user->user_nicename ) ) {
-				$user_nicename = $user->user_nicename;
-			} else {
-				$user_nicename = $user->user_login;
-			}
-			$url = str_replace( '%' . bbp_get_user_rewrite_id() . '%', $user_nicename, $url );
-			$url = home_url( user_trailingslashit( $url ) );
+		if ( bbp_use_pretty_urls() ) {
+			$url = trailingslashit( $profile_url ) . bbp_get_reply_archive_slug();
+			$url = user_trailingslashit( $url );
+			$url = home_url( $url );
 
 		// Unpretty permalinks
 		} else {
 			$url = add_query_arg( array(
-				bbp_get_user_rewrite_id()         => $user_id,
 				bbp_get_user_replies_rewrite_id() => '1',
-			), home_url( '/' ) );
+			), $profile_url );
 		}
 
 		return apply_filters( 'bbp_get_user_replies_created_url', $url, $user_id );
