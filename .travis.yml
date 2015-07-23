@@ -65,8 +65,6 @@ before_install:
     # prepare for running the tests
     - cd $plugin_dir
     - npm install -g grunt-cli
-    - if [[ "$TRAVIS_PHP_VERSION" == 5.6* ]] && [[ "$WP_VERSION" == "master" ]] ; then phpunit --coverage-clover clover.xml; fi;
-    - mv clover.xml $TRAVIS_BUILD_DIR
 
 # before_script: Failures in this section will result in build status 'failed'
 before_script:
@@ -76,10 +74,6 @@ before_script:
 # Run tests
 script:
   - grunt travis
-
-after_script:
-  # Push coverage off to Codecov
-  - bash <(curl -s https://codecov.io/bash)
 
 notifications:
     email: false
