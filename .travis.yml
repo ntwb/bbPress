@@ -55,6 +55,8 @@ before_install:
     - mkdir -p $BP_PLUGIN_DIR
     # clone the BuddyPress develop repo
     - git clone --depth=1 git://buddypress.git.wordpress.org/ $BP_PLUGIN_DIR
+    # setup BP_TESTS_DIR (needed for BuddyPress to bootstrap WP PHPUnit tests)
+    - export BP_TESTS_DIR=/tmp/buddypress/tests/includes/
     # set up tests config
     - cd $WP_DEVELOP_DIR
     - echo $WP_DEVELOP_DIR
