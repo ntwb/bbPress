@@ -45,12 +45,11 @@ before_install:
     - mkdir -p $WP_DEVELOP_DIR
     # clone the WordPress develop repo
     - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
+    # setup BP_PLUGIN_DIR (needed for BuddyPress to bootstrap WP PHPUnit tests)
+    - export BP_PLUGIN_DIR=/tmp/buddypress/
+    - mkdir -p $BP_PLUGIN_DIR
     # clone the BuddyPress develop repo
-    - git clone --depth=1 git://buddypress.git.wordpress.org/ $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
-    - plugin_slug=$(basename $(pwd))
-    - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
-    - cd ..
-    - mv $plugin_slug $plugin_dir
+    - git clone --depth=1 git://buddypress.git.wordpress.org/ $BP_PLUGIN_DIR
     # set up tests config
     - cd $WP_DEVELOP_DIR
     - echo $WP_DEVELOP_DIR
@@ -63,7 +62,7 @@ before_install:
     # set up database
     - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
     # prepare for running the tests
-    - cd $plugin_dir
+    - cd $TRAVIS_BUILD_DIR
     - npm install -g grunt-cli
 
 # before_script: Failures in this section will result in build status 'failed'
@@ -73,7 +72,7 @@ before_script:
 
 # Run tests
 script:
-  - grunt travis
+  - grunt travis --force
 
 notifications:
     email: false
