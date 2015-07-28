@@ -83,3 +83,6 @@ notifications:
     email: false
     slack:
         secure: mWDf/kxLOmmbkPC8z/pmiZOWmLRv+v/lOagiALI7gMGUBpAKbxwDIoQm/hxMYwLFNXS5/Fw0ARtaphL5ZBJZKXnRpZbDbkNcCxmPiyf9BHyMEJS9VpaTcfb+Nu7CzOdYa9GiAdfzAhwZ3d6Fn+5QQeAgZVLu0cr+WJTf1FKEX7w=
+
+git:
+  depth: 1
