@@ -9,11 +9,11 @@ language: php
 
 # PHP version used in first build configuration.
 php:
-    - 5.2
-    - 5.3
-    - 5.4
-    - 5.5
     - 5.6
+    - 5.5
+    - 5.4
+    - 5.3
+    - 5.2
 
 # WordPress comes from the Git mirror, where 'master' mirrors svn 'trunk' and
 # x.y mirrors the latest from the x.y branch
@@ -38,6 +38,11 @@ matrix:
     - php: hhvm
   fast_finish: true
 
+# cache: Cache bbPress' NodeJS packages in node_modules/
+cache:
+  directories:
+  - node_modules
+
 # before_install: Failures in this section will result in build status 'errored'
 before_install:
     # setup WP_DEVELOP_DIR (needed for bbPress to bootstrap WP PHPUnit tests)
@@ -45,12 +50,13 @@ before_install:
     - mkdir -p $WP_DEVELOP_DIR
     # clone the WordPress develop repo
     - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
+    # setup BP_PLUGIN_DIR (needed for BuddyPress to bootstrap WP PHPUnit tests)
+    - export BP_PLUGIN_DIR=/tmp/buddypress/
+    - mkdir -p $BP_PLUGIN_DIR
     # clone the BuddyPress develop repo
-    - git clone --depth=1 git://buddypress.git.wordpress.org/ $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
-    - plugin_slug=$(basename $(pwd))
-    - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
-    - cd ..
-    - mv $plugin_slug $plugin_dir
+    - git clone --depth=1 git://buddypress.git.wordpress.org/ $BP_PLUGIN_DIR
+    # setup BP_TESTS_DIR (needed for BuddyPress to bootstrap WP PHPUnit tests)
+    - export BP_TESTS_DIR=/tmp/buddypress/tests/includes/
     # set up tests config
     - cd $WP_DEVELOP_DIR
     - echo $WP_DEVELOP_DIR
@@ -63,7 +69,7 @@ before_install:
     # set up database
     - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
     # prepare for running the tests
-    - cd $plugin_dir
+    - cd $TRAVIS_BUILD_DIR
     - npm install -g grunt-cli
 
 # before_script: Failures in this section will result in build status 'failed'
@@ -73,9 +79,12 @@ before_script:
 
 # Run tests
 script:
-  - grunt travis
+  - grunt travis --force
 
 notifications:
     email: false
     slack:
         secure: mWDf/kxLOmmbkPC8z/pmiZOWmLRv+v/lOagiALI7gMGUBpAKbxwDIoQm/hxMYwLFNXS5/Fw0ARtaphL5ZBJZKXnRpZbDbkNcCxmPiyf9BHyMEJS9VpaTcfb+Nu7CzOdYa9GiAdfzAhwZ3d6Fn+5QQeAgZVLu0cr+WJTf1FKEX7w=
+
+git:
+  depth: 1
