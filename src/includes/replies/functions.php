@@ -929,7 +929,7 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
 
 			// Make every effort to get topic id
 			// https://bbpress.trac.wordpress.org/ticket/2529
-			if ( empty( $topic_id ) && ( current_action() === 'bbp_deleted_reply' ) ) {
+			if ( empty( $topic_id ) && ( current_filter() === 'bbp_deleted_reply' ) ) {
 				$topic_id = get_post_field( 'post_parent', $reply_id );
 			}
 		}
@@ -972,10 +972,9 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
 					$topic_last_active_time = get_post_field( 'post_date', bbp_get_topic_last_active_id( $ancestor ) );
 				}
 
-				// Only update if reply is published
-				if ( bbp_is_reply_published( $reply_id ) ) {
-					bbp_update_topic_last_active_time( $ancestor, $topic_last_active_time );
-				}
+				// Update the topic last active time regardless of reply status.
+				// See https://bbpress.trac.wordpress.org/ticket/2838
+				bbp_update_topic_last_active_time( $ancestor, $topic_last_active_time );
 
 				// Counts
 				bbp_update_topic_voice_count       ( $ancestor );

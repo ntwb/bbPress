@@ -51,6 +51,66 @@ class BBP_Tests_Forums_Template_Forum_Last_Thing extends BBP_UnitTestCase {
 	}
 
 	/**
+	 * @covers ::bbp_forum_last_active_id
+	 * @covers ::bbp_get_forum_last_active_id
+	 */
+	public function test_bbp_get_forum_last_active_id_with_pending_reply() {
+		$u = $this->factory->user->create_many( 2 );
+		$f = $this->factory->forum->create();
+
+		$last_id = bbp_get_forum_last_active_id( $f );
+		$this->assertSame( 0, $last_id );
+
+		bbp_update_forum_last_active_id( $f );
+
+		$last_id = bbp_get_forum_last_active_id( $f );
+		$this->assertSame( 0, $last_id );
+
+		$t = $this->factory->topic->create( array(
+			'post_parent' => $f,
+			'topic_meta' => array(
+				'forum_id' => $f,
+			),
+		) );
+
+		bbp_update_forum_last_active_id( $f );
+
+		$last_id = bbp_get_forum_last_active_id( $f );
+		$this->assertSame( $t, $last_id );
+
+		$r1 = $this->factory->reply->create( array(
+			'post_parent' => $t,
+			'reply_meta' => array(
+				'forum_id' => $f,
+				'topic_id' => $t,
+			),
+		) );
+
+		bbp_update_forum_last_active_id( $f );
+
+		$last_id = bbp_get_forum_last_active_id( $f );
+		$this->assertSame( $r1, $last_id );
+
+		$r2 = $this->factory->reply->create( array(
+			'post_parent' => $t,
+			'post_author' => $u[1],
+			'post_status' => bbp_get_pending_status_id(),
+			'reply_meta' => array(
+				'forum_id' => $f,
+				'topic_id' => $t,
+			)
+		) );
+
+		$last_id = bbp_get_forum_last_active_id( $f );
+		$this->assertSame( $r1, $last_id );
+
+		bbp_approve_reply( $r2 );
+
+		$last_id = bbp_get_forum_last_active_id( $f );
+		$this->assertSame( $r2, $last_id );
+	}
+
+	/**
 	 * @covers ::bbp_forum_last_active_time
 	 * @covers ::bbp_get_forum_last_active_time
 	 */
@@ -147,13 +207,23 @@ class BBP_Tests_Forums_Template_Forum_Last_Thing extends BBP_UnitTestCase {
 	/**
 	 * @covers ::bbp_forum_last_topic_permalink
 	 * @covers ::bbp_get_forum_last_topic_permalink
-	 * @todo   Implement test_bbp_get_forum_last_topic_permalink().
 	 */
 	public function test_bbp_get_forum_last_topic_permalink() {
-		// Remove the following lines when you implement this test.
-		$this->markTestIncomplete(
-			'This test has not been implemented yet.'
-		);
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Skipping URL tests in multiste for now.' );
+		}
+
+		$f = $this->factory->forum->create();
+
+		$t = $this->factory->topic->create( array(
+			'post_parent' => $f,
+			'topic_meta' => array(
+				'forum_id' => $f,
+			)
+		) );
+
+		$forum_last_topic_permalink = bbp_get_forum_last_topic_permalink( $f );
+		$this->assertSame( bbp_get_topic_permalink( $t ), $forum_last_topic_permalink );
 	}
 
 	/**
@@ -189,14 +259,26 @@ class BBP_Tests_Forums_Template_Forum_Last_Thing extends BBP_UnitTestCase {
 
 	/**
 	 * @covers ::bbp_forum_last_topic_author_link
-	 * @covers ::bbp_get_forum_last_topic_author_link
-	 * @todo   Implement test_bbp_get_forum_last_topic_author_link().
-	 */
+	 * @covers ::bbp_get_forum_last_topic_author_link	 */
 	public function test_bbp_get_forum_last_topic_author_link() {
-		// Remove the following lines when you implement this test.
-		$this->markTestIncomplete(
-			'This test has not been implemented yet.'
-		);
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Skipping URL tests in multiste for now.' );
+		}
+
+		$u = $this->factory->user->create();
+
+		$f = $this->factory->forum->create();
+
+		$t = $this->factory->topic->create( array(
+			'post_parent' => $f,
+			'post_author' => $u,
+			'topic_meta' => array(
+				'forum_id' => $f,
+			)
+		) );
+
+		$last_topic_author_link = bbp_get_forum_last_topic_author_link( $f );
+		$this->assertSame( bbp_get_user_profile_link( $u ), $last_topic_author_link );
 	}
 
 	/**
@@ -330,13 +412,35 @@ class BBP_Tests_Forums_Template_Forum_Last_Thing extends BBP_UnitTestCase {
 	/**
 	 * @covers ::bbp_forum_last_reply_author_link
 	 * @covers ::bbp_get_forum_last_reply_author_link
-	 * @todo   Implement test_bbp_get_forum_last_reply_author_link().
 	 */
 	public function test_bbp_get_forum_last_reply_author_link() {
-		// Remove the following lines when you implement this test.
-		$this->markTestIncomplete(
-			'This test has not been implemented yet.'
-		);
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Skipping URL tests in multiste for now.' );
+		}
+
+		$u = $this->factory->user->create();
+
+		$f = $this->factory->forum->create();
+
+		$t = $this->factory->topic->create( array(
+			'post_parent' => $f,
+			'post_author' => $u,
+			'topic_meta' => array(
+				'forum_id' => $f,
+			)
+		) );
+
+		$r = $this->factory->reply->create( array(
+			'post_parent' => $t,
+			'post_author' => $u,
+			'reply_meta' => array(
+				'forum_id' => $f,
+				'topic_id' => $t,
+			),
+		) );
+
+		$last_reply_author_link = bbp_get_forum_last_reply_author_link( $f );
+		$this->assertSame( bbp_get_user_profile_link( $u ), $last_reply_author_link );
 	}
 
 	/**
@@ -353,6 +457,9 @@ class BBP_Tests_Forums_Template_Forum_Last_Thing extends BBP_UnitTestCase {
 
 		// Get the forums last topic id _bbp_last_topic_id
 		$this->assertSame( 0, bbp_get_forum_last_topic_id( $f ) );
+
+		// Get the forums last reply id _bbp_last_reply_id
+		$this->assertSame( 0, bbp_get_forum_last_reply_id( $f ) );
 
 		$t = $this->factory->topic->create( array(
 			'post_parent' => $f,
@@ -375,6 +482,9 @@ class BBP_Tests_Forums_Template_Forum_Last_Thing extends BBP_UnitTestCase {
 				'topic_id' => $t,
 			)
 		) );
+
+		// Get the forums last reply id _bbp_last_reply_id
+		$this->assertSame( $r, bbp_get_forum_last_reply_id( $f ) );
 
 		// Get the topics last reply id _bbp_last_reply_id
 		$this->assertSame( $r, bbp_get_topic_last_reply_id( $t ) );
