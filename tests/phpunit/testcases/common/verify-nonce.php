@@ -28,7 +28,7 @@ class BBP_Tests_Core_Functions_BBPVerifyNonceRequest extends BBP_UnitTestCase {
 
 	public function tearDown() {
 		if ( '' !== $this->http_host ) {
-			$_SERVER['HTTP_HOST'] = $this->http_host;
+			$_SERVER['HTTP_HOST'] = WP_TESTS_DOMAIN;
 		}
 
 		if ( '' !== $this->server_port ) {
