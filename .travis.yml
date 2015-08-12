@@ -79,7 +79,7 @@ before_script:
 
 # Run tests
 script:
-  - grunt travis --force
+  - grunt travis
 
 notifications:
     email: false
