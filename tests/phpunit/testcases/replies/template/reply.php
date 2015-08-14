@@ -514,10 +514,10 @@ class BBP_Tests_Replies_Template_Reply extends BBP_UnitTestCase {
 				'topic_id' => $t,
 			),
 		) );
-
+		
 		// Reply menu position is unaltered when bbp_show_lead_topic() true.
 		add_filter( 'bbp_show_lead_topic', '__return_true' );
-
+		
 		$position = get_post_field( 'menu_order', $r[3] );
 		$this->assertSame( 4, $position );
 
