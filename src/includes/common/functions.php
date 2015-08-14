@@ -151,7 +151,7 @@ function bbp_time_since( $older_date, $newer_date = false, $gmt = false ) {
 
 			// Step one: the first chunk
 			for ( $i = 0, $j = count( $chunks ); $i < $j; ++$i ) {
-				$seconds = $chunks[$i][0];
+				$seconds = $chunks[ $i ][0];
 
 				// Finding the biggest chunk (if the chunk fits, break)
 				$count = floor( $since / $seconds );
@@ -161,23 +161,23 @@ function bbp_time_since( $older_date, $newer_date = false, $gmt = false ) {
 			}
 
 			// If $i iterates all the way to $j, then the event happened 0 seconds ago
-			if ( ! isset( $chunks[$i] ) ) {
+			if ( ! isset( $chunks[ $i ] ) ) {
 				$output = $right_now_text;
 
 			} else {
 
 				// Set output var
-				$output = ( 1 == $count ) ? '1 '. $chunks[$i][1] : $count . ' ' . $chunks[$i][2];
+				$output = ( 1 == $count ) ? '1 '. $chunks[ $i ][1] : $count . ' ' . $chunks[ $i ][2];
 
 				// Step two: the second chunk
 				if ( $i + 2 < $j ) {
-					$seconds2 = $chunks[$i + 1][0];
-					$name2    = $chunks[$i + 1][1];
+					$seconds2 = $chunks[ $i + 1 ][0];
+					$name2    = $chunks[ $i + 1 ][1];
 					$count2   = floor( ( $since - ( $seconds * $count ) ) / $seconds2 );
 
 					// Add to output var
 					if ( 0 != $count2 ) {
-						$output .= ( 1 == $count2 ) ? _x( ',', 'Separator in time since', 'bbpress' ) . ' 1 '. $name2 : _x( ',', 'Separator in time since', 'bbpress' ) . ' ' . $count2 . ' ' . $chunks[$i + 1][2];
+						$output .= ( 1 == $count2 ) ? _x( ',', 'Separator in time since', 'bbpress' ) . ' 1 '. $name2 : _x( ',', 'Separator in time since', 'bbpress' ) . ' ' . $count2 . ' ' . $chunks[ $i + 1 ][2];
 					}
 				}
 
@@ -1784,7 +1784,7 @@ function bbp_verify_nonce_request( $action = '', $query_arg = '_wpnonce' ) {
 	/** Requested URL *********************************************************/
 
 	// Maybe include the port, if it's included in home_url()
-	if ( isset( $parsed_home['port'] ) ) {
+	if ( isset( $parsed_home['port'] ) && false === strpos( $_SERVER['HTTP_HOST'], ':' ) ) {
 		$request_host = $_SERVER['HTTP_HOST'] . ':' . $_SERVER['SERVER_PORT'];
 	} else {
 		$request_host = $_SERVER['HTTP_HOST'];
@@ -1796,18 +1796,33 @@ function bbp_verify_nonce_request( $action = '', $query_arg = '_wpnonce' ) {
 
 	/** Look for match ********************************************************/
 
-	// Filter the requested URL, for configurations like reverse proxying
+	/**
+	 * Filters the requested URL being nonce-verified.
+	 *
+	 * Useful for configurations like reverse proxying.
+	 *
+	 * @since bbPress (2.5.0)
+	 *
+	 * @param string $requested_url The requested URL.
+	 */
 	$matched_url = apply_filters( 'bbp_verify_nonce_request_url', $requested_url );
 
 	// Check the nonce
-	$result = isset( $_REQUEST[$query_arg] ) ? wp_verify_nonce( $_REQUEST[$query_arg], $action ) : false;
+	$result = isset( $_REQUEST[ $query_arg ] ) ? wp_verify_nonce( $_REQUEST[ $query_arg ], $action ) : false;
 
 	// Nonce check failed
 	if ( empty( $result ) || empty( $action ) || ( strpos( $matched_url, $home_url ) !== 0 ) ) {
 		$result = false;
 	}
 
-	// Do extra things
+	/**
+	 * Fires at the end of the nonce verification check.
+	 *
+	 * @since bbPress (2.2.0)
+	 *
+	 * @param string $action Action nonce.
+	 * @param bool   $result Boolean result of nonce verification.
+	 */
 	do_action( 'bbp_verify_nonce_request', $action, $result );
 
 	return $result;
@@ -1866,8 +1881,8 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 
 				// Setup matched variables to select
 				foreach ( $query_vars as $key => $value ) {
-					if ( isset( $select_query_vars[$key] ) ) {
-						$select_query_vars[$key] = $value;
+					if ( isset( $select_query_vars[ $key ] ) ) {
+						$select_query_vars[ $key ] = $value;
 					}
 				}
 

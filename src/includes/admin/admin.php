@@ -68,6 +68,13 @@ class BBP_Admin {
 	 */
 	public $show_separator = false;
 
+	/** Tools *****************************************************************/
+
+	/**
+	 * @var array Array of available repair tools
+	 */
+	public $tools = array();
+
 	/** Functions *************************************************************/
 
 	/**
@@ -625,7 +632,12 @@ class BBP_Admin {
 	 *
 	 * @uses wp_admin_css_color() To register the color scheme
 	 */
-	public function register_admin_style () {
+	public function register_admin_style() {
+
+		// Color schemes are not available when running out of src
+		if ( false !== strpos( plugin_basename( bbpress()->file ), 'src' ) ) {
+			return;
+		}
 
 		// RTL and/or minified
 		$suffix  = is_rtl() ? '-rtl' : '';
@@ -954,8 +966,7 @@ class BBP_Admin {
 		$action = isset( $_GET['action'] ) ? $_GET['action'] : ''; ?>
 
 		<div class="wrap">
-			<div id="icon-edit" class="icon32 icon32-posts-topic"><br /></div>
-			<h2><?php esc_html_e( 'Update Forum', 'bbpress' ); ?></h2>
+			<h1><?php esc_html_e( 'Update Forum', 'bbpress' ); ?></h1>
 
 		<?php
 
@@ -1001,8 +1012,7 @@ class BBP_Admin {
 		$action = isset( $_GET['action'] ) ? $_GET['action'] : ''; ?>
 
 		<div class="wrap">
-			<div id="icon-edit" class="icon32 icon32-posts-topic"><br /></div>
-			<h2><?php esc_html_e( 'Update Forums', 'bbpress' ); ?></h2>
+			<h1><?php esc_html_e( 'Update Forums', 'bbpress' ); ?></h1>
 
 		<?php
 

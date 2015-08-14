@@ -104,7 +104,7 @@ function bbp_current_anonymous_user_data( $key = '' ) {
 		$bbp_current_poster = wp_get_current_commenter();
 
 		if ( ! empty( $key ) && in_array( $key, array_keys( $cookie_names ) ) ) {
-			return $bbp_current_poster[$cookie_names[$key]];
+			return $bbp_current_poster[ $cookie_names[ $key ] ];
 		}
 
 		return $bbp_current_poster;
@@ -1839,7 +1839,7 @@ function bbp_bump_user_reply_count( $user_id = 0, $difference = 1 ) {
 	$user_reply_count = (int) ( $count + $difference );
 
 	// Add them up and filter them
-	$new_count = apply_filters( 'bbp_bump_user_reply_count', $user_reply_count, $user_id, $difference, $count );
+	$new_count = (int) apply_filters( 'bbp_bump_user_reply_count', $user_reply_count, $user_id, $difference, $count );
 
 	return bbp_update_user_reply_count( $user_id, $new_count );
 }

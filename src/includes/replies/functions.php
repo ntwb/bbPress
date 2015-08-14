@@ -28,7 +28,7 @@ defined( 'ABSPATH' ) || exit;
  */
 function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
 
-	// Forum
+	// Parse arguments against default values
 	$reply_data = bbp_parse_args( $reply_data, array(
 		'post_parent'    => 0, // topic ID
 		'post_status'    => bbp_get_public_status_id(),
@@ -37,7 +37,7 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
 		'post_password'  => '',
 		'post_content'   => '',
 		'post_title'     => '',
-		'menu_order'     => 0,
+		'menu_order'     => bbp_get_topic_reply_count( $reply_data['post_parent'], true ) + 1,
 		'comment_status' => 'closed'
 	), 'insert_reply' );
 
@@ -49,7 +49,7 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
 		return false;
 	}
 
-	// Forum meta
+	// Parse arguments against default values
 	$reply_meta = bbp_parse_args( $reply_meta, array(
 		'author_ip' => bbp_current_author_ip(),
 		'forum_id'  => 0,
@@ -2154,7 +2154,7 @@ function _bbp_has_replies_where( $where = '', $query = false ) {
  * @uses bbp_is_single_topic()
  * @uses bbp_user_can_view_forum()
  * @uses bbp_get_topic_forum_id()
- * @uses bbp_show_load_topic()
+ * @uses bbp_show_lead_topic()
  * @uses bbp_topic_permalink()
  * @uses bbp_topic_title()
  * @uses bbp_get_topic_reply_count()

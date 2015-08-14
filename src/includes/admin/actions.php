@@ -3,9 +3,6 @@
 /**
  * bbPress Admin Actions
  *
- * @package bbPress
- * @subpackage Admin
- *
  * This file contains the actions that are used through-out bbPress Admin. They
  * are consolidated here to make searching for them easier, and to help developers
  * understand at a glance the order in which things occur.
@@ -14,6 +11,9 @@
  *
  *  - bbPress: In {@link bbPress::setup_actions()} in bbpress.php
  *  - Admin: More in {@link BBP_Admin::setup_actions()} in admin.php
+ *
+ * @package bbPress
+ * @subpackage Administration
  *
  * @see bbp-core-actions.php
  * @see bbp-core-filters.php
@@ -72,6 +72,9 @@ add_action( 'bbp_deactivation', 'bbp_delete_rewrite_rules' );
 
 // New Site
 add_action( 'bbp_new_site', 'bbp_create_initial_content', 8 );
+
+// Load the default repair tools
+add_action( 'load-tools_page_bbp-repair', 'bbp_register_default_repair_tools' );
 
 // Contextual Helpers
 add_action( 'load-settings_page_bbpress',    'bbp_admin_settings_help' );

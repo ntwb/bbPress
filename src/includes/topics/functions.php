@@ -3234,7 +3234,7 @@ function bbp_stick_topic( $topic_id = 0, $super = false ) {
 	// Unset incorrectly stuck revisions
 	foreach ( (array) $stickies as $key => $id ) {
 		if ( ! bbp_is_topic( $id ) ) {
-			unset( $stickies[$key] );
+			unset( $stickies[ $key ] );
 		}
 	}
 
@@ -3747,7 +3747,7 @@ function bbp_topic_content_autoembed() {
  * @uses bbp_is_single_topic()
  * @uses bbp_user_can_view_forum()
  * @uses bbp_get_topic_forum_id()
- * @uses bbp_show_load_topic()
+ * @uses bbp_show_lead_topic()
  * @uses bbp_topic_permalink()
  * @uses bbp_topic_title()
  * @uses bbp_get_topic_reply_count()

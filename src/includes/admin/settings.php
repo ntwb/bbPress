@@ -441,7 +441,9 @@ function bbp_admin_get_settings_fields_for_section( $section_id = '' ) {
 	}
 
 	$fields = bbp_admin_get_settings_fields();
-	$retval = isset( $fields[$section_id] ) ? $fields[$section_id] : false;
+	$retval = isset( $fields[ $section_id ] )
+		? $fields[ $section_id ]
+		: false;
 
 	return (array) apply_filters( 'bbp_admin_get_settings_fields_for_section', $retval, $section_id );
 }
@@ -1278,7 +1280,7 @@ function bbp_admin_settings() {
 
 	<div class="wrap">
 
-		<h2><?php esc_html_e( 'Forums Settings', 'bbpress' ) ?></h2>
+		<h1><?php esc_html_e( 'Forums Settings', 'bbpress' ) ?></h1>
 
 		<form action="options.php" method="post">
 
@@ -1526,7 +1528,7 @@ function bbp_converter_settings() {
 ?>
 
 	<div class="wrap">
-
+		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
 		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Import Forums', 'bbpress' ) ); ?></h2>
 
 		<form action="#" method="post" id="bbp-converter-settings">
@@ -1629,7 +1631,7 @@ function bbp_admin_settings_help() {
  * @param string $option_key
  */
 function bbp_maybe_admin_setting_disabled( $option_key = '' ) {
-	disabled( isset( bbpress()->options[$option_key] ) );
+	disabled( isset( bbpress()->options[ $option_key ] ) );
 }
 
 /**
@@ -1757,7 +1759,11 @@ function bbp_form_slug_conflict_check( $slug, $default ) {
 				foreach ( $bp->pages as $page => $page_data ) {
 					$page_base    = $page . '_base';
 					$page_title   = sprintf( __( '%s page', 'bbpress' ), $page_data->title );
-					$core_slugs[$page_base] = array( 'name' => $page_title, 'default' => $page_data->slug, 'context' => 'BuddyPress' );
+					$core_slugs[ $page_base ] = array(
+						'name'    => $page_title,
+						'default' => $page_data->slug,
+						'context' => 'BuddyPress'
+					);
 				}
 			}
 		}
