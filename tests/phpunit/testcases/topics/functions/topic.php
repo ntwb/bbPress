@@ -18,7 +18,7 @@ class BBP_Tests_Topics_Functions_Topic extends BBP_UnitTestCase {
 		$f = $this->factory->forum->create();
 
 		$now = time();
-		$post_date = date( 'Y-m-d H:i:s', $now - 60*60*100 );
+		$post_date = date( 'Y-m-d H:i:s', $now - 60 * 60 * 100 );
 
 		$t = $this->factory->topic->create( array(
 			'post_parent' => $f,
@@ -37,13 +37,17 @@ class BBP_Tests_Topics_Functions_Topic extends BBP_UnitTestCase {
 			),
 		) );
 
-		// Topic post
+		// Get the topic.
+		$topic = bbp_get_topic( $t );
+
+		// Topic post.
 		$this->assertSame( 'Topic 1', bbp_get_topic_title( $t ) );
 		$this->assertSame( 'publish', bbp_get_topic_status( $t ) );
-		$this->assertSame( $f, wp_get_post_parent_id( $t ) ); // post parent
+		$this->assertSame( $f, wp_get_post_parent_id( $t ) );
+		$this->assertEquals( 'http://' . WP_TESTS_DOMAIN . '/?topic=' . $topic->post_name, $topic->guid );
 
-		// Topic meta
-		$this->assertSame( $f, bbp_get_topic_forum_id( $t ) ); // _bbp_forum_id
+		// Topic meta.
+		$this->assertSame( $f, bbp_get_topic_forum_id( $t ) );
 		$this->assertSame( 1, bbp_get_topic_reply_count( $t, true ) );
 		$this->assertSame( 0, bbp_get_topic_reply_count_hidden( $t, true ) );
 		$this->assertSame( 1, bbp_get_topic_voice_count( $t, true ) );
@@ -358,13 +362,29 @@ class BBP_Tests_Topics_Functions_Topic extends BBP_UnitTestCase {
 
 	/**
 	 * @covers ::bbp_delete_topic_replies
-	 * @todo   Implement test_bbp_delete_topic_replies().
 	 */
 	public function test_bbp_delete_topic_replies() {
-		// Remove the following lines when you implement this test.
-		$this->markTestIncomplete(
-			'This test has not been implemented yet.'
-		);
+		$f = $this->factory->forum->create();
+		$t = $this->factory->topic->create( array(
+			'post_parent' => $f,
+			'topic_meta' => array(
+				'forum_id' => $f,
+			),
+		) );
+		$r = $this->factory->reply->create_many( 2, array(
+			'post_parent' => $t,
+			'reply_meta' => array(
+				'forum_id' => $f,
+				'topic_id' => $t,
+			),
+		) );
+
+		$this->assertSame( 2, bbp_get_topic_reply_count( $t, true ) );
+
+		bbp_delete_topic_replies( $t );
+
+		$count = count( bbp_get_all_child_ids( $t, bbp_get_reply_post_type() ) );
+		$this->assertSame( 0, ( $count ) );
 	}
 
 	/**
