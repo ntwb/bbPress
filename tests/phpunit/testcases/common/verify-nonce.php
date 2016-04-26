@@ -1,11 +1,11 @@
 <?php
 
 /**
- * @group core
+ * @group common
  * @group functions
  * @group bbp_verify_nonce_request
  */
-class BBP_Tests_Core_Functions_BBPVerifyNonceRequest extends BBP_UnitTestCase {
+class BBP_Tests_Common_Functions_BBPVerifyNonceRequest extends BBP_UnitTestCase {
 	private $http_host   = '';
 	private $server_port = '';
 	private $request_uri = '';
