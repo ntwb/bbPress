@@ -1087,7 +1087,12 @@ class BBP_Topics_Admin {
 			0 =>  '', // Left empty on purpose
 
 			// Updated
-			1 =>  sprintf( __( 'Topic updated. <a href="%s">View topic</a>', 'bbpress' ), $topic_url ),
+			1 =>  sprintf(
+				'%1$s <a href="%2$s">%3$s</a>',
+				__( 'Topic updated.', 'bbpress' ),
+				$topic_url,
+				__( 'View topic', 'bbpress' )
+			),
 
 			// Custom field updated
 			2 => __( 'Custom field updated.', 'bbpress' ),
@@ -1105,23 +1110,43 @@ class BBP_Topics_Admin {
 					: false,
 
 			// Topic created
-			6 => sprintf( __( 'Topic created. <a href="%s">View topic</a>', 'bbpress' ), $topic_url ),
+			6 => sprintf(
+				'%1$s <a href="%2$s">%3$s</a>',
+				__( 'Topic created.', 'bbpress' ),
+				$topic_url,
+				__( 'View topic', 'bbpress' )
+			),
 
 			// Topic saved
 			7 => __( 'Topic saved.', 'bbpress' ),
 
 			// Topic submitted
-			8 => sprintf( __( 'Topic submitted. <a target="_blank" href="%s">Preview topic</a>', 'bbpress' ), esc_url( add_query_arg( 'preview', 'true', $topic_url ) ) ),
+			8 => sprintf(
+				'%1$s <a href="%2$s" target="_blank">%3$s</a>',
+				__( 'Topic submitted.', 'bbpress' ),
+				esc_url( add_query_arg( 'preview', 'true', $topic_url ) ),
+				__( 'Preview topic', 'bbpress' )
+			),
 
 			// Topic scheduled
-			9 => sprintf( __( 'Topic scheduled for: <strong>%1$s</strong>. <a target="_blank" href="%2$s">Preview topic</a>', 'bbpress' ),
+			9 => sprintf(
+				'%1$s <a target="_blank" href="%2$s">%3$s</a>',
+				sprintf(
+					__( 'Topic scheduled for: %s.', 'bbpress' ),
 					// translators: Publish box date format, see http://php.net/date
-					date_i18n( __( 'M j, Y @ G:i', 'bbpress' ),
-					strtotime( $post_date ) ),
-					$topic_url ),
+					'<strong>' . date_i18n( __( 'M j, Y @ G:i', 'bbpress' ), strtotime( $post_date ) ) . '</strong>'
+				),
+				$topic_url,
+				__( 'Preview topic', 'bbpress' )
+			),
 
 			// Topic draft updated
-			10 => sprintf( __( 'Topic draft updated. <a target="_blank" href="%s">Preview topic</a>', 'bbpress' ), esc_url( add_query_arg( 'preview', 'true', $topic_url ) ) ),
+			10 => sprintf(
+				'%1$s <a href="%2$s" target="_blank">%3$s</a>',
+				__( 'Topic draft updated.', 'bbpress' ),
+				esc_url( add_query_arg( 'preview', 'true', $topic_url ) ),
+				__( 'Preview topic', 'bbpress' )
+			),
 		);
 
 		return $messages;
