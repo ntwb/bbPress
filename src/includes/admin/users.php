@@ -272,7 +272,7 @@ class BBP_Users_Admin {
 	 * Filter the list of roles included in the WordPress site role list
 	 *
 	 * This ensures bbPress' roles are only displayed under the Forum Role list
-	 * in the WordPRess USers list table
+	 * in the WordPress Users list table
 	 *
 	 * @since 2.6.0 bbPress (r6051)
 	 *
@@ -286,6 +286,7 @@ class BBP_Users_Admin {
 		if ( ! empty( $user_role ) ) {
 			unset( $roles[ $user_role ] );
 		}
+
 		return $roles;
 	}
 }
