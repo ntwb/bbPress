@@ -57,6 +57,8 @@ class BBP_Tests_Topics_Functions_Update_Topic_Last_Thing extends BBP_UnitTestCas
 		// Pass the reply id to bbp_update_topic_last_active_id().
 		bbp_update_topic_last_active_id( $r3 );
 		$last_active_id = bbp_get_topic_last_active_id( $t );
+		bbp_clean_post_cache( $t );
+		bbp_clean_post_cache( $r3 );
 		$this->assertSame( $r3, $last_active_id );
 
 		// Create a couple of replies.
