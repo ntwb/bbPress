@@ -162,7 +162,7 @@ function bbp_new_topic_handler( $action = '' ) {
 
 		// User cannot create topics
 		if ( ! current_user_can( 'publish_topics' ) ) {
-			bbp_add_error( 'bbp_topic_permissions', __( '<strong>ERROR</strong>: You do not have permission to create new topics.', 'bbpress' ) );
+			bbp_add_error( 'bbp_topic_permission', __( '<strong>ERROR</strong>: You do not have permission to create new topics.', 'bbpress' ) );
 			return;
 		}
 
@@ -282,7 +282,7 @@ function bbp_new_topic_handler( $action = '' ) {
 	/** Topic Duplicate *******************************************************/
 
 	if ( ! bbp_check_for_duplicate( array( 'post_type' => bbp_get_topic_post_type(), 'post_author' => $topic_author, 'post_content' => $topic_content, 'anonymous_data' => $anonymous_data ) ) ) {
-		bbp_add_error( 'bbp_topic_duplicate', __( '<strong>ERROR</strong>: Duplicate topic detected; it looks as though you&#8217;ve already said that!', 'bbpress' ) );
+		bbp_add_error( 'bbp_topic_duplicate', __( '<strong>ERROR</strong>: Duplicate topic detected; it looks as though you&#8217;ve already said that.', 'bbpress' ) );
 	}
 
 	/** Topic Blacklist *******************************************************/
@@ -504,7 +504,7 @@ function bbp_edit_topic_handler( $action = '' ) {
 
 			// User cannot edit this topic
 			if ( ! current_user_can( 'edit_topic', $topic_id ) ) {
-				bbp_add_error( 'bbp_edit_topic_permissions', __( '<strong>ERROR</strong>: You do not have permission to edit that topic.', 'bbpress' ) );
+				bbp_add_error( 'bbp_edit_topic_permission', __( '<strong>ERROR</strong>: You do not have permission to edit that topic.', 'bbpress' ) );
 			}
 
 			// Set topic author
@@ -1232,7 +1232,7 @@ function bbp_merge_topic_handler( $action = '' ) {
 
 	// Cannot edit source topic
 	if ( ! current_user_can( 'edit_topic', $source_topic->ID ) ) {
-		bbp_add_error( 'bbp_merge_topic_source_permission', __( '<strong>ERROR</strong>: You do not have the permissions to edit the source topic.', 'bbpress' ) );
+		bbp_add_error( 'bbp_merge_topic_source_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the source topic.', 'bbpress' ) );
 		return;
 	}
 
@@ -1252,7 +1252,7 @@ function bbp_merge_topic_handler( $action = '' ) {
 
 	// Cannot edit destination topic
 	if ( ! current_user_can( 'edit_topic', $destination_topic->ID ) ) {
-		bbp_add_error( 'bbp_merge_topic_destination_permission', __( '<strong>ERROR</strong>: You do not have the permissions to edit the destination topic.', 'bbpress' ) );
+		bbp_add_error( 'bbp_merge_topic_destination_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the destination topic.', 'bbpress' ) );
 	}
 
 	// Bail if errors
@@ -1511,7 +1511,7 @@ function bbp_split_topic_handler( $action = '' ) {
 	/** Split Reply ***********************************************************/
 
 	if ( empty( $_POST['bbp_reply_id'] ) ) {
-		bbp_add_error( 'bbp_split_topic_reply_id', __( '<strong>ERROR</strong>: Reply ID to split the topic from not found!', 'bbpress' ) );
+		bbp_add_error( 'bbp_split_topic_reply_id', __( '<strong>ERROR</strong>: A reply ID is required.', 'bbpress' ) );
 	} else {
 		$from_reply_id = (int) $_POST['bbp_reply_id'];
 	}
@@ -1541,7 +1541,7 @@ function bbp_split_topic_handler( $action = '' ) {
 
 	// Use cannot edit topic
 	if ( ! current_user_can( 'edit_topic', $source_topic->ID ) ) {
-		bbp_add_error( 'bbp_split_topic_source_permission', __( '<strong>ERROR</strong>: You do not have the permissions to edit the source topic.', 'bbpress' ) );
+		bbp_add_error( 'bbp_split_topic_source_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the source topic.', 'bbpress' ) );
 	}
 
 	// How to Split
@@ -1564,7 +1564,7 @@ function bbp_split_topic_handler( $action = '' ) {
 
 				// Get destination topic id
 				if ( empty( $_POST['bbp_destination_topic'] ) ) {
-					bbp_add_error( 'bbp_split_topic_destination_id', __( '<strong>ERROR</strong>: Destination topic ID not found!', 'bbpress' ) );
+					bbp_add_error( 'bbp_split_topic_destination_id', __( '<strong>ERROR</strong>: A topic ID is required.', 'bbpress' ) );
 				} else {
 					$destination_topic_id = (int) $_POST['bbp_destination_topic'];
 				}
@@ -1574,12 +1574,12 @@ function bbp_split_topic_handler( $action = '' ) {
 
 				// No destination topic
 				if ( empty( $destination_topic ) ) {
-					bbp_add_error( 'bbp_split_topic_destination_not_found', __( '<strong>ERROR</strong>: The topic you want to split to was not found!', 'bbpress' ) );
+					bbp_add_error( 'bbp_split_topic_destination_not_found', __( '<strong>ERROR</strong>: The topic you want to split to was not found.', 'bbpress' ) );
 				}
 
 				// User cannot edit the destination topic
 				if ( ! current_user_can( 'edit_topic', $destination_topic->ID ) ) {
-					bbp_add_error( 'bbp_split_topic_destination_permission', __( '<strong>ERROR</strong>: You do not have the permissions to edit the destination topic!', 'bbpress' ) );
+					bbp_add_error( 'bbp_split_topic_destination_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the destination topic.', 'bbpress' ) );
 				}
 
 				break;
@@ -1622,7 +1622,7 @@ function bbp_split_topic_handler( $action = '' ) {
 
 				// User cannot publish posts
 				} else {
-					bbp_add_error( 'bbp_split_topic_destination_permission', __( '<strong>ERROR</strong>: You do not have the permissions to create new topics. The reply could not be converted into a topic.', 'bbpress' ) );
+					bbp_add_error( 'bbp_split_topic_destination_permission', __( '<strong>ERROR</strong>: You do not have permission to create new topics. The reply could not be converted into a topic.', 'bbpress' ) );
 				}
 
 				break;
@@ -1897,7 +1897,7 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 
 			// Can user edit topic tags?
 			if ( ! current_user_can( 'edit_topic_tags' ) ) {
-				bbp_add_error( 'bbp_manage_topic_tag_update_permissions', __( '<strong>ERROR</strong>: You do not have the permissions to edit the topic tags.', 'bbpress' ) );
+				bbp_add_error( 'bbp_manage_topic_tag_update_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the topic tags.', 'bbpress' ) );
 				return;
 			}
 
@@ -1937,7 +1937,7 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 
 			// Can user edit topic tags?
 			if ( ! current_user_can( 'edit_topic_tags' ) ) {
-				bbp_add_error( 'bbp_manage_topic_tag_merge_permissions', __( '<strong>ERROR</strong>: You do not have the permissions to edit the topic tags.', 'bbpress' ) );
+				bbp_add_error( 'bbp_manage_topic_tag_merge_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the topic tags.', 'bbpress' ) );
 				return;
 			}
 
@@ -1995,7 +1995,7 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 
 			// Can user delete topic tags?
 			if ( ! current_user_can( 'delete_topic_tags' ) ) {
-				bbp_add_error( 'bbp_manage_topic_tag_delete_permissions', __( '<strong>ERROR</strong>: You do not have the permissions to delete the topic tags.', 'bbpress' ) );
+				bbp_add_error( 'bbp_manage_topic_tag_delete_permission', __( '<strong>ERROR</strong>: You do not have permission to delete the topic tags.', 'bbpress' ) );
 				return;
 			}
 
@@ -2059,6 +2059,25 @@ function bbp_get_topic_types( $topic_id = 0 ) {
 		'unstick' => _x( 'Normal',       'Unstick a topic',         'bbpress' ),
 		'stick'   => _x( 'Sticky',       'Make topic sticky',       'bbpress' ),
 		'super'   => _x( 'Super Sticky', 'Make topic super sticky', 'bbpress' )
+	), $topic_id );
+}
+
+/**
+ * Return array of available topic toggle actions
+ *
+ * @since 2.6.0 bbPress (r6133)
+ *
+ * @param int $topic_id   Optional. Topic id.
+ *
+ * @return array
+ */
+function bbp_get_topic_toggles( $topic_id = 0 ) {
+	return apply_filters( 'bbp_get_toggle_topic_actions', array(
+		'bbp_toggle_topic_close',
+		'bbp_toggle_topic_stick',
+		'bbp_toggle_topic_spam',
+		'bbp_toggle_topic_trash',
+		'bbp_toggle_topic_approve'
 	), $topic_id );
 }
 
@@ -2138,116 +2157,197 @@ function bbp_toggle_topic_handler( $action = '' ) {
 		return;
 	}
 
-	// Setup possible get actions
-	$possible_actions = array(
-		'bbp_toggle_topic_close',
-		'bbp_toggle_topic_stick',
-		'bbp_toggle_topic_spam',
-		'bbp_toggle_topic_trash',
-		'bbp_toggle_topic_approve'
-	);
+	// What's the topic id?
+	$topic_id = bbp_get_topic_id( (int) $_GET['topic_id'] );
+
+	// Get possible topic-handler toggles
+	$toggles = bbp_get_topic_toggles( $topic_id );
 
 	// Bail if actions aren't meant for this function
-	if ( ! in_array( $action, $possible_actions ) ) {
+	if ( ! in_array( $action, $toggles, true ) ) {
 		return;
 	}
-
-	$failure   = '';                         // Empty failure string
-	$view_all  = false;                      // Assume not viewing all
-	$topic_id  = (int) $_GET['topic_id'];    // What's the topic id?
-	$success   = false;                      // Flag
-	$post_data = array( 'ID' => $topic_id ); // Prelim array
-	$redirect  = '';                         // Empty redirect URL
 
 	// Make sure topic exists
 	$topic = bbp_get_topic( $topic_id );
 	if ( empty( $topic ) ) {
+		bbp_add_error( 'bbp_toggle_topic_missing', __( '<strong>ERROR:</strong> This topic could not be found or no longer exists.', 'bbpress' ) );
 		return;
 	}
 
 	// What is the user doing here?
-	if ( ! current_user_can( 'edit_topic', $topic->ID ) || ( 'bbp_toggle_topic_trash' === $action && ! current_user_can( 'delete_topic', $topic->ID ) ) ) {
-		bbp_add_error( 'bbp_toggle_topic_permission', __( '<strong>ERROR:</strong> You do not have the permission to do that.', 'bbpress' ) );
+	if ( ! current_user_can( 'edit_topic', $topic_id ) || ( 'bbp_toggle_topic_trash' === $action && ! current_user_can( 'delete_topic', $topic_id ) ) ) {
+		bbp_add_error( 'bbp_toggle_topic_permission', __( '<strong>ERROR:</strong> You do not have permission to do that.', 'bbpress' ) );
 		return;
 	}
 
+	// Sub-action?
+	$sub_action = ! empty( $_GET['sub_action'] )
+		? sanitize_key( $_GET['sub_action'] )
+		: false;
+
+	// Preliminary array
+	$post_data = array( 'ID' => $topic_id );
+
+	// Do the topic toggling
+	$retval = bbp_toggle_topic( array(
+		'id'         => $topic_id,
+		'action'     => $action,
+		'sub_action' => $sub_action,
+		'data'       => $post_data
+	) );
+
+	// Do additional topic toggle actions
+	do_action( 'bbp_toggle_topic_handler', $retval['status'], $post_data, $action );
+
+	// No errors
+	if ( ( false !== $retval['status'] ) && ! is_wp_error( $retval['status'] ) ) {
+		bbp_redirect( $retval['redirect_to'] );
+
+	// Handle errors
+	} else {
+		bbp_add_error( 'bbp_toggle_topic', $retval['message'] );
+	}
+}
+
+/**
+ * Do the actual topic toggling
+ *
+ * This function is used by `bbp_toggle_topic_handler()` to do the actual heavy
+ * lifting when it comes to toggling topic. It only really makes sense to call
+ * within that context, so if you need to call this function directly, make sure
+ * you're also doing what the handler does too.
+ *
+ * @since 2.6.0
+ * @access private
+ *
+ * @param array $args
+ */
+function bbp_toggle_topic( $args = array() ) {
+
+	// Parse the arguments
+	$r = bbp_parse_args( $args, array(
+		'id'         => 0,
+		'action'     => '',
+		'sub_action' => '',
+		'data'       => array()
+	) );
+
+	// Build the nonce suffix
+	$nonce_suffix = bbp_get_topic_post_type() . '_' . (int) $r['id'];
+
+	// Default return values
+	$retval = array(
+		'status'      => 0,
+		'message'     => '',
+		'redirect_to' => bbp_get_topic_permalink( $r['id'], bbp_get_redirect_to() ),
+		'view_all'    => false
+	);
+
 	// What action are we trying to perform?
-	switch ( $action ) {
+	switch ( $r['action'] ) {
 
 		// Toggle approve/unapprove
 		case 'bbp_toggle_topic_approve' :
-			check_ajax_referer( 'approve-topic_' . $topic_id );
+			check_ajax_referer( "approve-{$nonce_suffix}" );
 
-			$is_pending = bbp_is_topic_pending( $topic_id );
-			$success    = true === $is_pending ? bbp_approve_topic( $topic_id ) : bbp_unapprove_topic( $topic_id );
-			$failure    = true === $is_pending ? __( '<strong>ERROR</strong>: There was a problem approving the topic.', 'bbpress' ) : __( '<strong>ERROR</strong>: There was a problem unapproving the topic.', 'bbpress' );
+			$is_pending         = bbp_is_topic_pending( $r['id'] );
+			$retval['view_all'] = ! $is_pending;
+
+			// Toggle
+			$retval['status'] = ( true === $is_pending )
+				? bbp_approve_topic( $r['id'] )
+				: bbp_unapprove_topic( $r['id'] );
+
+			// Feedback
+			$retval['message'] = ( true === $is_pending )
+				? __( '<strong>ERROR</strong>: There was a problem approving the topic.',   'bbpress' )
+				: __( '<strong>ERROR</strong>: There was a problem unapproving the topic.', 'bbpress' );
 
 			break;
 
 		// Toggle open/close
 		case 'bbp_toggle_topic_close' :
-			check_ajax_referer( 'close-topic_' . $topic_id );
+			check_ajax_referer( "close-{$nonce_suffix}" );
 
-			$is_open = bbp_is_topic_open( $topic_id );
-			$success = true === $is_open ? bbp_close_topic( $topic_id ) : bbp_open_topic( $topic_id );
-			$failure = true === $is_open ? __( '<strong>ERROR</strong>: There was a problem closing the topic.', 'bbpress' ) : __( '<strong>ERROR</strong>: There was a problem opening the topic.', 'bbpress' );
+			$is_open = bbp_is_topic_open( $r['id'] );
+
+			// Toggle
+			$retval['status'] = ( true === $is_open )
+				? bbp_close_topic( $r['id'] )
+				: bbp_open_topic( $r['id'] );
+
+			// Feedback
+			$retval['message'] = ( true === $is_open )
+				? __( '<strong>ERROR</strong>: There was a problem closing the topic.', 'bbpress' )
+				: __( '<strong>ERROR</strong>: There was a problem opening the topic.', 'bbpress' );
 
 			break;
 
 		// Toggle sticky/super-sticky/unstick
 		case 'bbp_toggle_topic_stick' :
-			check_ajax_referer( 'stick-topic_' . $topic_id );
+			check_ajax_referer( "stick-{$nonce_suffix}" );
 
-			$is_sticky = bbp_is_topic_sticky( $topic_id );
+			$is_sticky = bbp_is_topic_sticky( $r['id'] );
 			$is_super  = false === $is_sticky && ! empty( $_GET['super'] ) && ( "1" === $_GET['super'] ) ? true : false;
-			$success   = true  === $is_sticky ? bbp_unstick_topic( $topic_id ) : bbp_stick_topic( $topic_id, $is_super );
-			$failure   = true  === $is_sticky ? __( '<strong>ERROR</strong>: There was a problem unsticking the topic.', 'bbpress' ) : __( '<strong>ERROR</strong>: There was a problem sticking the topic.', 'bbpress' );
+
+			// Toggle
+			$retval['status'] = ( true === $is_sticky )
+				? bbp_unstick_topic( $r['id'] )
+				: bbp_stick_topic( $r['id'], $is_super );
+
+			// Feedback
+			$retval['message'] = ( true === $is_sticky )
+				? __( '<strong>ERROR</strong>: There was a problem unsticking the topic.', 'bbpress' )
+				: __( '<strong>ERROR</strong>: There was a problem sticking the topic.',   'bbpress' );
 
 			break;
 
 		// Toggle spam
 		case 'bbp_toggle_topic_spam' :
-			check_ajax_referer( 'spam-topic_' . $topic_id );
+			check_ajax_referer( "spam-{$nonce_suffix}" );
 
-			$is_spam  = bbp_is_topic_spam( $topic_id );
-			$success  = true === $is_spam ? bbp_unspam_topic( $topic_id ) : bbp_spam_topic( $topic_id );
-			$failure  = true === $is_spam ? __( '<strong>ERROR</strong>: There was a problem unmarking the topic as spam.', 'bbpress' ) : __( '<strong>ERROR</strong>: There was a problem marking the topic as spam.', 'bbpress' );
-			$view_all = ! $is_spam;
+			$is_spam            = bbp_is_topic_spam( $r['id'] );
+			$retval['view_all'] = ! $is_spam;
+
+			// Toggle
+			$retval['status'] = ( true === $is_spam )
+				? bbp_unspam_topic( $r['id'] )
+				: bbp_spam_topic( $r['id'] );
+
+			// Feedback
+			$retval['message'] = ( true === $is_spam )
+				? __( '<strong>ERROR</strong>: There was a problem unmarking the topic as spam.', 'bbpress' )
+				: __( '<strong>ERROR</strong>: There was a problem marking the topic as spam.',   'bbpress' );
 
 			break;
 
 		// Toggle trash
 		case 'bbp_toggle_topic_trash' :
 
-			$sub_action = ! empty( $_GET['sub_action'] ) && in_array( $_GET['sub_action'], array( 'trash', 'untrash', 'delete' ) ) ? $_GET['sub_action'] : false;
-
-			if ( empty( $sub_action ) ) {
-				break;
-			}
-
-			switch ( $sub_action ) {
+			switch ( $r['sub_action'] ) {
 				case 'trash':
-					check_ajax_referer( 'trash-' . bbp_get_topic_post_type() . '_' . $topic_id );
+					check_ajax_referer( "trash-{$nonce_suffix}" );
 
-					$view_all = true;
-					$success  = wp_trash_post( $topic_id );
-					$failure  = __( '<strong>ERROR</strong>: There was a problem trashing the topic.', 'bbpress' );
+					$retval['view_all'] = true;
+					$retval['status']   = wp_trash_post( $r['id'] );
+					$retval['message']  = __( '<strong>ERROR</strong>: There was a problem trashing the topic.', 'bbpress' );
 
 					break;
 
 				case 'untrash':
-					check_ajax_referer( 'untrash-' . bbp_get_topic_post_type() . '_' . $topic_id );
+					check_ajax_referer( "untrash-{$nonce_suffix}" );
 
-					$success = wp_untrash_post( $topic_id );
-					$failure = __( '<strong>ERROR</strong>: There was a problem untrashing the topic.', 'bbpress' );
+					$retval['status']  = wp_untrash_post( $r['id'] );
+					$retval['message'] = __( '<strong>ERROR</strong>: There was a problem untrashing the topic.', 'bbpress' );
 
 					break;
 
 				case 'delete':
-					check_ajax_referer( 'delete-' . bbp_get_topic_post_type() . '_' . $topic_id );
+					check_ajax_referer( "delete-{$nonce_suffix}" );
 
-					$success = wp_delete_post( $topic_id );
-					$failure = __( '<strong>ERROR</strong>: There was a problem deleting the topic.', 'bbpress' );
+					$retval['status']  = wp_delete_post( $r['id'] );
+					$retval['message'] = __( '<strong>ERROR</strong>: There was a problem deleting the topic.', 'bbpress' );
 
 					break;
 			}
@@ -2255,30 +2355,18 @@ function bbp_toggle_topic_handler( $action = '' ) {
 			break;
 	}
 
-	// Do additional topic toggle actions
-	do_action( 'bbp_toggle_topic_handler', $success, $post_data, $action );
-
-	// No errors
-	if ( false !== $success && ! is_wp_error( $success ) ) {
-
-		// Redirect back to the topic's forum
-		if ( isset( $sub_action ) && ( 'delete' === $sub_action ) ) {
-			$redirect = bbp_get_forum_permalink( $success->post_parent );
-
-		// Redirect back to the topic
-		} else {
-
-			// Get the redirect detination
-			$permalink = bbp_get_topic_permalink( $topic_id );
-			$redirect  = bbp_add_view_all( $permalink, $view_all );
-		}
-
-		bbp_redirect( $redirect );
-
-	// Handle errors
-	} else {
-		bbp_add_error( 'bbp_toggle_topic', $failure );
+	// Maybe redirect back to the topic's forum
+	if ( isset( $r['sub_action'] ) && ( 'delete' === $r['sub_action'] ) ) {
+		$retval['redirect_to'] = bbp_get_forum_permalink( $retval['status']->post_parent );
 	}
+
+	// Add view all if needed
+	if ( ! empty( $retval['view_all'] ) ) {
+		$retval['redirect_to'] = bbp_add_view_all( $retval['redirect_to'], true );
+	}
+
+	// Filter & return
+	return apply_filters( 'bbp_toggle_topic', $retval, $r, $args );
 }
 
 /** Favorites & Subscriptions *************************************************/
