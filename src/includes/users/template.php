@@ -1709,6 +1709,9 @@ function bbp_author_link( $args = array() ) {
 		// Neither a reply nor a topic, so could be a revision
 		if ( ! empty( $r['post_id'] ) ) {
 
+			// Setup author_links array
+			$author_links = array();
+
 			// Generate title with the display name of the author
 			if ( empty( $r['link_title'] ) ) {
 				$r['link_title'] = sprintf( ! bbp_is_reply_anonymous( $r['post_id'] ) ? __( 'View %s\'s profile', 'bbpress' ) : __( 'Visit %s\'s website', 'bbpress' ), get_the_author_meta( 'display_name', $user_id ) );

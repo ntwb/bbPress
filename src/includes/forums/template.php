@@ -693,6 +693,7 @@ function bbp_forum_get_subforums( $args = array() ) {
 	}
 
 	// Setup post status array
+	$post_stati = array();
 	$post_stati[] = bbp_get_public_status_id();
 
 	// Super admin get whitelisted post statuses
