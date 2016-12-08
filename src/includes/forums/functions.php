@@ -2189,6 +2189,10 @@ function bbp_pre_get_posts_normalize_forum_visibility( $posts_query = null ) {
 
 		/** Default ***********************************************************/
 
+		// Setup the post_stati array
+		$post_stati = array();
+		$post_stati[] = bbp_get_public_status_id();
+
 		// Get any existing post status
 		$post_stati = $posts_query->get( 'post_status' );
 
