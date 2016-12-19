@@ -35,7 +35,7 @@ function bbp_admin_repair() {
 		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
 		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( __( 'Repair Forums', 'bbpress' ) ); ?></h2>
 
-		<p><?php esc_html_e( 'bbPress keeps track of relationships between forums, topics, replies, and topic tags, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
+		<p><?php esc_html_e( 'bbPress keeps track of relationships between forums, topics, replies, topic-tags, favorites, subscriptions, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 repair at a time.', 'bbpress' ); ?></p>
 
 		<?php bbp_admin_repair_tool_overhead_filters(); ?>
@@ -72,7 +72,7 @@ function bbp_admin_repair() {
 							</label>
 							<input id="cb-select-all-1" type="checkbox">
 						</td>
-						<th scope="col" id="description" class="manage-column column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
+						<th scope="col" id="description" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
 						<th scope="col" id="components" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
 						<th scope="col" id="overhead" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>
@@ -89,7 +89,7 @@ function bbp_admin_repair() {
 									<label class="screen-reader-text" for="<?php echo esc_attr( str_replace( '_', '-', $item['id'] ) ); ?>"></label>
 									<input type="checkbox" name="checked[]" value="<?php echo esc_attr( $item['id'] ); ?>" id="<?php echo esc_attr( str_replace( '_', '-', $item['id'] ) ); ?>">
 								</th>
-								<td class="bbp-tool-title column-primary">
+								<td class="bbp-tool-title column-primary column-description" data-colname="<?php esc_html_e( 'Description', 'bbpress' ); ?>">
 									<strong><?php echo esc_html( $item['description'] ); ?></strong>
 									<div class="row-actions hide-if-no-js">
 										<span class="run">
@@ -100,17 +100,17 @@ function bbp_admin_repair() {
 										<span class="screen-reader-text"><?php esc_html_e( 'Show more details', 'bbpress' ); ?></span>
 									</button>
 								</td>
-								<td class="column-components desc">
+								<td class="column-components desc" data-colname="<?php esc_html_e( 'Components', 'bbpress' ); ?>">
 									<div class="bbp-tool-overhead">
 
 										<?php echo implode( ', ', bbp_get_admin_repair_tool_components( $item ) ); ?>
 
 									</div>
 								</td>
-								<td class="column-overhead desc">
+								<td class="column-overhead desc" data-colname="<?php esc_html_e( 'Overhead', 'bbpress' ); ?>">
 									<div class="bbp-tool-overhead">
 
-										<?php echo esc_html( $item['overhead'] ); ?>
+										<?php echo implode( ', ', bbp_get_admin_repair_tool_overhead( $item ) ); ?>
 
 									</div>
 								</td>
@@ -137,7 +137,7 @@ function bbp_admin_repair() {
 							</label>
 							<input id="cb-select-all-2" type="checkbox">
 						</td>
-						<th scope="col" class="manage-column column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
+						<th scope="col" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
 						<th scope="col" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
 						<th scope="col" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>
@@ -447,7 +447,7 @@ function bbp_register_repair_tool( $args = array() ) {
 		'description' => '',
 		'callback'    => '',
 		'priority'    => 0,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
 		'components'  => array(),
 
 		// @todo
@@ -487,7 +487,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recalculate parent topic for each reply', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_topic_meta',
 		'priority'    => 5,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
 		'components'  => array( bbp_get_reply_post_type() )
 	) );
 
@@ -497,7 +497,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recalculate parent forum for each topic and reply', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_forum_meta',
 		'priority'    => 10,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_reply_post_type() )
 	) );
 
@@ -507,7 +507,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recalculate private and hidden forums', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_forum_visibility',
 		'priority'    => 15,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
 		'components'  => array( bbp_get_forum_post_type() )
 	) );
 
@@ -517,7 +517,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recalculate last activity in each topic and forum', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_freshness',
 		'priority'    => 20,
-		'overhead'    => esc_html__( 'High', 'bbpress' ),
+		'overhead'    => 'high',
 		'components'  => array( bbp_get_forum_post_type(), bbp_get_topic_post_type(), bbp_get_reply_post_type() )
 	) );
 
@@ -527,7 +527,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recalculate sticky relationship of each topic', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_sticky',
 		'priority'    => 25,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
 		'components'  => array( bbp_get_topic_post_type() )
 	) );
 
@@ -537,7 +537,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recalculate the position of each reply', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_reply_menu_order',
 		'priority'    => 30,
-		'overhead'    => esc_html__( 'High', 'bbpress' ),
+		'overhead'    => 'high',
 		'components'  => array( bbp_get_reply_post_type() )
 	) );
 
@@ -547,7 +547,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Repair BuddyPress Group Forum relationships', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_group_forum_relationship',
 		'priority'    => 35,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
 		'components'  => array( bbp_get_forum_post_type() )
 	) );
 
@@ -557,7 +557,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Repair closed topics', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_closed_topics',
 		'priority'    => 40,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_topic_post_type() )
 	) );
 
@@ -567,7 +567,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Count topics in each forum', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_forum_topic_count',
 		'priority'    => 45,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_forum_post_type(), bbp_get_topic_post_type() )
 	) );
 
@@ -577,7 +577,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Count replies in each forum', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_forum_reply_count',
 		'priority'    => 50,
-		'overhead'    => esc_html__( 'High', 'bbpress' ),
+		'overhead'    => 'high',
 		'components'  => array( bbp_get_forum_post_type(), bbp_get_reply_post_type() )
 	) );
 
@@ -587,7 +587,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Count replies in each topic', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_topic_reply_count',
 		'priority'    => 55,
-		'overhead'    => esc_html__( 'High', 'bbpress' ),
+		'overhead'    => 'high',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_reply_post_type() )
 	) );
 
@@ -597,7 +597,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Count voices in each topic', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_topic_voice_count',
 		'priority'    => 60,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_user_rewrite_id() )
 	) );
 
@@ -607,7 +607,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Count pending, spammed, & trashed replies in each topic', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_topic_hidden_reply_count',
 		'priority'    => 65,
-		'overhead'    => esc_html__( 'High', 'bbpress' ),
+		'overhead'    => 'high',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_reply_post_type() )
 	) );
 
@@ -617,7 +617,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recount topics for each user', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_user_topic_count',
 		'priority'    => 70,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_user_rewrite_id() )
 	) );
 
@@ -627,7 +627,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Recount replies for each user', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_user_reply_count',
 		'priority'    => 75,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_reply_post_type(), bbp_get_user_rewrite_id() )
 	) );
 
@@ -637,7 +637,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Remove unpublished topics from user favorites', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_user_favorites',
 		'priority'    => 80,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_user_rewrite_id() )
 	) );
 
@@ -647,7 +647,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Remove unpublished topics from user subscriptions', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_user_topic_subscriptions',
 		'priority'    => 85,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_topic_post_type(), bbp_get_user_rewrite_id() )
 	) );
 
@@ -657,7 +657,7 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Remove unpublished forums from user subscriptions', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_user_forum_subscriptions',
 		'priority'    => 90,
-		'overhead'    => esc_html__( 'Medium', 'bbpress' ),
+		'overhead'    => 'medium',
 		'components'  => array( bbp_get_forum_post_type(), bbp_get_user_rewrite_id() )
 	) );
 
@@ -667,7 +667,27 @@ function bbp_register_default_repair_tools() {
 		'description' => __( 'Remap existing users to default forum roles', 'bbpress' ),
 		'callback'    => 'bbp_admin_repair_user_roles',
 		'priority'    => 95,
-		'overhead'    => esc_html__( 'Low', 'bbpress' ),
+		'overhead'    => 'low',
+		'components'  => array( bbp_get_user_rewrite_id() )
+	) );
+
+	// Migrate favorites from user-meta to post-meta
+	bbp_register_repair_tool( array(
+		'id'          => 'bbp-user-favorites-move',
+		'description' => __( 'Upgrade user favorites', 'bbpress' ),
+		'callback'    => 'bbp_admin_upgrade_user_favorites',
+		'priority'    => 100,
+		'overhead'    => 'high',
+		'components'  => array( bbp_get_user_rewrite_id() )
+	) );
+
+	// Migrate favorites from user-meta to post-meta
+	bbp_register_repair_tool( array(
+		'id'          => 'bbp-user-subscriptions-move',
+		'description' => __( 'Upgrade user subscriptions', 'bbpress' ),
+		'callback'    => 'bbp_admin_upgrade_user_subscriptions',
+		'priority'    => 105,
+		'overhead'    => 'high',
 		'components'  => array( bbp_get_user_rewrite_id() )
 	) );
 }
@@ -723,12 +743,19 @@ function bbp_admin_repair_list_search_form() {
 	<?php
 }
 
+/**
+ * Output a select drop-down of components to filter by
+ *
+ * @since 2.5.0 bbPress (r5885)
+ */
 function bbp_admin_repair_list_components_filter() {
 
+	// Sanitize component value, if exists
 	$selected = ! empty( $_GET['components'] )
 		? sanitize_key( $_GET['components'] )
 		: '';
 
+	// Get registered components
 	$components = bbp_get_admin_repair_tool_registered_components(); ?>
 
 	<label class="screen-reader-text" for="cat"><?php esc_html_e( 'Filter by Component', 'bbpress' ); ?></label>
@@ -745,6 +772,35 @@ function bbp_admin_repair_list_components_filter() {
 	<input type="submit" name="filter_action" id="components-submit" class="button" value="<?php esc_html_e( 'Filter', 'bbpress' ); ?>">
 
 	<?php
+}
+
+/**
+ * Maybe translate a repair tool overhead name
+ *
+ * @since 2.6.0 bbPress (r6177)
+ *
+ * @param string $overhead
+ * @return string
+ */
+function bbp_admin_repair_tool_translate_overhead( $overhead = '' ) {
+
+	// Get the name of the component
+	switch ( $overhead ) {
+		case 'low' :
+			$name = esc_html__( 'Low', 'bbpress' );
+			break;
+		case 'medium' :
+			$name = esc_html__( 'Medium', 'bbpress' );
+			break;
+		case 'high' :
+			$name = esc_html__( 'High', 'bbpress' );
+			break;
+		default :
+			$name = ucwords( $overhead );
+			break;
+	}
+
+	return $name;
 }
 
 /**
@@ -771,7 +827,7 @@ function bbp_admin_repair_tool_translate_component( $component = '' ) {
 		case bbp_get_reply_post_type() :
 			$name = esc_html__( 'Replies', 'bbpress' );
 			break;
-		default;
+		default :
 			$name = ucwords( $component );
 			break;
 	}
@@ -800,7 +856,7 @@ function bbp_admin_repair_list() {
 
 	// Overhead filter
 	if ( ! empty( $overhead ) ) {
-		$list = wp_list_filter( $list, array( 'overhead' => ucwords( $overhead ) ) );
+		$list = wp_list_filter( $list, array( 'overhead' => $overhead ) );
 	}
 
 	// Loop through and key by priority for sorting
@@ -837,7 +893,7 @@ function bbp_admin_repair_list() {
 }
 
 /**
- * Get filter links for components for a specific admir repair tool
+ * Get filter links for components for a specific admin repair tool
  *
  * @since 2.6.0 bbPress (r5885)
  *
@@ -863,13 +919,49 @@ function bbp_get_admin_repair_tool_components( $item = array() ) {
 	// Filter & return
 	return apply_filters( 'bbp_get_admin_repair_tool_components', $links, $item );
 }
-//
+
+/**
+ * Output filter links for components for a specific admin repair tool
+ *
+ * @since 2.6.0 bbPress (r5885)
+ *
+ * @param type array
+ */
 function bbp_admin_repair_tool_overhead_filters( $args = array() ) {
 	echo bbp_get_admin_repair_tool_overhead_filters( $args );
 }
 
 /**
- * Get filter links for components for a specific admir repair tool
+ * Get filter links for overhead for a specific admin repair tool
+ *
+ * @since 2.6.0 bbPress (r5885)
+ *
+ * @param array $item
+ * @return array
+ */
+function bbp_get_admin_repair_tool_overhead( $item = array() ) {
+
+	// Get the tools URL
+	$tools_url = add_query_arg( array( 'page' => 'bbp-repair' ), admin_url( 'tools.php' ) );
+
+	// Define links array
+	$links     = array();
+	$overheads = array( $item['overhead'] );
+
+	// Loop through tool overhead and build links
+	foreach ( $overheads as $overhead ) {
+		$args       = array( 'overhead' => $overhead );
+		$filter_url = add_query_arg( $args, $tools_url );
+		$name       = bbp_admin_repair_tool_translate_overhead( $overhead );
+		$links[]    = '<a href="' . esc_url( $filter_url ) . '">' . esc_html( $name ) . '</a>';
+	}
+
+	// Filter & return
+	return apply_filters( 'bbp_get_admin_repair_tool_overhead', $links, $item );
+}
+
+/**
+ * Get filter links for components for a specific admin repair tool
  *
  * @since 2.6.0 bbPress (r5885)
  *
@@ -941,7 +1033,7 @@ function bbp_get_admin_repair_tool_overhead_filters( $args = array() ) {
 		}
 
 		// Build the link
-		$output .= $r['link_before'] . '<a href="' . esc_url( $filter_url ) . '" class="' . esc_attr( $current ) . '">' . $overhead . $overhead_count . '</a>' . $show_sep . $r['link_after'];
+		$output .= $r['link_before'] . '<a href="' . esc_url( $filter_url ) . '" class="' . esc_attr( $current ) . '">' . bbp_admin_repair_tool_translate_overhead( $overhead ) . $overhead_count . '</a>' . $show_sep . $r['link_after'];
 	}
 
 	// Surround output with before & after strings
@@ -1662,11 +1754,11 @@ function bbp_admin_repair_user_roles() {
 
 		// Get users of this site, limited to 1000
 		while ( $users = get_users( array(
-				'role'   => $role,
-				'fields' => 'ID',
-				'number' => 1000,
-				'offset' => $offset
-			) ) ) {
+			'role'   => $role,
+			'fields' => 'ID',
+			'number' => 1000,
+			'offset' => $offset
+		) ) ) {
 
 			// Iterate through each user of $role and try to set it
 			foreach ( (array) $users as $user_id ) {
@@ -2119,6 +2211,118 @@ function bbp_admin_repair_reply_menu_order() {
 	wp_cache_flush();
 
 	return array( 0, sprintf( $statement, __( 'Complete!', 'bbpress' ) ) );
+}
+
+/**
+ * Upgrade user favorites for bbPress 2.6 and higher
+ *
+ * @since 2.6.0 bbPress (r6174)
+ *
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_upgrade_user_favorites() {
+
+	// Define variables
+	$bbp_db    = bbp_db();
+	$statement = __( 'Upgrading user favorites &hellip; %s', 'bbpress' );
+	$result    = __( 'No favorites to upgrade.',             'bbpress' );
+	$changed   = $total = 0;
+	$key       = $bbp_db->prefix . '_bbp_favorites';
+	$favorites = $bbp_db->get_col( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = '{$key}'" );
+
+	// Bail if no closed topics found
+	if ( empty( $favorites ) || is_wp_error( $favorites ) ) {
+		return array( 1, sprintf( $statement, $result ) );
+	}
+
+	// Loop through each user's favorites
+	foreach ( $favorites as $meta_id => $meta ) {
+
+		// Get post IDs
+		$post_ids  = maybe_unserialize( $meta->meta_value );
+		$to_change = count( $post_ids );
+		$changed   = 0;
+
+		// Add user ID to all favorited posts
+		foreach ( $post_ids as $post_id ) {
+			$added = add_post_meta( $post_id, '_bbp_favorite', $meta->user_id );
+
+			// Bump counts if successfully added
+			if ( ! empty( $added ) ) {
+				++$changed;
+				++$total;
+			}
+		}
+
+		// Delete the old meta data
+		if ( $changed === $to_change ) {
+			delete_metadata_by_mid( 'user', $meta_id );
+		}
+	}
+
+	// Cleanup
+	unset( $favorites, $added, $post_ids );
+
+	// Complete results
+	$result = sprintf( _n( 'Complete! %d favorite upgraded.', 'Complete! %d favorites upgraded.', $total, 'bbpress' ), $total );
+
+	return array( 0, sprintf( $statement, $result ) );
+}
+
+/**
+ * Upgrade user subscriptions for bbPress 2.6 and higher
+ *
+ * @since 2.6.0 bbPress (r6174)
+ *
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_upgrade_user_subscriptions() {
+
+	// Define variables
+	$bbp_db        = bbp_db();
+	$statement     = __( 'Upgrading user subscriptions &hellip; %s', 'bbpress' );
+	$result        = __( 'No subscriptions to upgrade.',             'bbpress' );
+	$changed       = $total = 0;
+	$key           = $bbp_db->prefix . '_bbp_subscriptions';
+	$subscriptions = $bbp_db->get_col( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = '{$key}'" );
+
+	// Bail if no closed topics found
+	if ( empty( $subscriptions ) || is_wp_error( $subscriptions ) ) {
+		return array( 1, sprintf( $statement, $result ) );
+	}
+
+	// Loop through each user's favorites
+	foreach ( $subscriptions as $meta_id => $meta ) {
+
+		// Get post IDs
+		$post_ids  = maybe_unserialize( $meta->meta_value );
+		$to_change = count( $post_ids );
+		$changed   = 0;
+
+		// Add user ID to all favorited posts
+		foreach ( $post_ids as $post_id ) {
+			$added = add_post_meta( $post_id, '_bbp_subscription', $meta->user_id );
+
+			// Bump counts if successfully added
+			if ( ! empty( $added ) ) {
+				++$changed;
+				++$total;
+			}
+		}
+
+		// Delete the old meta data
+		if ( $changed === $to_change ) {
+			delete_metadata_by_mid( 'user', $meta_id );
+		}
+	}
+
+	// Cleanup
+	unset( $subscriptions, $added, $post_ids );
+
+	// Complete results
+	$result = sprintf( _n( 'Complete! %d subscription upgraded.', 'Complete! %d subscriptions upgraded.', $total, 'bbpress' ), $total );
+
+	return array( 0, sprintf( $statement, $result ) );
 }
 
 /** Reset ********************************************************************/
