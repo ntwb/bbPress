@@ -910,7 +910,7 @@ function bbp_topic_pagination( $args = array() ) {
 			if ( bbp_use_pretty_urls() ) {
 				$pagination_links = str_replace( bbp_get_paged_slug() . '/1/', '', $pagination_links );
 			} else {
-				$pagination_links = str_replace( '&#038;paged=1', '', $pagination_links );
+				$pagination_links = preg_replace( '/&#038;paged=1(?=[^0-9])/m', '', $pagination_links );
 			}
 
 			// Add before and after to pagination links
@@ -2207,7 +2207,7 @@ function bbp_topic_replies_link( $topic_id = 0 ) {
 		if ( ! empty( $deleted ) && current_user_can( 'edit_others_replies' ) ) {
 
 			// Extra text
-			$extra = sprintf( esc_html__( ' (+ %d hidden)', 'bbpress' ), $deleted );
+			$extra = ' ' . sprintf( _n( '(+ %d hidden)', '(+ %d hidden)', $deleted, 'bbpress' ), $deleted );
 
 			// No link
 			if ( bbp_get_view_all() ) {
@@ -2215,7 +2215,7 @@ function bbp_topic_replies_link( $topic_id = 0 ) {
 
 			// Link
 			} else {
-				$retval .= " <a href='" . esc_url( bbp_add_view_all( bbp_get_topic_permalink( $topic_id ), true ) ) . "'>$extra</a>";
+				$retval .= " <a href='" . esc_url( bbp_add_view_all( bbp_get_topic_permalink( $topic_id ), true ) ) . "'>" . esc_html( $extra ) . "</a>";
 			}
 		}
 
