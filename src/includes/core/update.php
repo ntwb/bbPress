@@ -322,8 +322,11 @@ function bbp_version_updater() {
 			 *
 			 * @link https://bbpress.trac.wordpress.org/ticket/2959
 			 */
-			bbp_admin_upgrade_user_favorites();
-			bbp_admin_upgrade_user_subscriptions();
+			if ( ! bbp_is_large_install() ) {
+				bbp_admin_upgrade_user_favorites();
+				bbp_admin_upgrade_user_topic_subscriptions();
+				bbp_admin_upgrade_user_forum_subscriptions();
+			}
 		}
 	}
 
@@ -384,8 +387,10 @@ function bbp_make_current_user_keymaster() {
 		return;
 	}
 
-	// Get the current user ID
+	// Cannot use bbp_get_current_user_id() here, during activation process
 	$user_id = get_current_user_id();
+
+	// Get the current blog ID, to know if they should be promoted here
 	$blog_id = get_current_blog_id();
 
 	// Bail if user is not actually a member of this site
