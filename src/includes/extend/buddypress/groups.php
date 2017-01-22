@@ -14,7 +14,7 @@
 // Exit if accessed directly
 defined( 'ABSPATH' ) || exit;
 
-if ( !class_exists( 'BBP_Forums_Group_Extension' ) && class_exists( 'BP_Group_Extension' ) ) :
+if ( ! class_exists( 'BBP_Forums_Group_Extension' ) && class_exists( 'BP_Group_Extension' ) ) :
 /**
  * Loads Group Extension for Forums Component
  *
@@ -841,7 +841,7 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 		// Assume forum query
 		bbp_set_query_name( 'bbp_single_forum' ); ?>
 
-		<div id="bbpress-forums">
+		<div id="bbpress-forums" class="bbpress-wrapper">
 
 			<?php switch ( $forum_action ) :
 

@@ -2020,6 +2020,8 @@ function bbp_topic_last_reply_id( $topic_id = 0 ) {
 /**
  * Output the title of the last reply inside a topic
  *
+ * @since 2.0.0 bbPress (r2753)
+ *
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_topic_last_reply_title() To get the topic last reply title
  */
@@ -2028,6 +2030,9 @@ function bbp_topic_last_reply_title( $topic_id = 0 ) {
 }
 	/**
 	 * Return the title of the last reply inside a topic
+	 *
+	 * @since 2.0.0 bbPress (r2753)
+	 * @since 2.6.0 bbPress https://bbpress.trac.wordpress.org/ticket/3039
 	 *
 	 * @param int $topic_id Optional. Topic id
 	 * @uses bbp_get_topic_id() To get the topic id
@@ -3131,7 +3136,7 @@ function bbp_forum_pagination_count() {
 	 * @uses bbp_number_format() To format the number value
 	 * @uses apply_filters() Calls 'bbp_get_forum_pagination_count' with the
 	 *                        pagination count
-	 * @return string Forum Pagintion count
+	 * @return string Forum Pagination count
 	 */
 	function bbp_get_forum_pagination_count() {
 		$bbp = bbpress();
@@ -3363,10 +3368,10 @@ function bbp_form_topic_status_dropdown( $args = array() ) {
 	echo bbp_get_form_topic_status_dropdown( $args );
 }
 	/**
-	 * Returns topic status downdown
+	 * Returns topic status dropdown
 	 *
 	 * This dropdown is only intended to be seen by users with the 'moderate'
-	 * capability. Because of this, no additional capablitiy checks are performed
+	 * capability. Because of this, no additional capability checks are performed
 	 * within this function to check available topic statuses.
 	 *
 	 * @since 2.4.0 bbPress (r5059)

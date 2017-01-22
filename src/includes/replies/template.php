@@ -2436,7 +2436,7 @@ function bbp_reply_class( $reply_id = 0, $classes = array() ) {
  * @uses bbp_get_topic_pagination_count() To get the topic pagination count
  */
 function bbp_topic_pagination_count() {
-	echo bbp_get_topic_pagination_count();
+	echo esc_html( bbp_get_topic_pagination_count() );
 }
 	/**
 	 * Return the topic pagination count
@@ -2463,13 +2463,9 @@ function bbp_topic_pagination_count() {
 		$total     = bbp_number_format( $total_int );
 
 		// We are threading replies
-		if ( bbp_thread_replies() && bbp_is_single_topic() ) {
-			return;
+		if ( bbp_thread_replies() ) {
 			$walker  = new BBP_Walker_Reply;
-			$threads = (int) $walker->get_number_of_root_elements( $bbp->reply_query->posts );
-
-			// Adjust for topic
-			$threads--;
+			$threads = absint( $walker->get_number_of_root_elements( $bbp->reply_query->posts ) - 1 );
 			$retstr  = sprintf( _n( 'Viewing %1$s reply thread', 'Viewing %1$s reply threads', $threads, 'bbpress' ), bbp_number_format( $threads ) );
 
 		// We are not including the lead topic
@@ -2498,7 +2494,7 @@ function bbp_topic_pagination_count() {
 		}
 
 		// Filter and return
-		return apply_filters( 'bbp_get_topic_pagination_count', esc_html( $retstr ) );
+		return apply_filters( 'bbp_get_topic_pagination_count', $retstr );
 	}
 
 /**
@@ -2604,7 +2600,7 @@ function bbp_form_reply_to() {
 			$reply_to = bbp_get_reply_to();
 		}
 
-		return (int) apply_filters( 'bbp_get_form_reply_to', $reply_to );
+		return apply_filters( 'bbp_get_form_reply_to', $reply_to );
 	}
 
 /**
@@ -2776,10 +2772,10 @@ function bbp_form_reply_status_dropdown( $args = array() ) {
 	echo bbp_get_form_reply_status_dropdown( $args );
 }
 	/**
-	 * Returns reply status downdown
+	 * Returns reply status dropdown
 	 *
 	 * This dropdown is only intended to be seen by users with the 'moderate'
-	 * capability. Because of this, no additional capablitiy checks are performed
+	 * capability. Because of this, no additional capability checks are performed
 	 * within this function to check available reply statuses.
 	 *
 	 * @since 2.6.0 bbPress (r5399)
