@@ -117,15 +117,24 @@ class BBP_Admin {
 	 * @access private
 	 */
 	private function includes() {
-		require( $this->admin_dir . 'tools.php'     );
-		require( $this->admin_dir . 'converter.php' );
-		require( $this->admin_dir . 'settings.php'  );
-		require( $this->admin_dir . 'functions.php' );
-		require( $this->admin_dir . 'metaboxes.php' );
-		require( $this->admin_dir . 'forums.php'    );
-		require( $this->admin_dir . 'topics.php'    );
-		require( $this->admin_dir . 'replies.php'   );
-		require( $this->admin_dir . 'users.php'     );
+
+		// Tools
+		require $this->admin_dir . 'tools.php';
+		require $this->admin_dir . 'tools/common.php';
+		require $this->admin_dir . 'tools/repair.php';
+		require $this->admin_dir . 'tools/upgrades.php';
+		require $this->admin_dir . 'tools/reset.php';
+		require $this->admin_dir . 'tools/help.php';
+
+		// Components
+		require $this->admin_dir . 'converter.php';
+		require $this->admin_dir . 'settings.php';
+		require $this->admin_dir . 'common.php';
+		require $this->admin_dir . 'metaboxes.php';
+		require $this->admin_dir . 'forums.php';
+		require $this->admin_dir . 'topics.php';
+		require $this->admin_dir . 'replies.php';
+		require $this->admin_dir . 'users.php';
 	}
 
 	/**
@@ -201,59 +210,47 @@ class BBP_Admin {
 
 		$hooks = array();
 
-		// These are later removed in admin_head
-		if ( current_user_can( 'bbp_tools_page' ) ) {
-			if ( current_user_can( 'bbp_tools_repair_page' ) ) {
-				$hooks[] = add_management_page(
-					__( 'Repair Forums', 'bbpress' ),
-					__( 'Forum Repair',  'bbpress' ),
-					$this->minimum_capability,
-					'bbp-repair',
-					'bbp_admin_repair'
-				);
-			}
+		// Get the tools pages
+		$tools = bbp_get_tools_admin_pages();
 
-			if ( current_user_can( 'bbp_tools_import_page' ) ) {
-				$hooks[] = add_management_page(
-					__( 'Import Forums', 'bbpress' ),
-					__( 'Forum Import',  'bbpress' ),
-					$this->minimum_capability,
-					'bbp-converter',
-					'bbp_converter_settings'
-				);
-			}
+		// Loop through tools and check
+		foreach ( $tools as $tool ) {
 
-			if ( current_user_can( 'bbp_tools_reset_page' ) ) {
-				$hooks[] = add_management_page(
-					__( 'Reset Forums', 'bbpress' ),
-					__( 'Forum Reset',  'bbpress' ),
-					$this->minimum_capability,
-					'bbp-reset',
-					'bbp_admin_reset'
-				);
-			}
-
-			// Fudge the highlighted subnav item when on a bbPress admin page
-			foreach ( $hooks as $hook ) {
-				add_action( "admin_head-$hook", 'bbp_tools_modify_menu_highlight' );
-			}
-
-			// Forums Tools Root
-			add_management_page(
-				__( 'Forums', 'bbpress' ),
-				__( 'Forums', 'bbpress' ),
-				$this->minimum_capability,
-				'bbp-repair',
-				'bbp_admin_repair'
+			// Try to add the admin page
+			$page = add_management_page(
+				$tool['name'],
+				$tool['name'],
+				$tool['cap'],
+				$tool['page'],
+				$tool['func']
 			);
+
+			// Add page to hook if user can view it
+			if ( false !== $page ) {
+				$hooks[] = $page;
+			}
 		}
 
+		// Fudge the highlighted subnav item when on a bbPress admin page
+		foreach ( $hooks as $hook ) {
+			add_action( "admin_head-{$hook}", 'bbp_tools_modify_menu_highlight' );
+		}
+
+		// Forums Tools Root
+		add_management_page(
+			__( 'Forums', 'bbpress' ),
+			__( 'Forums', 'bbpress' ),
+			'bbp_tools_page',
+			'bbp-repair',
+			'bbp_admin_repair_page'
+		);
+
 		// Are settings enabled?
-		if ( ! bbp_settings_integration() && current_user_can( 'bbp_settings_page' ) ) {
+		if ( ! bbp_settings_integration() ) {
 			add_options_page(
 				__( 'Forums',  'bbpress' ),
 				__( 'Forums',  'bbpress' ),
-				$this->minimum_capability,
+				'bbp_settings_page',
 				'bbpress',
 				'bbp_admin_settings'
 			);
@@ -266,7 +263,7 @@ class BBP_Admin {
 			add_dashboard_page(
 				__( 'Welcome to bbPress',  'bbpress' ),
 				__( 'Welcome to bbPress',  'bbpress' ),
-				$this->minimum_capability,
+				'bbp_about_page',
 				'bbp-about',
 				array( $this, 'about_screen' )
 			);
@@ -275,7 +272,7 @@ class BBP_Admin {
 			add_dashboard_page(
 				__( 'Welcome to bbPress',  'bbpress' ),
 				__( 'Welcome to bbPress',  'bbpress' ),
-				$this->minimum_capability,
+				'bbp_about_page',
 				'bbp-credits',
 				array( $this, 'credits_screen' )
 			);
@@ -437,6 +434,7 @@ class BBP_Admin {
 			case 'bbp_about_page'            : // About and Credits
 			case 'bbp_tools_page'            : // Tools Page
 			case 'bbp_tools_repair_page'     : // Tools - Repair Page
+			case 'bbp_tools_upgrade_page'    : // Tools - Upgrade Page
 			case 'bbp_tools_import_page'     : // Tools - Import Page
 			case 'bbp_tools_reset_page'      : // Tools - Reset Page
 			case 'bbp_settings_page'         : // Settings Page
@@ -466,12 +464,12 @@ class BBP_Admin {
 	public function register_importers() {
 
 		// Leave if we're not in the import section
-		if ( !defined( 'WP_LOAD_IMPORTERS' ) ) {
+		if ( ! defined( 'WP_LOAD_IMPORTERS' ) ) {
 			return;
 		}
 
 		// Load Importer API
-		require_once( ABSPATH . 'wp-admin/includes/import.php' );
+		require_once ABSPATH . 'wp-admin/includes/import.php';
 
 		// Load our importers
 		$importers = apply_filters( 'bbp_importers', array( 'bbpress' ) );
@@ -487,7 +485,7 @@ class BBP_Admin {
 
 			// If the file exists, include it
 			if ( file_exists( $import_file ) ) {
-				require( $import_file );
+				require $import_file;
 			}
 		}
 	}
@@ -616,14 +614,18 @@ class BBP_Admin {
 	 *
 	 * @since 2.0.0 bbPress (r2464)
 	 *
-	 * @uses remove_submenu_page() To remove menu items with alternat navigation
+	 * @uses remove_submenu_page() To remove menu items with alternate navigation
 	 */
 	public function admin_head() {
-		remove_submenu_page( 'tools.php', 'bbp-repair'    );
-		remove_submenu_page( 'tools.php', 'bbp-converter' );
-		remove_submenu_page( 'tools.php', 'bbp-reset'     );
-		remove_submenu_page( 'index.php', 'bbp-about'     );
-		remove_submenu_page( 'index.php', 'bbp-credits'   );
+
+		// Tools
+		foreach ( bbp_get_tools_admin_pages() as $tool ) {
+			remove_submenu_page( 'tools.php', $tool['page'] );
+		}
+
+		// About
+		remove_submenu_page( 'index.php', 'bbp-about'   );
+		remove_submenu_page( 'index.php', 'bbp-credits' );
 	}
 
 	/**

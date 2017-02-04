@@ -5,7 +5,7 @@
   },
   "description": "Forum software with a twist from the creators of WordPress.",
   "devDependencies": {
-    "autoprefixer": "~6.6.1",
+    "autoprefixer": "~6.7.0",
     "grunt": "~1.0.1",
     "grunt-check-dependencies": "~1.0.0",
     "grunt-checktextdomain": "~1.0.0",
@@ -17,16 +17,16 @@
     "grunt-contrib-watch": "~1.0.0",
     "grunt-exec": "~1.0.1",
     "grunt-jsvalidate": "~0.2.2",
-    "grunt-legacy-util": "^1.0.0",
+    "grunt-legacy-util": "~1.0.0",
     "grunt-patch-wordpress": "~0.4.0",
     "grunt-postcss": "~0.8.0",
     "grunt-rtlcss": "~2.0.1",
     "grunt-sass": "~2.0.0",
-    "grunt-stylelint": "^0.6.0",
+    "grunt-stylelint": "~0.6.0",
     "grunt-wp-i18n": "~0.5.2",
     "matchdep": "~1.0.1",
     "postcss-scss": "~0.4.0",
-    "stylelint": "^7.2.0"
+    "stylelint": "~7.7.1"
   },
   "engines": {
     "node": ">=4.2.1"

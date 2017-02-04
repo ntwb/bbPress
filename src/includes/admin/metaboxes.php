@@ -281,9 +281,9 @@ function bbp_dashboard_widget_right_now() {
 /** Forums ********************************************************************/
 
 /**
- * Forum metabox
+ * Forum meta-box
  *
- * The metabox that holds all of the additional forum information
+ * The meta-box that holds all of the additional forum information
  *
  * @since 2.0.0 bbPress (r2744)
  *
@@ -378,9 +378,9 @@ function bbp_forum_metabox( $post ) {
 /** Topics ********************************************************************/
 
 /**
- * Topic metabox
+ * Topic meta-box
  *
- * The metabox that holds all of the additional topic information
+ * The meta-box that holds all of the additional topic information
  *
  * @since 2.0.0 bbPress (r2464)
  *
@@ -451,9 +451,9 @@ function bbp_topic_metabox( $post ) {
 /** Replies *******************************************************************/
 
 /**
- * Reply metabox
+ * Reply meta-box
  *
- * The metabox that holds all of the additional reply information
+ * The meta-box that holds all of the additional reply information
  *
  * @since 2.0.0 bbPress (r2464)
  *
@@ -547,7 +547,7 @@ function bbp_reply_metabox( $post ) {
 }
 
 /**
- * Output the topic replies metabox
+ * Output the topic replies meta-box
  *
  * @since 2.6.0 bbPress (r5886)
  *
@@ -564,7 +564,7 @@ function bbp_topic_replies_metabox( $topic = false ) {
 
 	// Pull in the list table class
 	if ( ! class_exists( 'BBP_Topic_Replies_List_Table' ) ) {
-		require_once bbpress()->admin->admin_dir . '/list-tables/topic-replies.php';
+		require_once bbpress()->admin->admin_dir . '/classes/class-bbp-topic-replies-list-table.php';
 	}
 
 	// Look for pagination value
@@ -588,7 +588,7 @@ function bbp_topic_replies_metabox( $topic = false ) {
 /** Users *********************************************************************/
 
 /**
- * Anonymous user information metabox
+ * Anonymous user information meta-box
  *
  * @since 2.0.0 bbPress (r2828)
  *
@@ -642,7 +642,7 @@ function bbp_author_metabox( $post ) {
 }
 
 /**
- * Moderator assignment metabox
+ * Moderator assignment meta-box
  *
  * @since 2.6.0 bbPress (r2828)
  *
@@ -658,10 +658,9 @@ function bbp_moderator_assignment_metabox( $post ) {
 		? implode( ', ', array_map( 'esc_attr', $user_nicenames ) )
 		: ''; ?>
 
-	<p>
-		<label class="screen-reader-text" for="bbp_moderators"><?php esc_html_e( 'Moderators', 'bbpress' ); ?></label>
-		<input type="text" id="bbp_moderators" name="bbp_moderators" value="<?php echo esc_attr( $moderators ); ?>" />
-	</p>
+	<label class="screen-reader-text" for="bbp_moderators"><?php esc_html_e( 'Moderators', 'bbpress' ); ?></label>
+	<input type="text" id="bbp_moderators" name="bbp_moderators" value="<?php echo esc_attr( $moderators ); ?>" />
+	<p class="howto"><?php esc_html_e( 'Separate user-names with commas', 'bbpress' ); ?></p>
 
 	<?php
 

@@ -76,7 +76,7 @@ class BBP_Topics_Admin {
 		add_action( 'manage_' . $this->post_type . '_posts_custom_column',  array( $this, 'column_data' ), 10, 2 );
 		add_filter( 'post_row_actions',                                     array( $this, 'row_actions' ), 10, 2 );
 
-		// Topic metabox actions
+		// Topic meta-box actions
 		add_action( 'add_meta_boxes', array( $this, 'attributes_metabox'    ) );
 		add_action( 'add_meta_boxes', array( $this, 'author_metabox'        ) );
 		add_action( 'add_meta_boxes', array( $this, 'replies_metabox'       ) );
@@ -332,12 +332,12 @@ class BBP_Topics_Admin {
 	}
 
 	/**
-	 * Add the topic attributes metabox
+	 * Add the topic attributes meta-box
 	 *
 	 * @since 2.0.0 bbPress (r2744)
 	 *
 	 * @uses bbp_get_topic_post_type() To get the topic post type
-	 * @uses add_meta_box() To add the metabox
+	 * @uses add_meta_box() To add the meta-box
 	 * @uses do_action() Calls 'bbp_topic_attributes_metabox'
 	 */
 	public function attributes_metabox() {
@@ -352,11 +352,11 @@ class BBP_Topics_Admin {
 	}
 
 	/**
-	 * Add the author info metabox
+	 * Add the author info meta-box
 	 *
 	 * @since 2.0.0 bbPress (r2828)
 	 *
-	 * @uses add_meta_box() To add the metabox
+	 * @uses add_meta_box() To add the meta-box
 	 */
 	public function author_metabox() {
 
@@ -365,7 +365,7 @@ class BBP_Topics_Admin {
 			return;
 		}
 
-		// Add the metabox
+		// Add the meta-box
 		add_meta_box(
 			'bbp_author_metabox',
 			__( 'Author Information', 'bbpress' ),
@@ -377,7 +377,7 @@ class BBP_Topics_Admin {
 	}
 
 	/**
-	 * Add the replies metabox
+	 * Add the replies meta-box
 	 *
 	 * Allows viewing & moderating of replies to a topic, based on the way
 	 * comments are visible on a blog post.
@@ -388,7 +388,7 @@ class BBP_Topics_Admin {
 	 * @uses bbp_get_reply() To get the reply
 	 * @uses bbp_get_topic_post_type() To get the topic post type
 	 * @uses bbp_get_reply_post_type() To get the reply post type
-	 * @uses add_meta_box() To add the metabox
+	 * @uses add_meta_box() To add the meta-box
 	 * @uses do_action() Calls 'bbp_author_metabox' with the topic/reply
 	 *                    id
 	 */
@@ -399,7 +399,7 @@ class BBP_Topics_Admin {
 			return;
 		}
 
-		// Add the metabox
+		// Add the meta-box
 		add_meta_box(
 			'bbp_topic_replies_metabox',
 			__( 'Replies', 'bbpress' ),
@@ -411,13 +411,13 @@ class BBP_Topics_Admin {
 	}
 
 	/**
-	 * Add the favorites metabox
+	 * Add the favorites meta-box
 	 *
 	 * Allows viewing of users who have favorited a topic.
 	 *
 	 * @since 2.6.0 bbPress (r6197)
 	 *
-	 * @uses add_meta_box() To add the metabox
+	 * @uses add_meta_box() To add the meta-box
 	 */
 	public function favorites_metabox() {
 
@@ -431,7 +431,7 @@ class BBP_Topics_Admin {
 			return;
 		}
 
-		// Add the metabox
+		// Add the meta-box
 		add_meta_box(
 			'bbp_topic_favorites_metabox',
 			__( 'Favorites', 'bbpress' ),
@@ -443,13 +443,13 @@ class BBP_Topics_Admin {
 	}
 
 	/**
-	 * Add the subscriptions metabox
+	 * Add the subscriptions meta-box
 	 *
 	 * Allows viewing of users who have subscribed to a topic.
 	 *
 	 * @since 2.6.0 bbPress (r6197)
 	 *
-	 * @uses add_meta_box() To add the metabox
+	 * @uses add_meta_box() To add the meta-box
 	 */
 	public function subscriptions_metabox() {
 
@@ -463,7 +463,7 @@ class BBP_Topics_Admin {
 			return;
 		}
 
-		// Add the metabox
+		// Add the meta-box
 		add_meta_box(
 			'bbp_topic_subscriptions_metabox',
 			__( 'Subscriptions', 'bbpress' ),
@@ -475,7 +475,7 @@ class BBP_Topics_Admin {
 	}
 
 	/**
-	 * Remove comments & discussion metaboxes if comments are not supported
+	 * Remove comments & discussion meta-boxes if comments are not supported
 	 *
 	 * @since 2.6.0 bbPress (r6186)
 	 */
@@ -971,13 +971,13 @@ class BBP_Topics_Admin {
 		if ( current_user_can( 'delete_topic', $topic->ID ) ) {
 			if ( bbp_get_trash_status_id() === $topic->post_status ) {
 				$post_type_object   = get_post_type_object( bbp_get_topic_post_type() );
-				$actions['untrash'] = "<a title='" . esc_attr__( 'Restore this item from the Trash', 'bbpress' ) . "' href='" . wp_nonce_url( add_query_arg( array( '_wp_http_referer' => add_query_arg( array( 'post_type' => bbp_get_topic_post_type() ), admin_url( 'edit.php' ) ) ), admin_url( sprintf( $post_type_object->_edit_link . '&amp;action=untrash', $topic->ID ) ) ), 'untrash-' . $topic->post_type . '_' . $topic->ID ) . "'>" . esc_html__( 'Restore', 'bbpress' ) . "</a>";
+				$actions['untrash'] = "<a title='" . esc_attr__( 'Restore this item from the Trash', 'bbpress' ) . "' href='" . esc_url( wp_nonce_url( admin_url( sprintf( $post_type_object->_edit_link . '&amp;action=untrash', $topic->ID ) ), 'untrash-post_' . $topic->ID ) ) . "'>" . esc_html__( 'Restore', 'bbpress' ) . "</a>";
 			} elseif ( EMPTY_TRASH_DAYS ) {
-				$actions['trash'] = "<a class='submitdelete' title='" . esc_attr__( 'Move this item to the Trash', 'bbpress' ) . "' href='" . esc_url( add_query_arg( array( '_wp_http_referer' => add_query_arg( array( 'post_type' => bbp_get_topic_post_type() ), admin_url( 'edit.php' ) ) ), get_delete_post_link( $topic->ID ) ) ) . "'>" . esc_html__( 'Trash', 'bbpress' ) . "</a>";
+				$actions['trash'] = "<a class='submitdelete' title='" . esc_attr__( 'Move this item to the Trash', 'bbpress' ) . "' href='" . esc_url( get_delete_post_link( $topic->ID ) ) . "'>" . esc_html__( 'Trash', 'bbpress' ) . "</a>";
 			}
 
 			if ( bbp_get_trash_status_id() === $topic->post_status || !EMPTY_TRASH_DAYS ) {
-				$actions['delete'] = "<a class='submitdelete' title='" . esc_attr__( 'Delete this item permanently', 'bbpress' ) . "' href='" . esc_url( add_query_arg( array( '_wp_http_referer' => add_query_arg( array( 'post_type' => bbp_get_topic_post_type() ), admin_url( 'edit.php' ) ) ), get_delete_post_link( $topic->ID, '', true ) ) ) . "'>" . esc_html__( 'Delete Permanently', 'bbpress' ) . "</a>";
+				$actions['delete'] = "<a class='submitdelete' title='" . esc_attr__( 'Delete this item permanently', 'bbpress' ) . "' href='" . esc_url( get_delete_post_link( $topic->ID, '', true ) ) . "'>" . esc_html__( 'Delete Permanently', 'bbpress' ) . "</a>";
 			} elseif ( bbp_get_spam_status_id() === $topic->post_status ) {
 				unset( $actions['trash'] );
 			}
