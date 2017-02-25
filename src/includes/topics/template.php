@@ -1904,6 +1904,7 @@ function bbp_topic_last_active_time( $topic_id = 0 ) {
  * Output the topic subscription link
  *
  * @since 2.5.0 bbPress (r5156)
+ * @since 2.6.0 bbPress (r6308) Add 'redirect_to' support
  *
  * @uses bbp_get_topic_subscription_link()
  */
@@ -1917,15 +1918,21 @@ function bbp_topic_subscription_link( $args = array() ) {
 	 * A custom wrapper for bbp_get_user_subscribe_link()
 	 *
 	 * @since 2.5.0 bbPress (r5156)
+	 * @since 2.6.0 bbPress (r6308) Add 'redirect_to' support
 	 *
+	 * @uses bbp_is_subscriptions()
+	 * @uses bbp_get_subscriptions_permalink()
 	 * @uses bbp_parse_args()
 	 * @uses bbp_get_user_subscribe_link()
 	 * @uses apply_filters() Calls 'bbp_get_topic_subscribe_link'
 	 */
 	function bbp_get_topic_subscription_link( $args = array() ) {
 
-		// No link
-		$retval = false;
+		// Defaults
+		$retval      = false;
+		$redirect_to = bbp_is_subscriptions()
+			? bbp_get_subscriptions_permalink()
+			: '';
 
 		// Parse the arguments
 		$r = bbp_parse_args( $args, array(
@@ -1934,7 +1941,8 @@ function bbp_topic_subscription_link( $args = array() ) {
 			'before'      => '&nbsp;|&nbsp;',
 			'after'       => '',
 			'subscribe'   => esc_html__( 'Subscribe',   'bbpress' ),
-			'unsubscribe' => esc_html__( 'Unsubscribe', 'bbpress' )
+			'unsubscribe' => esc_html__( 'Unsubscribe', 'bbpress' ),
+			'redirect_to' => $redirect_to
 		), 'get_topic_subscribe_link' );
 
 		// Get the link
@@ -1949,6 +1957,7 @@ function bbp_topic_subscription_link( $args = array() ) {
  * Output the topic favorite link
  *
  * @since 2.5.0 bbPress (r5156)
+ * @since 2.6.0 bbPress (r6308) Add 'redirect_to' support
  *
  * @uses bbp_get_topic_favorite_link()
  */
@@ -1959,10 +1968,13 @@ function bbp_topic_favorite_link( $args = array() ) {
 	/**
 	 * Get the forum favorite link
 	 *
-	 * A custom wrapper for bbp_get_user_favorite_link()
+	 * A custom wrapper for bbp_get_user_favorites_link()
 	 *
 	 * @since 2.5.0 bbPress (r5156)
+	 * @since 2.6.0 bbPress (r6308) Add 'redirect_to' support
 	 *
+	 * @uses bbp_is_favorites()
+	 * @uses bbp_get_favorites_permalink()
 	 * @uses bbp_parse_args()
 	 * @uses bbp_get_user_favorites_link()
 	 * @uses apply_filters() Calls 'bbp_get_topic_favorite_link'
@@ -1970,16 +1982,20 @@ function bbp_topic_favorite_link( $args = array() ) {
 	function bbp_get_topic_favorite_link( $args = array() ) {
 
 		// No link
-		$retval = false;
+		$retval      = false;
+		$redirect_to = bbp_is_favorites()
+			? bbp_get_favorites_permalink()
+			: '';
 
 		// Parse the arguments
 		$r = bbp_parse_args( $args, array(
-			'user_id'   => 0,
-			'topic_id'  => 0,
-			'before'    => '',
-			'after'     => '',
-			'favorite'  => esc_html__( 'Favorite',   'bbpress' ),
-			'favorited' => esc_html__( 'Unfavorite', 'bbpress' )
+			'user_id'     => 0,
+			'topic_id'    => 0,
+			'before'      => '',
+			'after'       => '',
+			'favorite'    => esc_html__( 'Favorite',   'bbpress' ),
+			'favorited'   => esc_html__( 'Unfavorite', 'bbpress' ),
+			'redirect_to' => $redirect_to
 		), 'get_topic_favorite_link' );
 
 		// Get the link
