@@ -1018,13 +1018,11 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
 				// See https://bbpress.trac.wordpress.org/ticket/2838
 				bbp_update_topic_last_active_time( $ancestor, $topic_last_active_time );
 
-				// Counts
-				bbp_update_topic_voice_count( $ancestor );
-
 				// Only update reply count if we're deleting a reply, or in the dashboard.
 				if ( in_array( current_filter(), array( 'bbp_deleted_reply', 'save_post' ), true ) ) {
 					bbp_update_topic_reply_count(        $ancestor );
 					bbp_update_topic_reply_count_hidden( $ancestor );
+					bbp_update_topic_voice_count(        $ancestor );
 				}
 
 			// Forum meta relating to most recent topic
@@ -2317,7 +2315,7 @@ function bbp_display_replies_feed_rss2( $replies_query = array() ) {
 		<atom:link href="<?php self_link(); ?>" rel="self" type="application/rss+xml" />
 		<link><?php self_link(); ?></link>
 		<description><?php //?></description>
-		<pubDate><?php echo mysql2date( 'D, d M Y H:i:s O', current_time( 'mysql' ), false ); ?></pubDate>
+		<lastBuildDate><?php echo date( 'r' ); ?></lastBuildDate>
 		<generator>https://bbpress.org/?v=<?php bbp_version(); ?></generator>
 		<language><?php bloginfo_rss( 'language' ); ?></language>
 
@@ -2540,14 +2538,18 @@ function bbp_thread_replies() {
  */
 function bbp_list_replies( $args = array() ) {
 
+	// Get bbPress
+	$bbp = bbpress();
+
 	// Reset the reply depth
-	bbpress()->reply_query->reply_depth = 0;
+	$bbp->reply_query->reply_depth = 0;
 
 	// In reply loop
-	bbpress()->reply_query->in_the_loop = true;
+	$bbp->reply_query->in_the_loop = true;
 
+	// Parse arguments
 	$r = bbp_parse_args( $args, array(
-		'walker'       => null,
+		'walker'       => new BBP_Walker_Reply,
 		'max_depth'    => bbp_thread_replies_depth(),
 		'style'        => 'ul',
 		'callback'     => null,
@@ -2557,11 +2559,10 @@ function bbp_list_replies( $args = array() ) {
 	), 'list_replies' );
 
 	// Get replies to loop through in $_replies
-	$walker = new BBP_Walker_Reply;
-	$walker->paged_walk( bbpress()->reply_query->posts, $r['max_depth'], $r['page'], $r['per_page'], $r );
+	echo '<ul>' . $r['walker']->paged_walk( $bbp->reply_query->posts, $r['max_depth'], $r['page'], $r['per_page'], $r ) . '</ul>';
 
-	bbpress()->max_num_pages            = $walker->max_pages;
-	bbpress()->reply_query->in_the_loop = false;
+	$bbp->max_num_pages            = $r['walker']->max_pages;
+	$bbp->reply_query->in_the_loop = false;
 }
 
 /**

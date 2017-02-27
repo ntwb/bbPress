@@ -15,6 +15,7 @@ if ( ! class_exists( 'BBP_Forums_Members' ) ) :
  * Member profile modifications
  *
  * @since 2.2.0 bbPress (r4395)
+ * @since 2.6.0 bbPress (r6320) Add engagements support
  *
  * @package bbPress
  * @subpackage BuddyPress
@@ -62,15 +63,17 @@ class BBP_BuddyPress_Members {
 	 * Setup the filters
 	 *
 	 * @since 2.2.0 bbPress (r4395)
+	 * @since 2.6.0 bbPress (r6320) Add engagements support
 	 *
 	 * @access private
 	 * @uses add_filter() To add various filters
 	 * @uses add_action() To add various actions
 	 */
 	private function setup_filters() {
-		add_filter( 'bbp_pre_get_user_profile_url',    array( $this, 'user_profile_url'            )        );
-		add_filter( 'bbp_get_favorites_permalink',     array( $this, 'get_favorites_permalink'     ), 10, 2 );
-		add_filter( 'bbp_get_subscriptions_permalink', array( $this, 'get_subscriptions_permalink' ), 10, 2 );
+		add_filter( 'bbp_pre_get_user_profile_url',     array( $this, 'user_profile_url'            )        );
+		add_filter( 'bbp_pre_get_user_engagements_url', array( $this, 'get_engagements_permalink'   )        );
+		add_filter( 'bbp_get_favorites_permalink',      array( $this, 'get_favorites_permalink'     ), 10, 2 );
+		add_filter( 'bbp_get_subscriptions_permalink',  array( $this, 'get_subscriptions_permalink' ), 10, 2 );
 	}
 
 	/** Filters ***************************************************************/
@@ -79,6 +82,7 @@ class BBP_BuddyPress_Members {
 	 * Override bbPress profile URL with BuddyPress profile URL
 	 *
 	 * @since 2.0.0 bbPress (r3401)
+	 * @since 2.6.0 bbPress (r6320) Add engagements support
 	 *
 	 * @param string $url
 	 * @param int $user_id
@@ -95,17 +99,18 @@ class BBP_BuddyPress_Members {
 		// Define local variable(s)
 		$profile_url    = '';
 		$component_slug = bbpress()->extend->buddypress->slug;
+		$profile_url    = bp_core_get_user_domain( $user_id );
 
 		// Special handling for forum component
 		if ( bp_is_current_component( $component_slug ) ) {
 
 			// Empty action or 'topics' action
-			if ( !bp_current_action() || bp_is_current_action( bbp_get_topic_archive_slug() ) ) {
-				$profile_url = bp_core_get_user_domain( $user_id ) . $component_slug . '/' . bbp_get_topic_archive_slug();
+			if ( ! bp_current_action() || bp_is_current_action( bbp_get_topic_archive_slug() ) ) {
+				$profile_url = $profile_url . $component_slug . '/' . bbp_get_topic_archive_slug();
 
 			// Empty action or 'topics' action
 			} elseif ( bp_is_current_action( bbp_get_reply_archive_slug() ) ) {
-				$profile_url = bp_core_get_user_domain( $user_id ) . $component_slug . '/' . bbp_get_reply_archive_slug();
+				$profile_url = $profile_url . $component_slug . '/' . bbp_get_reply_archive_slug();
 
 			// 'favorites' action
 			} elseif ( bbp_is_favorites_active() && bp_is_current_action( bbp_get_user_favorites_slug() ) ) {
@@ -114,11 +119,11 @@ class BBP_BuddyPress_Members {
 			// 'subscriptions' action
 			} elseif ( bbp_is_subscriptions_active() && bp_is_current_action( bbp_get_user_subscriptions_slug() ) ) {
 				$profile_url = $this->get_subscriptions_permalink( '', $user_id );
-			}
 
-		// Not in users' forums area
-		} else {
-			$profile_url = bp_core_get_user_domain( $user_id );
+			// 'engagements' action
+			} elseif ( bbp_is_engagements_active() && bp_is_current_action( bbp_get_user_engagements_slug() ) ) {
+				$profile_url = $this->get_engagements_permalink( $user_id );
+			}
 		}
 
 		return trailingslashit( $profile_url );
@@ -142,6 +147,7 @@ class BBP_BuddyPress_Members {
 
 		$component_slug = bbpress()->extend->buddypress->slug;
 		$url            = trailingslashit( bp_core_get_user_domain( $user_id ) . $component_slug . '/' . bbp_get_user_favorites_slug() );
+
 		return $url;
 	}
 
@@ -163,6 +169,29 @@ class BBP_BuddyPress_Members {
 
 		$component_slug = bbpress()->extend->buddypress->slug;
 		$url            = trailingslashit( bp_core_get_user_domain( $user_id ) . $component_slug . '/' . bbp_get_user_subscriptions_slug() );
+
+		return $url;
+	}
+
+	/**
+	 * Override bbPress engagements URL with BuddyPress profile URL
+	 *
+	 * @since 2.6.0 bbPress (r6320)
+	 *
+	 * @param string $url
+	 * @param int $user_id
+	 * @return string
+	 */
+	public function get_engagements_permalink( $user_id ) {
+
+		// Do not filter if not on BuddyPress root blog
+		if ( ! bp_is_root_blog() ) {
+			return false;
+		}
+
+		$component_slug = bbpress()->extend->buddypress->slug;
+		$url            = trailingslashit( bp_core_get_user_domain( $user_id ) . $component_slug . '/' . bbp_get_user_engagements_slug() );
+
 		return $url;
 	}
 
@@ -171,6 +200,7 @@ class BBP_BuddyPress_Members {
 	 * pages.
 	 *
 	 * @since 2.3.0 bbPress (r4615)
+	 * @since 2.6.0 bbPress (r6320) Add engagements support
 	 *
 	 * @global WP_Query $wp_query
 	 * @return If not viewing your own profile
@@ -191,6 +221,10 @@ class BBP_BuddyPress_Members {
 		// 'subscriptions' action
 		} elseif ( bbp_is_subscriptions_active() && bp_is_current_action( bbp_get_user_subscriptions_slug() ) ) {
 			$wp_query->bbp_is_single_user_subs = true;
+
+		// 'engagements' action
+		} elseif ( bbp_is_engagements_active() && bp_is_current_action( bbp_get_user_engagements_slug() ) ) {
+			$wp_query->bbp_is_single_user_engagements = true;
 		}
 	}
 }

@@ -155,6 +155,14 @@ function bbp_admin_get_settings_fields() {
 				'args'              => array()
 			),
 
+			// Allow engagements setting
+			'_bbp_enable_engagements' => array(
+				'title'             => __( 'Engagements', 'bbpress' ),
+				'callback'          => 'bbp_admin_setting_callback_engagements',
+				'sanitize_callback' => 'intval',
+				'args'              => array()
+			),
+
 			// Allow topic tags
 			'_bbp_allow_topic_tags' => array(
 				'title'             => __( 'Topic tags', 'bbpress' ),
@@ -389,6 +397,14 @@ function bbp_admin_get_settings_fields() {
 				'callback'          => 'bbp_admin_setting_callback_user_subs_slug',
 				'sanitize_callback' => 'bbp_sanitize_slug',
 				'args'              => array( 'label_for'=>'_bbp_user_subs_slug' )
+			),
+
+			// Engagements slug setting
+			'_bbp_user_engagements_slug' => array(
+				'title'             => __( 'Engagements', 'bbpress' ),
+				'callback'          => 'bbp_admin_setting_callback_user_engagements_slug',
+				'sanitize_callback' => 'bbp_sanitize_slug',
+				'args'              => array( 'label_for'=>'_bbp_user_engagements_slug' )
 			)
 		),
 
@@ -593,6 +609,22 @@ function bbp_admin_setting_callback_subscriptions() {
 
 	<input name="_bbp_enable_subscriptions" id="_bbp_enable_subscriptions" type="checkbox" value="1" <?php checked( bbp_is_subscriptions_active( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_enable_subscriptions' ); ?> />
 	<label for="_bbp_enable_subscriptions"><?php esc_html_e( 'Allow users to subscribe to forums and topics', 'bbpress' ); ?></label>
+
+<?php
+}
+
+/**
+ * Allow engagements setting field
+ *
+ * @since 2.0.0 bbPress (r2737)
+ *
+ * @uses checked() To display the checked attribute
+ */
+function bbp_admin_setting_callback_engagements() {
+?>
+
+	<input name="_bbp_enable_engagements" id="_bbp_enable_engagements" type="checkbox" value="1" <?php checked( bbp_is_engagements_active( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_enable_engagements' ); ?> />
+	<label for="_bbp_enable_engagements"><?php esc_html_e( 'Track topics each user engages in', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1059,6 +1091,23 @@ function bbp_admin_setting_callback_user_subs_slug() {
 <?php
 	// Slug Check
 	bbp_form_slug_conflict_check( '_bbp_user_subs_slug', 'subscriptions' );
+}
+
+/**
+ * Engagements slug setting field
+ *
+ * @since 2.6.0 bbPress (r6320)
+ *
+ * @uses bbp_form_option() To output the option value
+ */
+function bbp_admin_setting_callback_user_engagements_slug() {
+?>
+
+	<input name="_bbp_user_engagements_slug" id="_bbp_user_engagements_slug" type="text" class="regular-text code" value="<?php bbp_form_option( '_bbp_user_engagements_slug', 'engagements', true ); ?>"<?php bbp_maybe_admin_setting_disabled( '_bbp_user_engagements_slug' ); ?> />
+
+<?php
+	// Slug Check
+	bbp_form_slug_conflict_check( '_bbp_user_engagements_slug', 'engagements' );
 }
 
 /** Single Slugs **************************************************************/

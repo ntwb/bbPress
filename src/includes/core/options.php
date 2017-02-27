@@ -34,6 +34,7 @@ function bbp_get_default_options() {
 		'_bbp_throttle_time'          => 10,                         // Throttle post time to 10 seconds
 		'_bbp_enable_favorites'       => 1,                          // Favorites
 		'_bbp_enable_subscriptions'   => 1,                          // Subscriptions
+		'_bbp_enable_engagements'     => 1,                          // Engagements
 		'_bbp_allow_anonymous'        => 0,                          // Allow anonymous posting
 		'_bbp_allow_global_access'    => 1,                          // Users from all sites can post
 		'_bbp_allow_revisions'        => 1,                          // Allow revisions
@@ -228,6 +229,19 @@ function bbp_is_favorites_active( $default = 1 ) {
  */
 function bbp_is_subscriptions_active( $default = 1 ) {
 	return (bool) apply_filters( 'bbp_is_subscriptions_active', (bool) get_option( '_bbp_enable_subscriptions', $default ) );
+}
+
+/**
+ * Checks if engagements feature is enabled.
+ *
+ * @since 2.6.0 bbPress (r6320)
+ *
+ * @param $default bool Optional.Default value true
+ * @uses get_option() To get the engagements option
+ * @return bool Is engagements enabled or not
+ */
+function bbp_is_engagements_active( $default = 1 ) {
+	return (bool) apply_filters( 'bbp_is_engagements_active', (bool) get_option( '_bbp_enable_engagements', $default ) );
 }
 
 /**
@@ -623,6 +637,17 @@ function bbp_get_user_favorites_slug( $default = 'favorites' ) {
  */
 function bbp_get_user_subscriptions_slug( $default = 'subscriptions' ) {
 	return apply_filters( 'bbp_get_user_subscriptions_slug', get_option( '_bbp_user_subs_slug', $default ) );
+}
+
+/**
+ * Return the single user engagements slug
+ *
+ * @since 2.6.0 bbPress (r6320)
+ *
+ * @return string
+ */
+function bbp_get_user_engagements_slug( $default = 'engagements' ) {
+	return apply_filters( 'bbp_get_user_engagements_slug', get_option( '_bbp_user_engagements_slug', $default ) );
 }
 
 /**
