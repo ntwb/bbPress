@@ -21,11 +21,9 @@ function bbp_get_default_user_options() {
 
 	// Default options
 	return apply_filters( 'bbp_get_default_user_options', array(
-		'_bbp_last_posted'   => '0', // For checking flooding
-		'_bbp_topic_count'   => '0', // Total topics per site
-		'_bbp_reply_count'   => '0', // Total replies per site
-		'_bbp_favorites'     => '',  // Favorite topics per site
-		'_bbp_subscriptions' => ''   // Subscribed topics per site
+		'_bbp_last_posted' => '0', // For checking flooding
+		'_bbp_topic_count' => '0', // Total topics per site
+		'_bbp_reply_count' => '0'  // Total replies per site
 	) );
 }
 
@@ -199,7 +197,7 @@ function bbp_update_user_reply_count( $user_id = 0, $count = false ) {
  * @return string
  */
 function bbp_user_topic_count( $user_id = 0, $integer = false ) {
-	echo bbp_get_user_topic_count( $user_id, $integer );
+	echo esc_html( bbp_get_user_topic_count( $user_id, $integer ) );
 }
 	/**
 	 * Return a users reply count
@@ -240,7 +238,7 @@ function bbp_user_topic_count( $user_id = 0, $integer = false ) {
  * @return string
  */
 function bbp_user_reply_count( $user_id = 0, $integer = false ) {
-	echo bbp_get_user_reply_count( $user_id, $integer );
+	echo esc_html( bbp_get_user_reply_count( $user_id, $integer ) );
 }
 	/**
 	 * Return a users reply count
@@ -281,7 +279,7 @@ function bbp_user_reply_count( $user_id = 0, $integer = false ) {
  * @return string
  */
 function bbp_user_post_count( $user_id = 0, $integer = false ) {
-	echo bbp_get_user_post_count( $user_id, $integer );
+	echo esc_html( bbp_get_user_post_count( $user_id, $integer ) );
 }
 	/**
 	 * Return a users total post count
@@ -353,7 +351,7 @@ function bbp_user_last_posted( $user_id = 0 ) {
 }
 
 	/**
-	 * Return the raw value of teh last posted time.
+	 * Return the raw value of the last posted time.
 	 *
 	 * @since 2.1.0 bbPress (r3910)
 	 *
