@@ -26,6 +26,7 @@ class BBP_Tests_Common_Functions_Make_Clickable extends BBP_UnitTestCase {
 		$anchor = '<a href="%1$s" class="">@%2$s</a>';
 		$name   = $user->user_nicename;
 		$link   = sprintf( $anchor, esc_url( $url ), esc_html( $name ) );
+		$link   = bbp_rel_nofollow( $link );
 
 		// mentions inside links, should not be replaced
 		$text                    = "Send messages to <a href='mailto:mail@%s.com'>Foo Bar Baz</a>";
@@ -88,6 +89,7 @@ class BBP_Tests_Common_Functions_Make_Clickable extends BBP_UnitTestCase {
 		$anchor = '<a href="%1$s" class="">@%2$s</a>';
 		$name   = $user->user_nicename;
 		$link   = sprintf( $anchor, esc_url( $url ), esc_html( $user->user_nicename ) );
+		$link   = bbp_rel_nofollow( $link );
 
 		// mentions inside links (with an external match) should not be replaced inside href ever
 		$at_name_in_href_matched       = sprintf( "Send messages to <a href='@%s'>Foo Bar Baz</a>@%s @%s", $name, $name, $name );
@@ -134,7 +136,7 @@ class BBP_Tests_Common_Functions_Make_Clickable extends BBP_UnitTestCase {
 		$at_name_comma_final = sprintf( 'Hey %s, hello', $link );
 		$this->assertEquals( $at_name_comma_final, bbp_make_clickable( $at_name_comma ) );
 
-		// Don"t link non-existent users
+		// Don't link non-existent users
 		$text = "Don't link @non @existent @users";
 		$this->assertSame( $text, bbp_make_clickable( $text ) );
 
@@ -165,17 +167,29 @@ class BBP_Tests_Common_Functions_Make_Clickable extends BBP_UnitTestCase {
 		$anchor_1 = '<a href="%1$s" class="">@%2$s</a>';
 		$name_1   = $user_1->user_nicename;
 		$link_1   = sprintf( $anchor_1, esc_url( $url_1 ), esc_html( $name_1 ) );
+		$link_1   = bbp_rel_nofollow( $link_1 );
 
 		$user_2   = get_userdata( $u2 );
 		$url_2    = bbp_get_user_profile_url( $user_2->ID );
 		$anchor_2 = '<a href="%1$s" class="">@%2$s</a>';
 		$name_2   = $user_2->user_nicename;
 		$link_2   = sprintf( $anchor_2, esc_url( $url_2 ), esc_html( $name_2 ) );
+		$link_2   = bbp_rel_nofollow( $link_2 );
 
 		// Multiples
-		$at_name_in_mailto       = sprintf( "Send messages to @%s, @%s.", $link_1, $link_2 );
-		$at_name_in_mailto_final = sprintf( "Send messages to @%s, @%s.", $link_1, $link_2 );
+		$at_name_in_mailto       = sprintf( "Send messages to @%s, @%s.", $name_1, $name_2 );
+		$at_name_in_mailto_final = sprintf( "Send messages to %s, %s.",   $link_1, $link_2 );
 		$this->assertEquals( $at_name_in_mailto_final, bbp_make_clickable( $at_name_in_mailto ) );
+
+		// Two names separated by `&`
+		$at_names_inbetween_ampersand       = sprintf( "Oh hi @%s & @%s.", $name_1, $name_2 );
+		$at_names_inbetween_ampersand_final = sprintf( "Oh hi %s & %s.",   $link_1, $link_2 );
+		$this->assertEquals( $at_names_inbetween_ampersand_final, bbp_make_clickable( $at_names_inbetween_ampersand ) );
+
+		// Two names separated by `and`
+		$at_names_inbetween_and       = sprintf( "Oh hi @%s and @%s.", $name_1, $name_2 );
+		$at_names_inbetween_and_final = sprintf( "Oh hi %s and %s.",   $link_1, $link_2 );
+		$this->assertEquals( $at_names_inbetween_and_final, bbp_make_clickable( $at_names_inbetween_and ) );
 
 		remove_filter( 'bbp_make_mentions_clickable_classes', '__return_empty_array' );
 	}
@@ -204,16 +218,18 @@ class BBP_Tests_Common_Functions_Make_Clickable extends BBP_UnitTestCase {
 		$anchor_1 = '<a href="%1$s" class="">@%2$s</a>';
 		$name_1   = $user_1->user_nicename;
 		$link_1   = sprintf( $anchor_1, esc_url( $url_1 ), esc_html( $name_1 ) );
+		$link_1   = bbp_rel_nofollow( $link_1 );
 
 		$user_2   = get_userdata( $u2 );
 		$url_2    = bbp_get_user_profile_url( $user_2->ID );
 		$anchor_2 = '<a href="%1$s" class="">@%2$s</a>';
 		$name_2   = $user_2->user_nicename;
 		$link_2   = sprintf( $anchor_2, esc_url( $url_2 ), esc_html( $name_2 ) );
+		$link_2   = bbp_rel_nofollow( $link_2 );
 
 		// Multiples
-		$at_name_in_mailto       = sprintf( "Send messages to @%s, @non1, @%s, @non2.", $link_1, $link_2 );
-		$at_name_in_mailto_final = sprintf( "Send messages to @%s, @non1, @%s, @non2.", $link_1, $link_2 );
+		$at_name_in_mailto       = sprintf( "Send messages to @%s, @non1, @%s, @non2.", $name_1, $name_2 );
+		$at_name_in_mailto_final = sprintf( "Send messages to %s, @non1, %s, @non2.",   $link_1, $link_2 );
 		$this->assertEquals( $at_name_in_mailto_final, bbp_make_clickable( $at_name_in_mailto ) );
 
 		remove_filter( 'bbp_make_mentions_clickable_classes', '__return_empty_array' );
