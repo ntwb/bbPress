@@ -110,6 +110,11 @@ script:
   - grunt travis
   - if [ "$TRAVIS_PHP_VERSION" != "5.2" ]; then grunt test:buddypress; fi
 
+# Code Coverage
+after_script:
+  - wget https://scrutinizer-ci.com/ocular.phar
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
+
 notifications:
     email: false
     irc:
