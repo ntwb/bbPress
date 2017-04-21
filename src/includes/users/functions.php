@@ -88,6 +88,8 @@ function bbp_current_anonymous_user_data( $key = '' ) {
 	 * @return string|array Cookie(s) for current poster
 	 */
 	function bbp_get_current_anonymous_user_data( $key = '' ) {
+
+		// Array of allowed cookie names
 		$cookie_names = array(
 			'name'  => 'comment_author',
 			'email' => 'comment_author_email',
@@ -99,14 +101,21 @@ function bbp_current_anonymous_user_data( $key = '' ) {
 			'comment_author_url'   => 'comment_author_url',
 		);
 
+		// Sanitize core cookies
 		sanitize_comment_cookies();
 
+		// Get the current poster's info from the cookies
 		$bbp_current_poster = wp_get_current_commenter();
 
-		if ( ! empty( $key ) && in_array( $key, array_keys( $cookie_names ) ) ) {
+		// Sanitize the cookie key being retrieved
+		$key = sanitize_key( $key );
+
+		// Maybe return a specific key
+		if ( ! empty( $key ) && in_array( $key, array_keys( $cookie_names ), true ) ) {
 			return $bbp_current_poster[ $cookie_names[ $key ] ];
 		}
 
+		// Return all keys
 		return $bbp_current_poster;
 	}
 
@@ -115,24 +124,28 @@ function bbp_current_anonymous_user_data( $key = '' ) {
  *
  * @since 2.0.0 bbPress (r2734)
  *
- * @param array $anonymous_data With keys 'bbp_anonymous_name',
- *                               'bbp_anonymous_email', 'bbp_anonymous_website'.
- *                               Should be sanitized (see
- *                               {@link bbp_filter_anonymous_post_data()} for
- *                               sanitization)
+ * @param array $anonymous_data Optional - if it's an anonymous post. Do not
+ *                              supply if supplying $author_id. Should be
+ *                              sanitized (see {@link bbp_filter_anonymous_post_data()}
  * @uses apply_filters() Calls 'comment_cookie_lifetime' for cookie lifetime.
  *                        Defaults to 30000000.
  */
 function bbp_set_current_anonymous_user_data( $anonymous_data = array() ) {
+
+	// Bail if empty or not an array
 	if ( empty( $anonymous_data ) || ! is_array( $anonymous_data ) ) {
 		return;
 	}
 
-	$comment_cookie_lifetime = apply_filters( 'comment_cookie_lifetime', 30000000 );
+	// Setup cookie expiration
+	$lifetime = (int) apply_filters( 'comment_cookie_lifetime', 30000000 );
+	$expiry   = time() + $lifetime;
+	$secure   = ( 'https' === parse_url( home_url(), PHP_URL_SCHEME ) );
 
-	setcookie( 'comment_author_'       . COOKIEHASH, $anonymous_data['bbp_anonymous_name'],    time() + $comment_cookie_lifetime, COOKIEPATH, COOKIE_DOMAIN );
-	setcookie( 'comment_author_email_' . COOKIEHASH, $anonymous_data['bbp_anonymous_email'],   time() + $comment_cookie_lifetime, COOKIEPATH, COOKIE_DOMAIN );
-	setcookie( 'comment_author_url_'   . COOKIEHASH, $anonymous_data['bbp_anonymous_website'], time() + $comment_cookie_lifetime, COOKIEPATH, COOKIE_DOMAIN );
+	// Set the cookies
+	setcookie( 'comment_author_'       . COOKIEHASH, $anonymous_data['bbp_anonymous_name'],    $expiry, COOKIEPATH, COOKIE_DOMAIN, $secure );
+	setcookie( 'comment_author_email_' . COOKIEHASH, $anonymous_data['bbp_anonymous_email'],   $expiry, COOKIEPATH, COOKIE_DOMAIN, $secure );
+	setcookie( 'comment_author_url_'   . COOKIEHASH, $anonymous_data['bbp_anonymous_website'], $expiry, COOKIEPATH, COOKIE_DOMAIN, $secure );
 }
 
 /**
@@ -164,7 +177,9 @@ function bbp_current_author_ip() {
  * @return string
  */
 function bbp_current_author_ua() {
-	$retval = ! empty( $_SERVER['HTTP_USER_AGENT'] ) ? substr( $_SERVER['HTTP_USER_AGENT'], 0, 254 ) : '';
+	$retval = ! empty( $_SERVER['HTTP_USER_AGENT'] )
+		? substr( $_SERVER['HTTP_USER_AGENT'], 0, 254 )
+		: '';
 
 	return apply_filters( 'bbp_current_author_ua', $retval );
 }
@@ -344,8 +359,6 @@ function bbp_get_user_engaged_topic_ids( $user_id = 0 ) {
  * @param int $user_id Optional. User id
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_user_id() To get the user id
- * @uses bbp_get_user_engaged_topic_ids() To get the user engaged topics
- * @uses bbp_get_topic() To get the topic
  * @uses bbp_get_topic_id() To get the topic id
  * @uses bbp_is_object_of_user() To check if the user has engaged
  * @uses apply_filters() Calls 'bbp_is_user_engaged' with the bool, user id,
@@ -353,33 +366,11 @@ function bbp_get_user_engaged_topic_ids( $user_id = 0 ) {
  * @return bool True if the topic is in user's engagements, otherwise false
  */
 function bbp_is_user_engaged( $user_id = 0, $topic_id = 0 ) {
-	$retval      = false;
-	$user_id     = bbp_get_user_id( $user_id, true, true );
-	$engagements = bbp_get_user_engaged_topic_ids( $user_id );
+	$user_id  = bbp_get_user_id( $user_id, true, true );
+	$topic_id = bbp_get_topic_id( $topic_id );
+	$retval   = bbp_is_object_of_user( $topic_id, $user_id, '_bbp_engagement' );
 
-	if ( ! empty( $engagements ) ) {
-
-		// Checking a specific topic id
-		if ( ! empty( $topic_id ) ) {
-			$topic    = bbp_get_topic( $topic_id );
-			$topic_id = ! empty( $topic ) ? $topic->ID : 0;
-
-		// Using the global topic id
-		} elseif ( bbp_get_topic_id() ) {
-			$topic_id = bbp_get_topic_id();
-
-		// Use the current post id
-		} elseif ( ! bbp_get_topic_id() ) {
-			$topic_id = get_the_ID();
-		}
-
-		// Is topic_id in the user's engagements
-		if ( ! empty( $topic_id ) ) {
-			$retval = bbp_is_object_of_user( $topic_id, $user_id, '_bbp_engagement' );
-		}
-	}
-
-	return (bool) apply_filters( 'bbp_is_user_engaged', (bool) $retval, $user_id, $topic_id, $engagements );
+	return (bool) apply_filters( 'bbp_is_user_engaged', (bool) $retval, $user_id, $topic_id );
 }
 
 /**
