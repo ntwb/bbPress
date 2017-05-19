@@ -94,7 +94,7 @@ class BBP_Users_Admin {
 			unset( $dynamic_roles[ bbp_get_keymaster_role() ] );
 		} ?>
 
-		<h3><?php esc_html_e( 'Forums', 'bbpress' ); ?></h3>
+		<h2><?php esc_html_e( 'Forums', 'bbpress' ); ?></h2>
 
 		<table class="form-table">
 			<tbody>
@@ -238,7 +238,7 @@ class BBP_Users_Admin {
 			$new_role  = sanitize_text_field( $new_role );
 
 			// Only keymasters can set other keymasters
-			if ( in_array( bbp_get_keymaster_role(), array( $user_role, $new_role ) ) && ! bbp_is_user_keymaster() ) {
+			if ( in_array( bbp_get_keymaster_role(), array( $user_role, $new_role ), true ) && ! bbp_is_user_keymaster() ) {
 				continue;
 			}
 
