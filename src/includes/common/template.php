@@ -111,6 +111,7 @@ function bbp_is_site_public( $site_id = 0 ) {
 	// Get the site visibility setting
 	$public = get_blog_option( $site_id, 'blog_public', 1 );
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_site_public', $public, $site_id );
 }
 
@@ -133,6 +134,7 @@ function bbp_is_forum( $post_id = 0 ) {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_forum', $retval, $post_id );
 }
 
@@ -157,6 +159,7 @@ function bbp_is_forum_archive() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_forum_archive', $retval );
 }
 
@@ -187,6 +190,7 @@ function bbp_is_single_forum() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_forum', $retval );
 }
 
@@ -213,6 +217,7 @@ function bbp_is_forum_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_forum_edit', $retval );
 }
 
@@ -236,6 +241,7 @@ function bbp_is_topic( $post_id = 0 ) {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic', $retval, $post_id );
 }
 
@@ -266,6 +272,7 @@ function bbp_is_single_topic() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_topic', $retval );
 }
 
@@ -289,6 +296,7 @@ function bbp_is_topic_archive() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic_archive', $retval );
 }
 
@@ -315,6 +323,7 @@ function bbp_is_topic_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic_edit', $retval );
 }
 
@@ -336,6 +345,7 @@ function bbp_is_topic_merge() {
 		return true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic_merge', $retval );
 }
 
@@ -357,6 +367,7 @@ function bbp_is_topic_split() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic_split', $retval );
 }
 
@@ -387,6 +398,7 @@ function bbp_is_topic_tag() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic_tag', $retval );
 }
 
@@ -418,6 +430,7 @@ function bbp_is_topic_tag_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topic_tag_edit', $retval );
 }
 
@@ -448,6 +461,7 @@ function bbp_is_custom_post_type( $the_post = false ) {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_custom_post_type', $retval, $the_post );
 }
 
@@ -471,6 +485,7 @@ function bbp_is_reply( $post_id = 0 ) {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_reply', $retval, $post_id );
 }
 
@@ -497,6 +512,7 @@ function bbp_is_reply_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_reply_edit', $retval );
 }
 
@@ -516,6 +532,7 @@ function bbp_is_reply_move() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_reply_move', $retval );
 }
 
@@ -546,6 +563,7 @@ function bbp_is_single_reply() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_reply', $retval );
 }
 
@@ -567,6 +585,7 @@ function bbp_is_favorites() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_favorites', $retval );
 }
 
@@ -588,6 +607,7 @@ function bbp_is_subscriptions() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_subscriptions', $retval );
 }
 
@@ -610,6 +630,7 @@ function bbp_is_topics_created() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_topics_created', $retval );
 }
 
@@ -632,6 +653,7 @@ function bbp_is_replies_created() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_replies_created', $retval );
 }
 
@@ -657,6 +679,7 @@ function bbp_is_user_home() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_user_home', $retval );
 }
 
@@ -680,6 +703,7 @@ function bbp_is_user_home_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_user_home_edit', $retval );
 }
 
@@ -702,6 +726,7 @@ function bbp_is_single_user() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_user', $retval );
 }
 
@@ -724,6 +749,7 @@ function bbp_is_single_user_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_user_edit', $retval );
 }
 
@@ -746,6 +772,7 @@ function bbp_is_single_user_profile() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_user_profile', $retval );
 }
 
@@ -768,6 +795,7 @@ function bbp_is_single_user_topics() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_user_topics', $retval );
 }
 
@@ -790,6 +818,7 @@ function bbp_is_single_user_replies() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_user_replies', $retval );
 }
 
@@ -812,6 +841,7 @@ function bbp_is_single_user_engagements() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_user_engagements', $retval );
 }
 
@@ -840,6 +870,7 @@ function bbp_is_single_view() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_single_view', $retval );
 }
 
@@ -878,6 +909,7 @@ function bbp_is_search() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_search', $retval );
 }
 
@@ -916,6 +948,7 @@ function bbp_is_search_results() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_search_results', $retval );
 }
 
@@ -938,6 +971,7 @@ function bbp_is_edit() {
 		$retval = true;
 	}
 
+	// Filter & return
 	return (bool) apply_filters( 'bbp_is_edit', $retval );
 }
 
@@ -1076,6 +1110,11 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
 	} elseif ( bbp_is_search_results() ) {
 		$bbp_classes[] = 'bbp-search-results';
 		$bbp_classes[] = 'forum-search-results';
+
+	/** Shortcodes ************************************************************/
+
+	} elseif ( bbp_has_shortcode() ) {
+		$bbp_classes[] = 'bbp-shortcode';
 	}
 
 	/** Clean up **************************************************************/
@@ -1091,7 +1130,59 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
 	// Deprecated filter (do not use)
 	$classes = apply_filters( 'bbp_get_the_body_class', $classes, $bbp_classes, $wp_classes, $custom_classes );
 
-	return apply_filters( 'bbp_body_class', $classes, $bbp_classes, $wp_classes, $custom_classes );
+	// Filter & return
+	return (array) apply_filters( 'bbp_body_class', $classes, $bbp_classes, $wp_classes, $custom_classes );
+}
+
+/**
+ * Check if text contains a bbPress shortcode.
+ *
+ * Loops through registered bbPress shortcodes and keeps track of which ones
+ * were used in a blob of text. If no text is passed, the current global post
+ * content is assumed.
+ *
+ * A preliminary strpos() is performed before looping through each shortcode, to
+ * prevent unnecessarily processing.
+ *
+ * @since 2.6.0
+ *
+ * @uses is_singular()
+ * @uses bbp_get_global_post_field()
+ * @uses has_shortcode();
+ *
+ * @param string $text
+ * @return bool
+ */
+function bbp_has_shortcode( $text = '' ) {
+
+	// Default return value
+	$retval = false;
+	$found  = array();
+
+	// Fallback to global post_content
+	if ( empty( $text ) && is_singular() ) {
+		$text = bbp_get_global_post_field( 'post_content', 'raw' );
+	}
+
+	// Skip if empty, or string doesn't contain the bbPress shortcode prefix
+	if ( ! empty( $text ) && ( false !== strpos( $text, '[bbp' ) ) ) {
+
+		// Get possible shortcodes
+		$codes = array_keys( bbpress()->shortcodes->codes );
+
+		// Loop through codes
+		foreach ( $codes as $code ) {
+
+			// Looking for shortcode in text
+			if ( has_shortcode( $text, $code ) ) {
+				$retval  = true;
+				$found[] = $code;
+			}
+		}
+	}
+
+	// Filter & return
+	return (bool) apply_filters( 'bbp_has_shortcode', $retval, $found, $text );
 }
 
 /**
@@ -1115,6 +1206,8 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
  * @uses bbp_is_favorites()
  * @uses bbp_is_topics_created()
  * @uses bbp_is_replies_created()
+ * @uses bbp_has_shortcode()
+ *
  * @return bool In a bbPress page
  */
 function is_bbpress() {
@@ -1200,10 +1293,16 @@ function is_bbpress() {
 
 	} elseif ( bbp_is_search_results() ) {
 		$retval = true;
+
+	/** Shortcodes ************************************************************/
+
+	} elseif ( bbp_has_shortcode() ) {
+		$retval = true;
 	}
 
 	/** Done ******************************************************************/
 
+	// Filter & return
 	return (bool) apply_filters( 'is_bbpress', $retval );
 }
 
@@ -1247,16 +1346,13 @@ function bbp_wp_login_action( $args = array() ) {
 		), 'login_action' );
 
 		// Add action as query arg
-		if ( ! empty( $r['action'] ) ) {
-			$login_url = add_query_arg( array( 'action' => $r['action'] ), $r['url'] );
-
-		// No query arg
-		} else {
-			$login_url = $r['url'];
-		}
+		$login_url = ! empty( $r['action'] )
+			? add_query_arg( array( 'action' => $r['action'] ), $r['url'] )
+			: $r['url'];
 
 		$login_url = site_url( $login_url, $r['context'] );
 
+		// Filter & return
 		return apply_filters( 'bbp_get_wp_login_action', $login_url, $r, $args );
 	}
 
@@ -1289,6 +1385,7 @@ function bbp_redirect_to_field( $redirect_to = '' ) {
 	$redirect_to    = remove_query_arg( 'loggedout', $redirect_to );
 	$redirect_field = '<input type="hidden" id="bbp_redirect_to" name="redirect_to" value="' . esc_url( $redirect_to ) . '" />';
 
+	// Filter & return
 	echo apply_filters( 'bbp_redirect_to_field', $redirect_field, $redirect_to );
 }
 
@@ -1350,6 +1447,7 @@ function bbp_sanitize_val( $request = '', $input_type = 'text' ) {
 				break;
 		}
 
+		// Filter & return
 		return apply_filters( 'bbp_get_sanitize_val', $retval, $request, $input_type );
 	}
 
@@ -1396,7 +1494,49 @@ function bbp_tab_index( $auto_increment = true ) {
 			++$bbp->tab_index;
 		}
 
+		// Filter & return
 		return apply_filters( 'bbp_get_tab_index', (int) $bbp->tab_index );
+	}
+
+/**
+ * Output a "tabindex" attribute for an element, if an index was passed.
+ *
+ * This helper function is in use, but it is generally considered impolite to
+ * override the "tabindex" attribute beyond what the browser naturally assigns.
+ *
+ * Most internal usages pass `false` which results in no attribute being used.
+ *
+ * @since 2.6.0 bbPress (r6424)
+ *
+ * @param mixed $tab False to skip, any integer to use
+ */
+function bbp_tab_index_attribute( $tab = false ) {
+	echo bbp_get_tab_index_attribute( $tab );
+}
+
+	/**
+	 * Return a "tabindex" attribute for an element, if an index was passed.
+	 *
+	 * This helper function is in use, but it is generally considered impolite to
+	 * override the "tabindex" attribute beyond what the browser naturally assigns.
+	 *
+	 * Most internal usages pass `false` which results in no attribute being used.
+	 *
+	 * @since 2.6.0 bbPress (r6424)
+	 *
+	 * @param mixed $tab False to skip, any integer to use
+	 *
+	 * @return string
+	 */
+	function bbp_get_tab_index_attribute( $tab = false ) {
+
+		// Get attribute
+		$attr = is_numeric( $tab )
+			? ' tabindex="' . (int) $tab . '"'
+			: '';
+
+		// Filter & return
+		return apply_filters( 'bbp_get_tab_index_attribute', $attr, $tab );
 	}
 
 /**
@@ -1583,6 +1723,7 @@ function bbp_dropdown( $args = array() ) {
 			$retval .= '</select>';
 		}
 
+		// Filter & return
 		return apply_filters( 'bbp_get_dropdown', $retval, $r );
 	}
 
@@ -1883,12 +2024,9 @@ function bbp_the_content( $args = array() ) {
 		 * Note that we do not use esc_textarea() here to prevent double
 		 * escaping the editable output, mucking up existing content.
 		 */
-		else :
+		else : ?>
 
-			// Setup the tab index attribute
-			$tab = ! empty( $r['tab'] ) ? ' tabindex="' . intval( $r['tab'] ) . '"' : ''; ?>
-
-			<textarea id="bbp_<?php echo esc_attr( $r['context'] ); ?>_content" class="<?php echo esc_attr( $r['editor_class'] ); ?>" name="bbp_<?php echo esc_attr( $r['context'] ); ?>_content" cols="60" rows="<?php echo esc_attr( $r['textarea_rows'] ); ?>" <?php echo $tab; ?>><?php echo $post_content; ?></textarea>
+			<textarea id="bbp_<?php echo esc_attr( $r['context'] ); ?>_content" class="<?php echo esc_attr( $r['editor_class'] ); ?>" name="bbp_<?php echo esc_attr( $r['context'] ); ?>_content" cols="60" rows="<?php echo esc_attr( $r['textarea_rows'] ); ?>" <?php bbp_tab_index_attribute( $r['tab'] ); ?>><?php echo $post_content; ?></textarea>
 
 		<?php endif;
 
@@ -1900,6 +2038,7 @@ function bbp_the_content( $args = array() ) {
 		// Put the output into a usable variable
 		$output = ob_get_clean();
 
+		// Filter & return
 		return apply_filters( 'bbp_get_the_content', $output, $args, $post_content );
 	}
 
@@ -1925,6 +2064,7 @@ function bbp_get_tiny_mce_plugins( $plugins = array() ) {
 	// Add the tabfocus plugin
 	$plugins[] = 'tabfocus';
 
+	// Filter & return
 	return apply_filters( 'bbp_get_tiny_mce_plugins', $plugins );
 }
 
@@ -1950,6 +2090,7 @@ function bbp_get_teeny_mce_buttons( $buttons = array() ) {
 	// Images
 	array_push( $buttons, 'image' );
 
+	// Filter & return
 	return apply_filters( 'bbp_get_teeny_mce_buttons', $buttons );
 }
 
@@ -1977,6 +2118,7 @@ function bbp_get_quicktags_settings( $settings = array() ) {
 	// Put them back into a string in the $settings array
 	$settings['buttons'] = implode( ',', $buttons );
 
+	// Filter & return
 	return apply_filters( 'bbp_get_quicktags_settings', $settings );
 }
 
@@ -2104,6 +2246,7 @@ function bbp_view_url( $view = false ) {
 			), home_url( '/' ) );
 		}
 
+		// Filter & return
 		return apply_filters( 'bbp_get_view_link', $url, $view );
 	}
 
@@ -2465,6 +2608,7 @@ function bbp_breadcrumb( $args = array() ) {
 		// Build the trail
 		$trail  = ! empty( $crumbs ) ? ( $r['before'] . $r['crumb_before'] . implode( $sep . $r['crumb_after'] . $r['crumb_before'] , $crumbs ) . $r['crumb_after'] . $r['after'] ) : '';
 
+		// Filter & return
 		return apply_filters( 'bbp_get_breadcrumb', $trail, $crumbs, $r );
 	}
 
@@ -2509,6 +2653,7 @@ function bbp_allowed_tags() {
 			$allowed .= '> ';
 		}
 
+		// Filter & return
 		return apply_filters( 'bbp_get_allowed_tags', htmlentities( $allowed ) );
 	}
 
@@ -2602,7 +2747,12 @@ function bbp_logout_link( $redirect_to = '' ) {
 	 * @return string The logout link
 	 */
 	function bbp_get_logout_link( $redirect_to = '' ) {
-		return apply_filters( 'bbp_get_logout_link', '<a href="' . wp_logout_url( $redirect_to ) . '" class="button logout-link">' . esc_html__( 'Log Out', 'bbpress' ) . '</a>', $redirect_to );
+
+		// Build the link
+		$link = '<a href="' . wp_logout_url( $redirect_to ) . '" class="button logout-link">' . esc_html__( 'Log Out', 'bbpress' ) . '</a>';
+
+		// Filter & return
+		return apply_filters( 'bbp_get_logout_link', $link, $redirect_to );
 	}
 
 /** Title *********************************************************************/
@@ -2819,6 +2969,6 @@ function bbp_title( $title = '', $sep = '&raquo;', $seplocation = '' ) {
 		$new_title       = $prefix . implode( " $sep ", $new_title_array );
 	}
 
-	// Filter and return
+	// Filter & return
 	return apply_filters( 'bbp_title', $new_title, $sep, $seplocation );
 }

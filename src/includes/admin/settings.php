@@ -20,6 +20,8 @@ defined( 'ABSPATH' ) || exit;
  * @return array
  */
 function bbp_admin_get_settings_sections() {
+
+	// Filter & return
 	return (array) apply_filters( 'bbp_admin_get_settings_sections', array(
 		'bbp_settings_users' => array(
 			'title'    => esc_html__( 'Forum User Settings', 'bbpress' ),
@@ -82,47 +84,61 @@ function bbp_admin_get_settings_sections() {
  * @return type
  */
 function bbp_admin_get_settings_fields() {
+
+	// Filter & return
 	return (array) apply_filters( 'bbp_admin_get_settings_fields', array(
 
 		/** User Section ******************************************************/
 
 		'bbp_settings_users' => array(
 
-			// Edit lock setting
-			'_bbp_edit_lock' => array(
-				'title'             => esc_html__( 'Disallow editing after', 'bbpress' ),
-				'callback'          => 'bbp_admin_setting_callback_editlock',
-				'sanitize_callback' => 'intval',
-				'args'              => array( 'label_for' => '_bbp_edit_lock' )
-			),
-
-			// Throttle setting
-			'_bbp_throttle_time' => array(
-				'title'             => esc_html__( 'Throttle posting every', 'bbpress' ),
-				'callback'          => 'bbp_admin_setting_callback_throttle',
-				'sanitize_callback' => 'intval',
-				'args'              => array( 'label_for' => '_bbp_throttle_time' )
-			),
-
-			// Allow anonymous posting setting
-			'_bbp_allow_anonymous' => array(
-				'title'             => esc_html__( 'Anonymous posting', 'bbpress' ),
-				'callback'          => 'bbp_admin_setting_callback_anonymous',
-				'sanitize_callback' => 'intval',
+			// Allow global access
+			'_bbp_default_role' => array(
+				'sanitize_callback' => 'sanitize_text_field',
 				'args'              => array()
 			),
 
-			// Allow global access (on multisite)
+			// Allow global access
 			'_bbp_allow_global_access' => array(
-				'title'             => esc_html__( 'Auto role', 'bbpress' ),
+				'title'             => esc_html__( 'Roles', 'bbpress' ),
 				'callback'          => 'bbp_admin_setting_callback_global_access',
 				'sanitize_callback' => 'intval',
 				'args'              => array()
 			),
 
-			// Allow global access (on multisite)
-			'_bbp_default_role' => array(
-				'sanitize_callback' => 'sanitize_text_field',
+			// Allow content throttling
+			'_bbp_allow_content_throttle' => array(
+				'sanitize_callback' => 'intval',
+				'args'              => array()
+			),
+
+			// Throttle setting
+			'_bbp_throttle_time' => array(
+				'title'             => esc_html__( 'Flooding', 'bbpress' ),
+				'callback'          => 'bbp_admin_setting_callback_throttle',
+				'sanitize_callback' => 'intval',
+				'args'              => array()
+			),
+
+			// Allow content editing
+			'_bbp_allow_content_edit' => array(
+				'sanitize_callback' => 'intval',
+				'args'              => array()
+			),
+
+			// Edit lock setting
+			'_bbp_edit_lock' => array(
+				'title'             => esc_html__( 'Editing', 'bbpress' ),
+				'callback'          => 'bbp_admin_setting_callback_editlock',
+				'sanitize_callback' => 'intval',
+				'args'              => array()
+			),
+
+			// Allow anonymous posting setting
+			'_bbp_allow_anonymous' => array(
+				'title'             => esc_html__( 'Anonymous', 'bbpress' ),
+				'callback'          => 'bbp_admin_setting_callback_anonymous',
+				'sanitize_callback' => 'intval',
 				'args'              => array()
 			)
 		),
@@ -502,10 +518,21 @@ function bbp_admin_setting_callback_user_section() {
  * @uses bbp_form_option() To output the option value
  */
 function bbp_admin_setting_callback_editlock() {
-?>
 
-	<input name="_bbp_edit_lock" id="_bbp_edit_lock" type="number" min="0" step="1" value="<?php bbp_form_option( '_bbp_edit_lock', '5' ); ?>" class="small-text"<?php bbp_maybe_admin_setting_disabled( '_bbp_edit_lock' ); ?> />
-	<?php esc_html_e( 'minutes', 'bbpress' ); ?>
+	// Start the output buffer for the second option
+	ob_start(); ?>
+
+	</label>
+	<label for="_bbp_edit_lock">
+		<input name="_bbp_edit_lock" id="_bbp_edit_lock" type="number" min="0" step="1" value="<?php bbp_form_option( '_bbp_edit_lock', '0' ); ?>" class="small-text"<?php bbp_maybe_admin_setting_disabled( '_bbp_edit_lock' ); ?> />
+
+	<?php $select = ob_get_clean(); ?>
+
+	<label for="_bbp_allow_content_edit">
+		<input name="_bbp_allow_content_edit" id="_bbp_allow_content_edit" type="checkbox" value="1" <?php checked( bbp_allow_content_edit( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_allow_content_edit' ); ?> />
+		<?php printf( esc_html__( 'Allow users to edit their content for %s minutes after posting', 'bbpress' ), $select ); ?>
+	</label>
+	<p class="description"><?php esc_html_e( 'If checked, setting to "0 minutes" allows editing forever.', 'bbpress' ); ?></p>
 
 <?php
 }
@@ -518,10 +545,21 @@ function bbp_admin_setting_callback_editlock() {
  * @uses bbp_form_option() To output the option value
  */
 function bbp_admin_setting_callback_throttle() {
-?>
 
-	<input name="_bbp_throttle_time" id="_bbp_throttle_time" type="number" min="0" step="1" value="<?php bbp_form_option( '_bbp_throttle_time', '10' ); ?>" class="small-text"<?php bbp_maybe_admin_setting_disabled( '_bbp_throttle_time' ); ?> />
-	<?php esc_html_e( 'seconds', 'bbpress' ); ?>
+	// Start the output buffer for the second option
+	ob_start(); ?>
+
+	</label>
+	<label for="_bbp_throttle_time">
+		<input name="_bbp_throttle_time" id="_bbp_throttle_time" type="number" min="0" step="1" value="<?php bbp_form_option( '_bbp_throttle_time', '10' ); ?>" class="small-text"<?php bbp_maybe_admin_setting_disabled( '_bbp_throttle_time' ); ?> />
+
+	<?php $select = ob_get_clean(); ?>
+
+	<label for="_bbp_allow_content_throttle">
+		<input name="_bbp_allow_content_throttle" id="_bbp_allow_content_throttle" type="checkbox" value="1" <?php checked( bbp_allow_content_throttle( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_allow_content_throttle' ); ?> />
+		<?php printf( esc_html__( 'Allow flood protection by throttling users for %s seconds after posting', 'bbpress' ), $select ); ?>
+	</label>
+	<p class="description"><?php esc_html_e( 'Use this to discourage users from spamming your forums.', 'bbpress' ); ?></p>
 
 <?php
 }
@@ -538,6 +576,7 @@ function bbp_admin_setting_callback_anonymous() {
 
 	<input name="_bbp_allow_anonymous" id="_bbp_allow_anonymous" type="checkbox" value="1" <?php checked( bbp_allow_anonymous( false ) ); bbp_maybe_admin_setting_disabled( '_bbp_allow_anonymous' ); ?> />
 	<label for="_bbp_allow_anonymous"><?php esc_html_e( 'Allow guest users without accounts to create topics and replies', 'bbpress' ); ?></label>
+	<p class="description"><?php esc_html_e( 'Works best on intranets or paired with antispam measures like Akismet.', 'bbpress' ); ?></p>
 
 <?php
 }
@@ -553,6 +592,7 @@ function bbp_admin_setting_callback_global_access() {
 
 	// Get the default role once rather than loop repeatedly below
 	$default_role = bbp_get_default_role();
+	$roles        = bbp_get_dynamic_roles();
 
 	// Start the output buffer for the select dropdown
 	ob_start(); ?>
@@ -560,7 +600,7 @@ function bbp_admin_setting_callback_global_access() {
 	</label>
 	<label for="_bbp_default_role">
 		<select name="_bbp_default_role" id="_bbp_default_role" <?php bbp_maybe_admin_setting_disabled( '_bbp_default_role' ); ?>>
-		<?php foreach ( bbp_get_dynamic_roles() as $role => $details ) : ?>
+		<?php foreach ( $roles as $role => $details ) : ?>
 
 			<option <?php selected( $default_role, $role ); ?> value="<?php echo esc_attr( $role ); ?>"><?php echo bbp_translate_user_role( $details['name'] ); ?></option>
 
@@ -573,6 +613,7 @@ function bbp_admin_setting_callback_global_access() {
 		<input name="_bbp_allow_global_access" id="_bbp_allow_global_access" type="checkbox" value="1" <?php checked( bbp_allow_global_access( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_allow_global_access' ); ?> />
 		<?php printf( esc_html__( 'Automatically give registered visitors the %s forum role', 'bbpress' ), $select ); ?>
 	</label>
+	<p class="description"><?php esc_html_e( 'Uncheck this to manually assign all user access to your forums.', 'bbpress' ); ?></p>
 
 <?php
 }
@@ -635,7 +676,7 @@ function bbp_admin_setting_callback_engagements() {
 ?>
 
 	<input name="_bbp_enable_engagements" id="_bbp_enable_engagements" type="checkbox" value="1" <?php checked( bbp_is_engagements_active( true ) ); bbp_maybe_admin_setting_disabled( '_bbp_enable_engagements' ); ?> />
-	<label for="_bbp_enable_engagements"><?php esc_html_e( 'Track topics each user engages in', 'bbpress' ); ?></label>
+	<label for="_bbp_enable_engagements"><?php esc_html_e( 'Allow tracking of topics each user engages in', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1001,7 +1042,17 @@ function bbp_admin_setting_callback_show_on_root() {
 
 	</select>
 
-<?php
+	<?php
+
+	// Look for theme support
+	$forum_archive = basename( bbp_get_forum_archive_template() );
+
+	// This setting doesn't work if the theme has an archive-forum.php template.
+	if ( ! empty( $forum_archive ) ) : ?>
+
+		<p class="description"><?php printf( esc_html__( 'This setting will be ignored because %s was found in your theme.', 'bbpress' ), '<code>' . $forum_archive . '</code>' ); ?></p>
+
+	<?php endif;
 }
 
 /** User Slug Section *********************************************************/
@@ -1643,7 +1694,7 @@ function bbp_admin_settings_help() {
 	$current_screen->add_help_tab( array(
 		'id'      => 'main_settings',
 		'title'   => esc_html__( 'Main Settings', 'bbpress' ),
-		'content' => '<p>' . esc_html__( 'In the Main Settings you have a number of options:', 'bbpress' ) . '</p>' .
+		'content' => '<p>' . esc_html__( 'The "Main Settings" section includes a number of options:', 'bbpress' ) . '</p>' .
 					 '<p>' .
 						'<ul>' .
 							'<li>' . esc_html__( 'You can choose to lock a post after a certain number of minutes. "Locking post editing" will prevent the author from editing some amount of time after saving a post.',              'bbpress' ) . '</li>' .
@@ -1659,23 +1710,43 @@ function bbp_admin_settings_help() {
 					'<p>' . esc_html__( 'You must click the Save Changes button at the bottom of the screen for new settings to take effect.', 'bbpress' ) . '</p>'
 	) );
 
+	// Theme Package
+	$current_screen->add_help_tab( array(
+		'id'      => 'theme_packages',
+		'title'   => esc_html__( 'Theme Packages', 'bbpress' ),
+		'content' => '<p>' . esc_html__( 'The "Theme Packages" section allows you to choose which theme package should be used.', 'bbpress' ) . '</p>' .
+					 '<p>' .
+						'<ul>' .
+							'<li>' . esc_html__( 'The "bbPress Default" package is installed by default.',      'bbpress' ) . '</li>' .
+							'<li>' . esc_html__( 'Some themes may choose to ignore this setting entirely.',     'bbpress' ) . '</li>' .
+							'<li>' . esc_html__( 'Packages can be stacked to allow for intelligent fallbacks.', 'bbpress' ) . '</li>' .
+						'</ul>' .
+					'</p>'
+	) );
+
 	// Per Page
 	$current_screen->add_help_tab( array(
 		'id'      => 'per_page',
 		'title'   => esc_html__( 'Per Page', 'bbpress' ),
-		'content' => '<p>' . esc_html__( 'Per Page settings allow you to control the number of topics and replies appear on each page.',                                                    'bbpress' ) . '</p>' .
-					 '<p>' . esc_html__( 'This is comparable to the WordPress "Reading Settings" page, where you can set the number of posts that should show on blog pages and in feeds.', 'bbpress' ) . '</p>' .
-					 '<p>' . esc_html__( 'These are broken up into two separate groups: one for what appears in your theme, another for RSS feeds.',                                        'bbpress' ) . '</p>'
+		'content' => '<p>' . esc_html__( 'The "Per Page" section allows you to control the number of topics and replies appear on each page.',                                                    'bbpress' ) . '</p>' .
+						'<ul>' .
+							'<li>' . esc_html__( 'This is comparable to the WordPress "Reading Settings" page, where you can set the number of posts that should show on blog pages and in feeds.', 'bbpress' ) . '</li>' .
+							'<li>' . esc_html__( 'These are broken up into two separate groups: one for what appears in your theme, another for RSS feeds.',                                        'bbpress' ) . '</li>' .
+						'</ul>' .
+					 '<p>'
 	) );
 
 	// Slugs
 	$current_screen->add_help_tab( array(
-		'id'      => 'slus',
+		'id'      => 'slugs',
 		'title'   => esc_html__( 'Slugs', 'bbpress' ),
-		'content' => '<p>' . esc_html__( 'The Slugs section allows you to control the permalink structure for your forums.',                                                                                                            'bbpress' ) . '</p>' .
-					 '<p>' . esc_html__( '"Archive Slugs" are used as the "root" for your forums and topics. If you combine these values with existing page slugs, bbPress will attempt to output the most correct title and content.', 'bbpress' ) . '</p>' .
-					 '<p>' . esc_html__( '"Single Slugs" are used as a prefix when viewing an individual forum, topic, reply, user, or view.',                                                                                          'bbpress' ) . '</p>' .
-					 '<p>' . esc_html__( 'In the event of a slug collision with WordPress or BuddyPress, a warning will appear next to the problem slug(s).', 'bbpress' ) . '</p>'
+		'content' => '<p>' . esc_html__( 'The "Slugs" section allows you to control the permalink structure for your forums.',                                                                                                            'bbpress' ) . '</p>' .
+						'<ul>' .
+							'<li>' . esc_html__( '"Archive Slugs" are used as the "root" for your forums and topics. If you combine these values with existing page slugs, bbPress will attempt to output the most correct title and content.', 'bbpress' ) . '</li>' .
+							'<li>' . esc_html__( '"Single Slugs" are used as a prefix when viewing an individual forum, topic, reply, user, or view.',                                                                                          'bbpress' ) . '</li>' .
+							'<li>' . esc_html__( 'In the event of a slug collision with WordPress or BuddyPress, a warning will appear next to the problem slug(s).', 'bbpress' ) . '</li>' .
+						'</ul>' .
+					 '<p>'
 	) );
 
 	// Help Sidebar
@@ -1744,7 +1815,7 @@ function bbp_form_option( $option, $default = '' , $slug = false ) {
 			$value = $default;
 		}
 
-		// Allow plugins to further filter the output
+		// Filter & return
 		return apply_filters( 'bbp_get_form_option', $value, $option );
 	}
 

@@ -292,7 +292,8 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 				break;
 		}
 
-		return apply_filters( 'bbp_map_group_forum_topic_meta_caps', $caps, $cap, $user_id, $args );
+		// Filter & return
+		return (array) apply_filters( 'bbp_map_group_forum_topic_meta_caps', $caps, $cap, $user_id, $args );
 	}
 
 	/**
@@ -348,7 +349,7 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 					<?php
 						bbp_dropdown( array(
 							'select_id' => 'bbp_group_forum_id',
-							'show_none' => __( '&mdash; No forum &mdash;', 'bbpress' ),
+							'show_none' => esc_html__( '&mdash; No forum &mdash;', 'bbpress' ),
 							'selected'  => $forum_id
 						) );
 					?>

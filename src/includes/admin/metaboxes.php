@@ -50,7 +50,7 @@ function bbp_filter_dashboard_glance_items( $elements = array() ) {
 		$elements[] = '<a href="' . esc_url( $link ) . '" class="bbp-glance-topic-tags">' . esc_html( $text ) . '</a>';
 	}
 
-	// Filter and return
+	// Filter & return
 	return apply_filters( 'bbp_dashboard_at_a_glance', $elements, $r );
 }
 
@@ -356,7 +356,7 @@ function bbp_forum_metabox( $post ) {
 			// Output-related
 			'select_id'          => 'parent_id',
 			'options_only'       => false,
-			'show_none'          => __( '&mdash; No forum &mdash;', 'bbpress' ),
+			'show_none'          => esc_html__( '&mdash; No parent &mdash;', 'bbpress' ),
 			'disable_categories' => false,
 			'disabled'           => ''
 		) ); ?>
@@ -435,7 +435,7 @@ function bbp_topic_metabox( $post ) {
 			// Output-related
 			'select_id'          => 'parent_id',
 			'options_only'       => false,
-			'show_none'          => __( '&mdash; No parent &mdash;', 'bbpress' ),
+			'show_none'          => esc_html__( '&mdash; No forum &mdash;', 'bbpress' ),
 			'disable_categories' => current_user_can( 'edit_forums' ),
 			'disabled'           => ''
 		) ); ?>
@@ -502,7 +502,7 @@ function bbp_reply_metabox( $post ) {
 				// Output-related
 				'select_id'          => 'bbp_forum_id',
 				'options_only'       => false,
-				'show_none'          => __( '&mdash; No reply &mdash;', 'bbpress' ),
+				'show_none'          => esc_html__( '&mdash; No reply &mdash;', 'bbpress' ),
 				'disable_categories' => current_user_can( 'edit_forums' ),
 				'disabled'           => ''
 			) ); ?>

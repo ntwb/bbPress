@@ -23,8 +23,13 @@ defined( 'ABSPATH' ) || exit;
  * @return string The URL to redirect to, if set
  */
 function bbp_get_redirect_to() {
-	$retval = ! empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '';
 
+	// Check 'redirect_to' request parameter
+	$retval = ! empty( $_REQUEST['redirect_to'] )
+		? $_REQUEST['redirect_to']
+		: '';
+
+	// Filter & return
 	return apply_filters( 'bbp_get_redirect_to', $retval );
 }
 
@@ -43,12 +48,11 @@ function bbp_get_redirect_to() {
 function bbp_add_view_all( $original_link = '', $force = false ) {
 
 	// Are we appending the view=all vars?
-	if ( bbp_get_view_all() || ! empty( $force ) ) {
-		$link = add_query_arg( array( 'view' => 'all' ), $original_link );
-	} else {
-		$link = $original_link;
-	}
+	$link = ( bbp_get_view_all() || ! empty( $force ) )
+		? add_query_arg( array( 'view' => 'all' ), $original_link )
+		: $original_link;
 
+	// Filter & return
 	return apply_filters( 'bbp_add_view_all', $link, $original_link );
 }
 
@@ -64,7 +68,12 @@ function bbp_add_view_all( $original_link = '', $force = false ) {
  * @return string The link with 'view=all' appended if necessary
  */
 function bbp_remove_view_all( $original_link = '' ) {
-	return apply_filters( 'bbp_remove_view_all', remove_query_arg( 'view', $original_link ), $original_link );
+
+	// Remove `view' argument
+	$link = remove_query_arg( 'view', $original_link );
+
+	// Filter & return
+	return apply_filters( 'bbp_remove_view_all', $link, $original_link );
 }
 
 /**
@@ -78,6 +87,8 @@ function bbp_remove_view_all( $original_link = '' ) {
  */
 function bbp_get_view_all( $cap = 'moderate' ) {
 	$retval = ( ( ! empty( $_GET['view'] ) && ( 'all' === $_GET['view'] ) && current_user_can( $cap ) ) );
+
+	// Filter & return
 	return apply_filters( 'bbp_get_view_all', (bool) $retval );
 }
 
@@ -155,43 +166,80 @@ function bbp_fix_post_author( $data = array(), $postarr = array() ) {
 }
 
 /**
- * Check the date against the _bbp_edit_lock setting.
+ * Check a date against the length of time something can be edited.
  *
  * @since 2.0.0 bbPress (r3133)
  *
  * @param string $post_date_gmt
  *
+ * @uses bbp_allow_content_edit()() To make sure editing is allowed
  * @uses get_option() Get the edit lock time
  * @uses current_time() Get the current time
  * @uses strtotime() Convert strings to time
  * @uses apply_filters() Allow output to be manipulated
  *
- * @return bool
+ * @return bool True if date is past, False if not
  */
-function bbp_past_edit_lock( $post_date_gmt ) {
+function bbp_past_edit_lock( $post_date_gmt = '' ) {
 
-	// Assume editing is allowed
+	// Default value
 	$retval = false;
 
-	// Bail if empty date
-	if ( ! empty( $post_date_gmt ) ) {
+	// Check if date and editing is allowed
+	if ( ! empty( $post_date_gmt ) && bbp_allow_content_edit() ) {
 
-		// Period of time
-		$lockable  = '+' . get_option( '_bbp_edit_lock', '5' ) . ' minutes';
+		// Get number of minutes to allow editing for
+		$minutes = (int) get_option( '_bbp_edit_lock', 5 );
 
-		// Now
-		$cur_time  = current_time( 'timestamp', true );
-
-		// Add lockable time to post time
-		$lock_time = strtotime( $lockable, strtotime( $post_date_gmt ) );
-
-		// Compare
-		if ( $cur_time >= $lock_time ) {
+		// "0" minutes set, so allow forever
+		if ( 0 === $minutes ) {
 			$retval = true;
+
+		// Not "0" so compare
+		} else {
+
+			// Period of time
+			$lockable  = "+{$minutes} minutes";
+
+			// Now
+			$cur_time  = current_time( 'timestamp', true );
+
+			// Add lockable time to post time
+			$lock_time = strtotime( $lockable, strtotime( $post_date_gmt ) );
+
+			// Compare
+			if ( $cur_time >= $lock_time ) {
+				$retval = true;
+			}
 		}
 	}
 
-	return apply_filters( 'bbp_past_edit_lock', (bool) $retval, $cur_time, $lock_time, $post_date_gmt );
+	// Filter & return
+	return (bool) apply_filters( 'bbp_past_edit_lock', $retval, $cur_time, $lock_time, $post_date_gmt );
+}
+
+/**
+ * Get number of days something should remain trashed for before it is cleaned
+ * up by WordPress Cron. If set to 0, items will skip trash and be deleted
+ * immediately.
+ *
+ * @since 2.6.0 bbPress (r6424)
+ *
+ * @param string $context Provide context for additional filtering
+ * @return int Number of days items remain in trash
+ */
+function bbp_get_trash_days( $context = 'forum' ) {
+
+	// Sanitize the context
+	$context = sanitize_key( $context );
+
+	// Check the WordPress constant
+	$days    = defined( 'EMPTY_TRASH_DAYS' )
+		? (int) EMPTY_TRASH_DAYS
+		: 30;
+
+	// Filter & return
+	return (int) apply_filters( 'bbp_get_trash_days', $days, $context );
 }
 
 /** Statistics ****************************************************************/
@@ -399,6 +447,7 @@ function bbp_get_statistics( $args = array() ) {
 	$statistics['hidden_topic_title'] = isset( $hidden_topic_title ) ? $hidden_topic_title : '';
 	$statistics['hidden_reply_title'] = isset( $hidden_reply_title ) ? $hidden_reply_title : '';
 
+	// Filter & return
 	return apply_filters( 'bbp_get_statistics', $statistics, $r );
 }
 
@@ -455,7 +504,7 @@ function bbp_filter_anonymous_post_data( $args = array() ) {
 	// Website is optional (can be empty)
 	$r['bbp_anonymous_website'] = apply_filters( 'bbp_pre_anonymous_post_author_website', $r['bbp_anonymous_website'] );
 
-	// Finally, return filtered anonymous post data
+	// Filter & return
 	return (array) apply_filters( 'bbp_filter_anonymous_post_data', $r, $args );
 }
 
@@ -494,7 +543,7 @@ function bbp_sanitize_anonymous_post_author( $anonymous_data = array() ) {
 		}
 	}
 
-	// Filter and return
+	// Filter & return
 	return (array) apply_filters( 'bbp_sanitize_anonymous_post_author', $r, $anonymous_data );
 }
 
@@ -631,17 +680,25 @@ function bbp_check_for_duplicate( $post_data = array() ) {
  *                              sanitized (see {@link bbp_filter_anonymous_post_data()}
  * @param int $author_id Optional. Supply if it's a post by a logged in user.
  *                        Do not supply if supplying $anonymous_data.
+ *
+ * @suse bbp_allow_content_throttle() To make sure flood checking is enabled
  * @uses get_option() To get the throttle time
  * @uses get_transient() To get the last posted transient of the ip
  * @uses bbp_get_user_last_posted() To get the last posted time of the user
  * @uses current_user_can() To check if the current user can throttle
+ *
  * @return bool True if there is no flooding, false if there is
  */
 function bbp_check_for_flood( $anonymous_data = array(), $author_id = 0 ) {
 
+	// Allow for flood check to be skipped
+	if ( apply_filters( 'bbp_bypass_check_for_flood', false, $anonymous_data, $author_id ) ) {
+		return true;
+	}
+
 	// Option disabled. No flood checks.
 	$throttle_time = get_option( '_bbp_throttle_time' );
-	if ( empty( $throttle_time ) ) {
+	if ( empty( $throttle_time ) || ! bbp_allow_content_throttle() ) {
 		return true;
 	}
 
@@ -947,6 +1004,8 @@ function bbp_get_do_not_reply_address() {
 	if ( substr( $sitename, 0, 4 ) === 'www.' ) {
 		$sitename = substr( $sitename, 4 );
 	}
+
+	// Filter & return
 	return apply_filters( 'bbp_get_do_not_reply_address', 'noreply@' . $sitename );
 }
 
@@ -1340,7 +1399,7 @@ function bbp_logout_url( $url = '', $redirect_to = '' ) {
 		$url         = add_query_arg( array( 'redirect_to' => urlencode( $redirect_to ) ), $url                    );
 	}
 
-	// Filter and return
+	// Filter & return
 	return apply_filters( 'bbp_logout_url', $url, $redirect_to );
 }
 
@@ -1475,6 +1534,10 @@ function bbp_get_public_child_last_id( $parent_id = 0, $post_type = 'post' ) {
 		'post_parent' => $parent_id,
 		'post_status' => $post_status,
 		'post_type'   => $post_type,
+		'orderby'     => array(
+			'post_date' => 'DESC',
+			'ID'        => 'DESC'
+		),
 
 		// Maybe change these later
 		'posts_per_page'         => 1,
@@ -1486,7 +1549,7 @@ function bbp_get_public_child_last_id( $parent_id = 0, $post_type = 'post' ) {
 	$child_id = array_shift( $query->posts );
 	unset( $query );
 
-	// Filter and return
+	// Filter & return
 	return (int) apply_filters( 'bbp_get_public_child_last_id', $child_id, $parent_id, $post_type );
 }
 
@@ -1537,7 +1600,7 @@ function bbp_get_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 	$child_count = $query->post_count;
 	unset( $query );
 
-	// Filter and return
+	// Filter & return
 	return (int) apply_filters( 'bbp_get_public_child_count', $child_count, $parent_id, $post_type );
 }
 
@@ -1588,7 +1651,7 @@ function bbp_get_public_child_ids( $parent_id = 0, $post_type = 'post' ) {
 	$child_ids = ! empty( $query->posts ) ? $query->posts : array();
 	unset( $query );
 
-	// Filter and return
+	// Filter & return
 	return (array) apply_filters( 'bbp_get_public_child_ids', $child_ids, $parent_id, $post_type );
 }
 
@@ -1660,15 +1723,19 @@ function bbp_get_all_child_ids( $parent_id = 0, $post_type = 'post' ) {
 		// Join post statuses together
 		$post_status = "'" . implode( "', '", $post_status ) . "'";
 		$bbp_db      = bbp_db();
+
+		// Note that we can't use WP_Query here thanks to post_status assumptions
 		$query       = $bbp_db->prepare( "SELECT ID FROM {$bbp_db->posts} WHERE post_parent = %d AND post_status IN ( {$post_status} ) AND post_type = %s ORDER BY ID DESC", $parent_id, $post_type );
 		$child_ids   = (array) $bbp_db->get_col( $query );
 
+		// Always cache the results
 		wp_cache_set( $cache_id, $child_ids, 'bbpress_posts' );
-	} else {
-		$child_ids = (array) $child_ids;
 	}
 
-	// Filter and return
+	// Make sure results are INTs
+	$child_ids = wp_parse_id_list( $child_ids );
+
+	// Filter & return
 	return (array) apply_filters( 'bbp_get_all_child_ids', $child_ids, $parent_id, $post_type );
 }
 
@@ -1693,6 +1760,7 @@ function bbp_get_global_post_field( $field = 'ID', $context = 'edit' ) {
 		? sanitize_post_field( $field, $post->{$field}, $post->ID, $context )
 		: '';
 
+	// Filter & return
 	return apply_filters( 'bbp_get_global_post_field', $retval, $post, $field, $context );
 }
 
@@ -2026,6 +2094,7 @@ function bbp_get_page_by_path( $path = '' ) {
 		}
 	}
 
+	// Filter & return
 	return apply_filters( 'bbp_get_page_by_path', $retval, $path );
 }
 
