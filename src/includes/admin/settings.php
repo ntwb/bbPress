@@ -1434,25 +1434,16 @@ function bbp_converter_setting_callback_main_section() {
  */
 function bbp_converter_setting_callback_platform() {
 
-	$platform_options = '';
-	$curdir           = opendir( bbpress()->admin->admin_dir . 'converters/' );
+	// Converters
+	$converters = bbp_get_converters();
+	$options    = '';
 
-	// Bail if no directory was found (how did this happen?)
-	if ( empty( $curdir ) ) {
-		return;
-	}
+	// Put options together
+	foreach ( $converters as $name => $file ) {
+		$options .= '<option value="' . esc_attr( $name ) . '">' . esc_html( $name ) . '</option>';
+	} ?>
 
-	// Loop through files in the converters folder and assemble some options
-	while ( $file = readdir( $curdir ) ) {
-		if ( ( stristr( $file, '.php' ) ) && ( stristr( $file, 'index' ) === false ) ) {
-			$file              = preg_replace( '/.php/', '', $file );
-			$platform_options .= '<option value="' . esc_attr( $file ) . '">' . esc_html( $file ) . '</option>';
-		}
-	}
-
-	closedir( $curdir ); ?>
-
-	<select name="_bbp_converter_platform" id="_bbp_converter_platform" /><?php echo $platform_options ?></select>
+	<select name="_bbp_converter_platform" id="_bbp_converter_platform" /><?php echo $options ?></select>
 	<label for="_bbp_converter_platform"><?php esc_html_e( 'is the previous forum software', 'bbpress' ); ?></label>
 
 <?php
@@ -1466,8 +1457,8 @@ function bbp_converter_setting_callback_platform() {
 function bbp_converter_setting_callback_dbserver() {
 ?>
 
-	<input name="_bbp_converter_db_server" id="_bbp_converter_db_server" type="text" value="<?php bbp_form_option( '_bbp_converter_db_server', 'localhost' ); ?>" class="medium-text" />
-	<label for="_bbp_converter_db_server"><?php esc_html_e( 'IP or hostname', 'bbpress' ); ?></label>
+	<input name="_bbp_converter_db_server" id="_bbp_converter_db_server" type="text" class="code" value="<?php bbp_form_option( '_bbp_converter_db_server', 'localhost' ); ?>" class="medium-text" />
+	<label for="_bbp_converter_db_server"><?php esc_html_e( 'Use default "localhost" if on the same server, otherwise IP or hostname', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1480,8 +1471,8 @@ function bbp_converter_setting_callback_dbserver() {
 function bbp_converter_setting_callback_dbport() {
 ?>
 
-	<input name="_bbp_converter_db_port" id="_bbp_converter_db_port" type="text" value="<?php bbp_form_option( '_bbp_converter_db_port', '3306' ); ?>" class="small-text" />
-	<label for="_bbp_converter_db_port"><?php esc_html_e( 'Use default 3306 if unsure', 'bbpress' ); ?></label>
+	<input name="_bbp_converter_db_port" id="_bbp_converter_db_port" type="text" class="code" value="<?php bbp_form_option( '_bbp_converter_db_port', '3306' ); ?>" class="small-text" />
+	<label for="_bbp_converter_db_port"><?php esc_html_e( 'Use default "3306" if unsure', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1494,8 +1485,8 @@ function bbp_converter_setting_callback_dbport() {
 function bbp_converter_setting_callback_dbuser() {
 ?>
 
-	<input name="_bbp_converter_db_user" id="_bbp_converter_db_user" type="text" value="<?php bbp_form_option( '_bbp_converter_db_user' ); ?>" class="medium-text" />
-	<label for="_bbp_converter_db_user"><?php esc_html_e( 'User for your database connection', 'bbpress' ); ?></label>
+	<input name="_bbp_converter_db_user" id="_bbp_converter_db_user" type="text" class="code" value="<?php bbp_form_option( '_bbp_converter_db_user' ); ?>" class="medium-text" />
+	<label for="_bbp_converter_db_user"><?php esc_html_e( 'User to acces the database', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1508,8 +1499,8 @@ function bbp_converter_setting_callback_dbuser() {
 function bbp_converter_setting_callback_dbpass() {
 ?>
 
-	<input name="_bbp_converter_db_pass" id="_bbp_converter_db_pass" type="password" value="<?php bbp_form_option( '_bbp_converter_db_pass' ); ?>" class="medium-text" autocomplete="off" />
-	<label for="_bbp_converter_db_pass"><?php esc_html_e( 'Password to access the database', 'bbpress' ); ?></label>
+	<input name="_bbp_converter_db_pass" id="_bbp_converter_db_pass" type="password" class="code" value="<?php bbp_form_option( '_bbp_converter_db_pass' ); ?>" class="medium-text" autocomplete="off" />
+	<label for="_bbp_converter_db_pass"><?php esc_html_e( 'Password of the above database user', 'bbpress' ); ?></label>
 
 <?php
 }
@@ -1522,7 +1513,7 @@ function bbp_converter_setting_callback_dbpass() {
 function bbp_converter_setting_callback_dbname() {
 ?>
 
-	<input name="_bbp_converter_db_name" id="_bbp_converter_db_name" type="text" value="<?php bbp_form_option( '_bbp_converter_db_name' ); ?>" class="medium-text" />
+	<input name="_bbp_converter_db_name" id="_bbp_converter_db_name" type="text" class="code" value="<?php bbp_form_option( '_bbp_converter_db_name' ); ?>" class="medium-text" />
 	<label for="_bbp_converter_db_name"><?php esc_html_e( 'Name of the database with your old forum data', 'bbpress' ); ?></label>
 
 <?php
@@ -1549,7 +1540,7 @@ function bbp_converter_setting_callback_options_section() {
 function bbp_converter_setting_callback_dbprefix() {
 ?>
 
-	<input name="_bbp_converter_db_prefix" id="_bbp_converter_db_prefix" type="text" value="<?php bbp_form_option( '_bbp_converter_db_prefix' ); ?>" class="medium-text" />
+	<input name="_bbp_converter_db_prefix" id="_bbp_converter_db_prefix" type="text" class="code" value="<?php bbp_form_option( '_bbp_converter_db_prefix' ); ?>" class="medium-text" />
 	<label for="_bbp_converter_db_prefix"><?php esc_html_e( '(If converting from BuddyPress Forums, use "wp_bb_" or your custom prefix)', 'bbpress' ); ?></label>
 
 <?php
@@ -1563,7 +1554,7 @@ function bbp_converter_setting_callback_dbprefix() {
 function bbp_converter_setting_callback_rows() {
 ?>
 
-	<input name="_bbp_converter_rows" id="_bbp_converter_rows" type="text" value="<?php bbp_form_option( '_bbp_converter_rows', '100' ); ?>" class="small-text" />
+	<input name="_bbp_converter_rows" id="_bbp_converter_rows" type="number" min="1" max="5000" value="<?php bbp_form_option( '_bbp_converter_rows', '100' ); ?>" class="small-text" />
 	<label for="_bbp_converter_rows"><?php esc_html_e( 'rows to process at a time', 'bbpress' ); ?></label>
 	<p class="description"><?php esc_html_e( 'Keep this low if you experience out-of-memory issues.', 'bbpress' ); ?></p>
 
@@ -1578,7 +1569,7 @@ function bbp_converter_setting_callback_rows() {
 function bbp_converter_setting_callback_delay_time() {
 ?>
 
-	<input name="_bbp_converter_delay_time" id="_bbp_converter_delay_time" type="text" value="<?php bbp_form_option( '_bbp_converter_delay_time', '1' ); ?>" class="small-text" />
+	<input name="_bbp_converter_delay_time" id="_bbp_converter_delay_time" type="number" min="1" max="3600" value="<?php bbp_form_option( '_bbp_converter_delay_time', '1' ); ?>" class="small-text" />
 	<label for="_bbp_converter_delay_time"><?php esc_html_e( 'second(s) delay between each group of rows', 'bbpress' ); ?></label>
 	<p class="description"><?php esc_html_e( 'Keep this high to prevent too-many-connection issues.', 'bbpress' ); ?></p>
 
@@ -1639,7 +1630,11 @@ function bbp_converter_setting_callback_convert_users() {
  * @uses do_settings_sections() To output the settings sections
  */
 function bbp_converter_settings_page() {
-?>
+
+	// Starting or continuing?
+	$start_text = get_option( '_bbp_converter_query', false )
+		? esc_html__( 'Continue', 'bbpress' )
+		: esc_html__( 'Start',    'bbpress' ); ?>
 
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
@@ -1652,9 +1647,8 @@ function bbp_converter_settings_page() {
 			<?php do_settings_sections( 'bbpress_converter' ); ?>
 
 			<p class="submit">
-				<input type="button" name="submit" class="button-primary" id="bbp-converter-start" value="<?php esc_attr_e( 'Start', 'bbpress' ); ?>" onclick="bbconverter_start();" />
+				<input type="button" name="submit" class="button-primary" id="bbp-converter-start" value="<?php echo esc_attr( $start_text ); ?>" onclick="bbconverter_start();" />
 				<input type="button" name="submit" class="button-primary" id="bbp-converter-stop" value="<?php esc_attr_e( 'Stop', 'bbpress' ); ?>" onclick="bbconverter_stop();" />
-				<img id="bbp-converter-progress" src="">
 			</p>
 
 			<div class="bbp-converter-updated" id="bbp-converter-message"></div>
