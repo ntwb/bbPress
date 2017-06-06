@@ -101,12 +101,12 @@ class BBP_Admin {
 	 */
 	private function setup_globals() {
 		$bbp              = bbpress();
-		$this->admin_dir  = trailingslashit( $bbp->includes_dir . 'admin'  ); // Admin path
-		$this->admin_url  = trailingslashit( $bbp->includes_url . 'admin'  ); // Admin url
-		$this->images_url = trailingslashit( $this->admin_url   . 'images' ); // Admin images URL
-		$this->styles_url = trailingslashit( $this->admin_url   . 'styles' ); // Admin styles URL
-		$this->css_url    = trailingslashit( $this->admin_url   . 'css'    ); // Admin css URL
-		$this->js_url     = trailingslashit( $this->admin_url   . 'js'     ); // Admin js URL
+		$this->admin_dir  = trailingslashit( $bbp->includes_dir . 'admin'      ); // Admin path
+		$this->admin_url  = trailingslashit( $bbp->includes_url . 'admin'      ); // Admin url
+		$this->images_url = trailingslashit( $this->admin_url   . 'images'     ); // Admin images URL
+		$this->styles_url = trailingslashit( $this->admin_url   . 'styles'     ); // Admin styles URL
+		$this->css_url    = trailingslashit( $this->admin_url   . 'assets/css' ); // Admin css URL
+		$this->js_url     = trailingslashit( $this->admin_url   . 'assets/js'  ); // Admin js URL
 	}
 
 	/**
@@ -452,7 +452,7 @@ class BBP_Admin {
 		}
 
 		// Filter & return
-		return apply_filters( 'bbp_map_settings_meta_caps', $caps, $cap, $user_id, $args );
+		return (array) apply_filters( 'bbp_map_settings_meta_caps', $caps, $cap, $user_id, $args );
 	}
 
 	/**

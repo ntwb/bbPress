@@ -51,6 +51,8 @@ function bbp_insert_forum( $forum_data = array(), $forum_meta = array() ) {
 
 	// Forum meta
 	$forum_meta = bbp_parse_args( $forum_meta, array(
+		'forum_type'           => 'forum',
+		'status'               => 'open',
 		'reply_count'          => 0,
 		'topic_count'          => 0,
 		'topic_count_hidden'   => 0,
@@ -65,12 +67,19 @@ function bbp_insert_forum( $forum_data = array(), $forum_meta = array() ) {
 
 	// Insert forum meta
 	foreach ( $forum_meta as $meta_key => $meta_value ) {
-		update_post_meta( $forum_id, '_bbp_' . $meta_key, $meta_value );
+
+		// Prefix if not prefixed
+		if ( '_bbp_' !== substr( $meta_key, 0, 5 ) ) {
+			$meta_key = '_bbp_' . $meta_key;
+		}
+
+		// Update the meta
+		update_post_meta( $forum_id, $meta_key, $meta_value );
 	}
 
 	// Update the forum and hierarchy
 	bbp_update_forum( array(
-		'forum_id' => $forum_id,
+		'forum_id' => $forum_id
 	) );
 
 	/**
@@ -855,13 +864,13 @@ function bbp_publicize_forum( $forum_id = 0, $current_visibility = '' ) {
 	// Find this forum in the array
 	if ( in_array( $forum_id, $private, true ) ) {
 
-		$offset = array_search( $forum_id, $private );
+		$offset = array_search( $forum_id, $private, true );
 
 		// Splice around it
 		array_splice( $private, $offset, 1 );
 
 		// Update private forums minus this one
-		update_option( '_bbp_private_forums', array_unique( array_filter( array_values( $private ) ) ) );
+		update_option( '_bbp_private_forums', bbp_get_unique_array_values( $private ) );
 	}
 
 	// Get hidden forums
@@ -870,13 +879,13 @@ function bbp_publicize_forum( $forum_id = 0, $current_visibility = '' ) {
 	// Find this forum in the array
 	if ( in_array( $forum_id, $hidden, true ) ) {
 
-		$offset = array_search( $forum_id, $hidden );
+		$offset = array_search( $forum_id, $hidden, true );
 
 		// Splice around it
 		array_splice( $hidden, $offset, 1 );
 
 		// Update hidden forums minus this one
-		update_option( '_bbp_hidden_forums', array_unique( array_filter( array_values( $hidden ) ) ) );
+		update_option( '_bbp_hidden_forums', bbp_get_unique_array_values( $hidden ) );
 	}
 
 	// Only run queries if visibility is changing
@@ -916,19 +925,19 @@ function bbp_privatize_forum( $forum_id = 0, $current_visibility = '' ) {
 		// Find this forum in the array
 		if ( in_array( $forum_id, $hidden, true ) ) {
 
-			$offset = array_search( $forum_id, $hidden );
+			$offset = array_search( $forum_id, $hidden, true );
 
 			// Splice around it
 			array_splice( $hidden, $offset, 1 );
 
 			// Update hidden forums minus this one
-			update_option( '_bbp_hidden_forums', array_unique( array_filter( array_values( $hidden ) ) ) );
+			update_option( '_bbp_hidden_forums', bbp_get_unique_array_values( $hidden ) );
 		}
 
 		// Add to '_bbp_private_forums' site option
 		$private   = bbp_get_private_forum_ids();
 		$private[] = $forum_id;
-		update_option( '_bbp_private_forums', array_unique( array_filter( array_values( $private ) ) ) );
+		update_option( '_bbp_private_forums', bbp_get_unique_array_values( $private ) );
 
 		// Update forums visibility setting
 		$bbp_db = bbp_db();
@@ -966,19 +975,19 @@ function bbp_hide_forum( $forum_id = 0, $current_visibility = '' ) {
 		// Find this forum in the array
 		if ( in_array( $forum_id, $private, true ) ) {
 
-			$offset = array_search( $forum_id, $private );
+			$offset = array_search( $forum_id, $private, true );
 
 			// Splice around it
 			array_splice( $private, $offset, 1 );
 
 			// Update private forums minus this one
-			update_option( '_bbp_private_forums', array_unique( array_filter( array_values( $private ) ) ) );
+			update_option( '_bbp_private_forums', bbp_get_unique_array_values( $private ) );
 		}
 
 		// Add to '_bbp_hidden_forums' site option
 		$hidden   = bbp_get_hidden_forum_ids();
 		$hidden[] = $forum_id;
-		update_option( '_bbp_hidden_forums', array_unique( array_filter( array_values( $hidden ) ) ) );
+		update_option( '_bbp_hidden_forums', bbp_get_unique_array_values( $hidden ) );
 
 		// Update forums visibility setting
 		$bbp_db = bbp_db();
@@ -2253,7 +2262,7 @@ function bbp_pre_get_posts_normalize_forum_visibility( $posts_query = null ) {
 
 		// Remove bbp_get_private_status_id() if user is not capable
 		if ( ! current_user_can( 'read_private_forums' ) ) {
-			$key = array_search( bbp_get_private_status_id(), $post_stati );
+			$key = array_search( bbp_get_private_status_id(), $post_stati, true );
 			if ( ! empty( $key ) ) {
 				unset( $post_stati[ $key ] );
 			}
@@ -2267,7 +2276,7 @@ function bbp_pre_get_posts_normalize_forum_visibility( $posts_query = null ) {
 
 		// Remove bbp_get_hidden_status_id() if user is not capable
 		if ( ! current_user_can( 'read_hidden_forums' ) ) {
-			$key = array_search( bbp_get_hidden_status_id(), $post_stati );
+			$key = array_search( bbp_get_hidden_status_id(), $post_stati, true );
 			if ( ! empty( $key ) ) {
 				unset( $post_stati[ $key ] );
 			}

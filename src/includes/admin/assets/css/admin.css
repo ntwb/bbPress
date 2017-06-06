@@ -313,3 +313,50 @@ body.post-type-reply strong.label {
 #bbp_topic_subscriptions_metabox .avatar {
 	margin: 3px;
 }
+
+/* Converter */
+
+#bbp-converter-monitor .inside {
+	margin-bottom: 0;
+}
+
+div.bbp-converter-log,
+div.bbp-converter-warning {
+	padding: 5px 0 5px 5px;
+}
+
+div.bbp-converter-log.started {
+	height: 300px;
+	overflow: auto;
+}
+
+div.bbp-converter-log p {
+	margin: 0;
+	padding: 2px;
+}
+
+div.bbp-converter-log p:only-child {
+	float: none;
+	margin-bottom: 0;
+}
+
+div.bbp-converter-log div {
+	padding: 10px;
+	margin: 5px;
+	background: #f4f4f4;
+	border: 1px solid #ddd;
+}
+
+div.bbp-converter-log div code {
+	margin-top: 5px;
+	display: block;
+}
+
+div.bbp-converter-log .step {
+	text-align: right;
+	font-weight: 600;
+}
+
+#bbp-converter-stop {
+	display: none;
+}
