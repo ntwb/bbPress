@@ -17,7 +17,7 @@
  * Description: bbPress is forum software with a twist from the creators of WordPress.
  * Author:      The bbPress Contributors
  * Author URI:  https://bbpress.org
- * Version:     2.6-beta-3
+ * Version:     2.6-rc-1
  * Text Domain: bbpress
  * Domain Path: /languages/
  * License:     GPLv2 or later (license.txt)
@@ -44,7 +44,7 @@ final class bbPress {
 	 * private array that gets updated with the help of PHP magic methods.
 	 *
 	 * This is a precautionary measure, to avoid potential errors produced by
-	 * unanticipated direct manipulation of bbPress's run-time data.
+	 * unanticipated direct manipulation of run-time data.
 	 *
 	 * @see bbPress::setup_globals()
 	 * @var array
@@ -204,24 +204,26 @@ final class bbPress {
 
 		/** Versions **********************************************************/
 
-		$this->version    = '2.6-beta-6338';
+		$this->version    = '2.6-rc-6513';
 		$this->db_version = '261';
 
 		/** Paths *************************************************************/
 
-		// Base name
-		$this->file       = __FILE__;
-		$this->basename   = apply_filters( 'bbp_plugin_basename', str_replace( array( 'build/', 'src/' ), '', plugin_basename( $this->file ) ) );
+		// File & base
+		$this->file         = __FILE__;
+		$this->basename     = apply_filters( 'bbp_plugin_basename', str_replace( array( 'build/', 'src/' ), '', plugin_basename( $this->file ) ) );
+		$this->basepath     = apply_filters( 'bbp_plugin_basepath', trailingslashit( dirname( $this->basename ) ) );
 
 		// Path and URL
-		$this->plugin_dir = apply_filters( 'bbp_plugin_dir_path', plugin_dir_path( $this->file ) );
-		$this->plugin_url = apply_filters( 'bbp_plugin_dir_url',  plugin_dir_url ( $this->file ) );
+		$this->plugin_dir   = apply_filters( 'bbp_plugin_dir_path', plugin_dir_path( $this->file ) );
+		$this->plugin_url   = apply_filters( 'bbp_plugin_dir_url',  plugin_dir_url ( $this->file ) );
 
 		// Includes
 		$this->includes_dir = apply_filters( 'bbp_includes_dir', trailingslashit( $this->plugin_dir . 'includes'  ) );
 		$this->includes_url = apply_filters( 'bbp_includes_url', trailingslashit( $this->plugin_url . 'includes'  ) );
 
 		// Languages
+		$this->lang_base    = apply_filters( 'bbp_lang_base',    trailingslashit( $this->basepath   . 'languages' ) );
 		$this->lang_dir     = apply_filters( 'bbp_lang_dir',     trailingslashit( $this->plugin_dir . 'languages' ) );
 
 		// Templates
@@ -485,22 +487,23 @@ final class bbPress {
 	 */
 	public function load_textdomain() {
 
-		// Traditional WordPress plugin locale filter
-		$locale        = apply_filters( 'plugin_locale', get_locale(), $this->domain );
-		$mofile        = sprintf( '%1$s-%2$s.mo', $this->domain, $locale );
+		// Define the old directory
+		$old_dir = WP_LANG_DIR . '/bbpress/';
 
-		// Setup paths to current locale file
-		$mofile_local  = $this->lang_dir . $mofile;
-		$mofile_global = WP_LANG_DIR . '/bbpress/' . $mofile;
+		// Old location, deprecated in 2.6.0
+		if ( is_dir( $old_dir ) ) {
 
-		// Look in global /wp-content/languages/bbpress folder
-		load_textdomain( $this->domain, $mofile_global );
+			// Get locale & file-name
+			$type   = is_admin() ? get_user_locale() : get_locale();
+			$locale = apply_filters( 'plugin_locale', $type, $this->domain );
+			$mofile = sprintf( '%1$s-%2$s.mo', $this->domain, $locale );
 
-		// Look in local /wp-content/plugins/bbpress/languages/ folder
-		load_textdomain( $this->domain, $mofile_local );
+			// Look in global /wp-content/languages/bbpress/ folder
+			load_textdomain( $this->domain, $old_dir . $mofile );
+		}
 
 		// Look in global /wp-content/languages/plugins/
-		load_plugin_textdomain( $this->domain );
+		load_plugin_textdomain( $this->domain, false, $this->lang_base );
 	}
 
 	/**

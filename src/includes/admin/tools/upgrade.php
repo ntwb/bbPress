@@ -28,7 +28,7 @@ function bbp_admin_upgrade_page() {
 
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( __( 'Upgrade Forums', 'bbpress' ) ); ?></h2>
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Upgrade Forums', 'bbpress' ) ); ?></h2>
 
 		<p><?php esc_html_e( 'As bbPress improves, occasionally database upgrades are required but some forums are too large to upgrade automatically. Use the tools below to manually run upgrade routines.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 upgrade at a time.', 'bbpress' ); ?></p>
@@ -165,8 +165,8 @@ function bbp_admin_upgrade_user_engagements() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Upgrading user engagements &hellip; %s', 'bbpress' );
-	$result    = __( 'No engagements to upgrade.',             'bbpress' );
+	$statement = esc_html__( 'Upgrading user engagements&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No engagements to upgrade.',            'bbpress' );
 
 	// Delete previous engagements
 	$sql_delete = "DELETE FROM {$bbp_db->postmeta} WHERE meta_key = '_bbp_engagement'";
@@ -174,7 +174,7 @@ function bbp_admin_upgrade_user_engagements() {
 		return array( 1, sprintf( $statement, $result ) );
 	}
 
-	// Post types and status
+	// Post types and statuses
 	$tpt = bbp_get_topic_post_type();
 	$rpt = bbp_get_reply_post_type();
 	$pps = bbp_get_public_status_id();
@@ -189,7 +189,9 @@ function bbp_admin_upgrade_user_engagements() {
 					AND posts.post_status IN (%s, %s)
 				GROUP BY postmeta.meta_value, posts.post_author)", $tpt, $rpt, $pps, $cps );
 
-	$engagements = $bbp_db->query( $sql );
+	// Run the big query
+	$prepare     = $bbp_db->prepare( $sql, $tpt, $rpt, $pps, $cps );
+	$engagements = $bbp_db->query( $prepare );
 
 	// Bail if no closed topics found
 	if ( empty( $engagements ) || is_wp_error( $engagements ) ) {
@@ -199,6 +201,145 @@ function bbp_admin_upgrade_user_engagements() {
 	// Complete results
 	$result = sprintf( _n( 'Complete! %d engagements upgraded.', 'Complete! %d engagements upgraded.', $engagements, 'bbpress' ), $engagements );
 
+	return array( 0, sprintf( $statement, $result ) );
+}
+
+/**
+ * Upgrade group forum ID mappings after a bbPress 1.x to bbPress 2.x conversion
+ *
+ * Previously named: bbp_admin_repair_group_forum_relationships()
+ *
+ * @since 2.6.0 bbPress (r4395)
+ *
+ * @uses bbp_get_forum_post_type() To get the forum post type
+ * @return If a wp_error() occurs and no converted forums are found
+ */
+function bbp_admin_upgrade_group_forum_relationships() {
+
+	// Define variables
+	$bbp_db    = bbp_db();
+	$statement = esc_html__( 'Upgrading BuddyPress group-forum relationships&hellip; %s', 'bbpress' );
+	$g_count   = 0;
+	$f_count   = 0;
+	$s_count   = 0;
+
+	// Copy the BuddyPress filter here, incase BuddyPress is not active
+	$prefix            = apply_filters( 'bp_core_get_table_prefix', $bbp_db->base_prefix );
+	$groups_table      = $prefix . 'bp_groups';
+	$groups_meta_table = $prefix . 'bp_groups_groupmeta';
+
+	// Get the converted forum IDs
+	$forum_ids = $bbp_db->query( "SELECT `forum`.`ID`, `forummeta`.`meta_value`
+								FROM `{$bbp_db->posts}` AS `forum`
+									LEFT JOIN `{$bbp_db->postmeta}` AS `forummeta`
+										ON `forum`.`ID` = `forummeta`.`post_id`
+										AND `forummeta`.`meta_key` = '_bbp_old_forum_id'
+								WHERE `forum`.`post_type` = '" . bbp_get_forum_post_type() . "'
+								GROUP BY `forum`.`ID`" );
+
+	// Bail if forum IDs returned an error
+	if ( is_wp_error( $forum_ids ) || empty( $bbp_db->last_result ) ) {
+		return array( 2, sprintf( $statement, esc_html__( 'Failed!', 'bbpress' ) ) );
+	}
+
+	// Stash the last results
+	$results = $bbp_db->last_result;
+
+	// Update each group forum
+	foreach ( $results as $group_forums ) {
+
+		// Only update if is a converted forum
+		if ( empty( $group_forums->meta_value ) ) {
+			continue;
+		}
+
+		// Attempt to update group meta
+		$updated = $bbp_db->query( "UPDATE `{$groups_meta_table}` SET `meta_value` = '{$group_forums->ID}' WHERE `meta_key` = 'forum_id' AND `meta_value` = '{$group_forums->meta_value}'" );
+
+		// Bump the count
+		if ( ! empty( $updated ) && ! is_wp_error( $updated ) ) {
+			++$g_count;
+		}
+
+		// Update group to forum relationship data
+		$group_id = (int) $bbp_db->get_var( "SELECT `group_id` FROM `{$groups_meta_table}` WHERE `meta_key` = 'forum_id' AND `meta_value` = '{$group_forums->ID}'" );
+		if ( ! empty( $group_id ) ) {
+
+			// Update the group to forum meta connection in forums
+			update_post_meta( $group_forums->ID, '_bbp_group_ids', array( $group_id ) );
+
+			// Get the group status
+			$group_status = $bbp_db->get_var( "SELECT `status` FROM `{$groups_table}` WHERE `id` = '{$group_id}'" );
+
+			// Sync up forum visibility based on group status
+			switch ( $group_status ) {
+
+				// Public groups have public forums
+				case 'public' :
+					bbp_publicize_forum( $group_forums->ID );
+
+					// Bump the count for output later
+					++$s_count;
+					break;
+
+				// Private/hidden groups have hidden forums
+				case 'private' :
+				case 'hidden'  :
+					bbp_hide_forum( $group_forums->ID );
+
+					// Bump the count for output later
+					++$s_count;
+					break;
+			}
+
+			// Bump the count for output later
+			++$f_count;
+		}
+	}
+
+	// Make some logical guesses at the old group root forum
+	if ( function_exists( 'bp_forums_parent_forum_id' ) ) {
+		$old_default_forum_id = bp_forums_parent_forum_id();
+	} elseif ( defined( 'BP_FORUMS_PARENT_FORUM_ID' ) ) {
+		$old_default_forum_id = (int) BP_FORUMS_PARENT_FORUM_ID;
+	} else {
+		$old_default_forum_id = 1;
+	}
+
+	// Try to get the group root forum
+	$posts = get_posts( array(
+		'post_type'   => bbp_get_forum_post_type(),
+		'meta_key'    => '_bbp_old_forum_id',
+		'meta_type'   => 'NUMERIC',
+		'meta_value'  => $old_default_forum_id,
+		'numberposts' => 1
+	) );
+
+	// Found the group root forum
+	if ( ! empty( $posts ) ) {
+
+		// Rename 'Default Forum'  since it's now visible in sitewide forums
+		if ( 'Default Forum' === $posts[0]->post_title ) {
+			wp_update_post( array(
+				'ID'         => $posts[0]->ID,
+				'post_title' => esc_html__( 'Group Forums', 'bbpress' ),
+				'post_name'  => esc_html__( 'group-forums', 'bbpress' ),
+			) );
+		}
+
+		// Update the group forums root metadata
+		update_option( '_bbp_group_forums_root_id', $posts[0]->ID );
+	}
+
+	// Remove old bbPress 1.1 roles (BuddyPress)
+	remove_role( 'member'    );
+	remove_role( 'inactive'  );
+	remove_role( 'blocked'   );
+	remove_role( 'moderator' );
+	remove_role( 'keymaster' );
+
+	// Complete results
+	$result = sprintf( esc_html__( 'Complete! %s groups updated; %s forums updated; %s forum statuses synced.', 'bbpress' ), bbp_number_format( $g_count ), bbp_number_format( $f_count ), bbp_number_format( $s_count ) );
 	return array( 0, sprintf( $statement, $result ) );
 }
 
@@ -213,11 +354,16 @@ function bbp_admin_upgrade_user_favorites() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Upgrading user favorites &hellip; %s', 'bbpress' );
-	$result    = __( 'No favorites to upgrade.',             'bbpress' );
+	$statement = esc_html__( 'Upgrading user favorites&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No favorites to upgrade.',            'bbpress' );
 	$total     = 0;
-	$key       = $bbp_db->prefix . '_bbp_favorites';
-	$favs      = $bbp_db->get_results( $bbp_db->prepare( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s", $key ) );
+	$old_key   = $bbp_db->prefix . '_bbp_favorites';
+	$new_key   = '_bbp_favorite';
+
+	// Results
+	$query     = "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s";
+	$prepare   = $bbp_db->prepare( $query, $old_key );
+	$favs      = $bbp_db->get_results( $prepare );
 
 	// Bail if no closed topics found
 	if ( empty( $favs ) || is_wp_error( $favs ) ) {
@@ -234,12 +380,12 @@ function bbp_admin_upgrade_user_favorites() {
 		foreach ( $post_ids as $post_id ) {
 
 			// Skip if already exists
-			if ( $bbp_db->get_var( $bbp_db->prepare( "SELECT COUNT(*) FROM {$bbp_db->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_value = %d", $post_id, '_bbp_favorite', $meta->user_id ) ) ) {
+			if ( $bbp_db->get_var( $bbp_db->prepare( "SELECT COUNT(*) FROM {$bbp_db->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_value = %d", $post_id, $new_key, $meta->user_id ) ) ) {
 				continue;
 			}
 
 			// Add the post meta
-			$added = add_post_meta( $post_id, '_bbp_favorite', $meta->user_id, false );
+			$added = add_post_meta( $post_id, $new_key, $meta->user_id, false );
 
 			// Bump counts if successfully added
 			if ( ! empty( $added ) ) {
@@ -268,11 +414,16 @@ function bbp_admin_upgrade_user_topic_subscriptions() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Upgrading user topic subscriptions &hellip; %s', 'bbpress' );
-	$result    = __( 'No topic subscriptions to upgrade.',             'bbpress' );
+	$statement = esc_html__( 'Upgrading user topic subscriptions&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No topic subscriptions to upgrade.',            'bbpress' );
 	$total     = 0;
-	$key       = $bbp_db->prefix . '_bbp_subscriptions';
-	$subs      = $bbp_db->get_results( $bbp_db->prepare( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id", $key ) );
+	$old_key   = $bbp_db->prefix . '_bbp_subscriptions';
+	$new_key   = '_bbp_subscription';
+
+	// Results
+	$query     = "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id";
+	$prepare   = $bbp_db->prepare( $query, $old_key );
+	$subs      = $bbp_db->get_results( $prepare );
 
 	// Bail if no topic subscriptions found
 	if ( empty( $subs ) || is_wp_error( $subs ) ) {
@@ -289,12 +440,12 @@ function bbp_admin_upgrade_user_topic_subscriptions() {
 		foreach ( $post_ids as $post_id ) {
 
 			// Skip if already exists
-			if ( $bbp_db->get_var( $bbp_db->prepare( "SELECT COUNT(*) FROM {$bbp_db->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_value = %d", $post_id, '_bbp_subscription', $meta->user_id ) ) ) {
+			if ( $bbp_db->get_var( $bbp_db->prepare( "SELECT COUNT(*) FROM {$bbp_db->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_value = %d", $post_id, $new_key, $meta->user_id ) ) ) {
 				continue;
 			}
 
 			// Add the post meta
-			$added = add_post_meta( $post_id, '_bbp_subscription', $meta->user_id, false );
+			$added = add_post_meta( $post_id, $new_key, $meta->user_id, false );
 
 			// Bump counts if successfully added
 			if ( ! empty( $added ) ) {
@@ -323,11 +474,16 @@ function bbp_admin_upgrade_user_forum_subscriptions() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Upgrading user forum subscriptions &hellip; %s', 'bbpress' );
-	$result    = __( 'No forum subscriptions to upgrade.',             'bbpress' );
+	$statement = esc_html__( 'Upgrading user forum subscriptions&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No forum subscriptions to upgrade.',            'bbpress' );
 	$total     = 0;
-	$key       = $bbp_db->prefix . '_bbp_forum_subscriptions';
-	$subs      = $bbp_db->get_results( $bbp_db->prepare( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id", $key ) );
+	$old_key   = $bbp_db->prefix . '_bbp_forum_subscriptions';
+	$new_key   = '_bbp_subscription';
+
+	// Results
+	$query     = "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id";
+	$prepare   = $bbp_db->prepare( $query, $old_key );
+	$subs      = $bbp_db->get_results( $prepare );
 
 	// Bail if no forum subscriptions found
 	if ( empty( $subs ) || is_wp_error( $subs ) ) {
@@ -344,12 +500,12 @@ function bbp_admin_upgrade_user_forum_subscriptions() {
 		foreach ( $post_ids as $post_id ) {
 
 			// Skip if already exists
-			if ( $bbp_db->get_var( $bbp_db->prepare( "SELECT COUNT(*) FROM {$bbp_db->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_value = %d", $post_id, '_bbp_forum_subscription', $meta->user_id ) ) ) {
+			if ( $bbp_db->get_var( $bbp_db->prepare( "SELECT COUNT(*) FROM {$bbp_db->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_value = %d", $post_id, $new_key, $meta->user_id ) ) ) {
 				continue;
 			}
 
 			// Add the post meta
-			$added = add_post_meta( $post_id, '_bbp_subscription', $meta->user_id, false );
+			$added = add_post_meta( $post_id, $new_key, $meta->user_id, false );
 
 			// Bump counts if successfully added
 			if ( ! empty( $added ) ) {
@@ -368,7 +524,7 @@ function bbp_admin_upgrade_user_forum_subscriptions() {
 }
 
 /**
- * Remove favorites data from wp_usermeta for bbPress 2.6 and higher
+ * Remove favorites data from user meta for bbPress 2.6 and higher
  *
  * @since 2.6.0 bbPress (r6281)
  *
@@ -378,16 +534,22 @@ function bbp_admin_upgrade_remove_favorites_from_usermeta() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Remove favorites from usermeta &hellip; %s', 'bbpress' );
-	$result    = __( 'No favorites to remove.',                    'bbpress' );
+	$statement = esc_html__( 'Remove favorites from usermeta&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No favorites to remove.',                   'bbpress' );
 	$total     = 0;
 	$key       = $bbp_db->prefix . '_bbp_favorites';
-	$favs      = $bbp_db->get_results( $bbp_db->prepare( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id", $key ) );
+
+	// Results
+	$query     = "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id";
+	$prepare   = $bbp_db->prepare( $query, $key );
+	$favs      = $bbp_db->get_results( $prepare );
 
 	// Bail if no favorites found
 	if ( empty( $favs ) || is_wp_error( $favs ) ) {
 		return array( 1, sprintf( $statement, $result ) );
 	}
+
+	delete_metadata( 'user', false, $meta_key, false, true );
 
 	// Loop through each user's favorites
 	foreach ( $favs as $meta ) {
@@ -409,7 +571,7 @@ function bbp_admin_upgrade_remove_favorites_from_usermeta() {
 }
 
 /**
- * Remove topic subscriptions data from wp_usermeta for bbPress 2.6 and higher
+ * Remove topic subscriptions data from user meta for bbPress 2.6 and higher
  *
  * @since 2.6.0 bbPress (r6281)
  *
@@ -419,11 +581,15 @@ function bbp_admin_upgrade_remove_topic_subscriptions_from_usermeta() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Remove topic subscriptions from usermeta &hellip; %s', 'bbpress' );
-	$result    = __( 'No topic subscriptions to remove.',                    'bbpress' );
+	$statement = esc_html__( 'Remove topic subscriptions from usermeta&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No topic subscriptions to remove.',                   'bbpress' );
 	$total     = 0;
 	$key       = $bbp_db->prefix . '_bbp_subscriptions';
-	$subs      = $bbp_db->get_results( $bbp_db->prepare( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id", $key ) );
+
+	// Results
+	$query     = "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id";
+	$prepare   = $bbp_db->prepare( $query, $key );
+	$subs      = $bbp_db->get_results( $prepare );
 
 	// Bail if no forum favorites found
 	if ( empty( $subs ) || is_wp_error( $subs ) ) {
@@ -450,7 +616,7 @@ function bbp_admin_upgrade_remove_topic_subscriptions_from_usermeta() {
 }
 
 /**
- * Remove topic subscriptions data from wp_usermeta for bbPress 2.6 and higher
+ * Remove topic subscriptions data from user meta for bbPress 2.6 and higher
  *
  * @since 2.6.0 bbPress (r6281)
  *
@@ -460,11 +626,15 @@ function bbp_admin_upgrade_remove_forum_subscriptions_from_usermeta() {
 
 	// Define variables
 	$bbp_db    = bbp_db();
-	$statement = __( 'Remove forum subscriptions from usermeta &hellip; %s', 'bbpress' );
-	$result    = __( 'No forum subscriptions to remove.',                    'bbpress' );
+	$statement = esc_html__( 'Remove forum subscriptions from usermeta&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'No forum subscriptions to remove.',                   'bbpress' );
 	$total     = 0;
 	$key       = $bbp_db->prefix . '_bbp_forum_subscriptions';
-	$subs      = $bbp_db->get_results( $bbp_db->prepare( "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id", $key ) );
+
+	// Query
+	$query     = "SELECT * FROM {$bbp_db->usermeta} WHERE meta_key = %s ORDER BY user_id";
+	$prepare   = $bbp_db->prepare( $query, $key );
+	$subs      = $bbp_db->get_results( $prepare );
 
 	// Bail if no forum favorites found
 	if ( empty( $subs ) || is_wp_error( $subs ) ) {

@@ -42,7 +42,7 @@ function bbp_insert_topic( $topic_data = array(), $topic_meta = array() ) {
 	), 'insert_topic' );
 
 	// Insert topic
-	$topic_id = wp_insert_post( $topic_data );
+	$topic_id = wp_insert_post( $topic_data, false );
 
 	// Bail if no topic was added
 	if ( empty( $topic_id ) ) {
@@ -124,8 +124,6 @@ function bbp_insert_topic( $topic_data = array(), $topic_meta = array() ) {
  * @uses add_post_meta() To add spam status meta to spam topics
  * @uses do_action() Calls 'bbp_new_topic' with the topic id, forum id,
  *                    anonymous data and reply author
- * @uses bbp_stick_topic() To stick or super stick the topic
- * @uses bbp_unstick_topic() To unstick the topic
  * @uses bbp_get_topic_permalink() To get the topic permalink
  * @uses bbp_redirect() To redirect to the topic link
  * @uses bbPress::errors::get_error_messages() To get the {@link WP_Error} error
@@ -351,7 +349,7 @@ function bbp_new_topic_handler( $action = '' ) {
 	) );
 
 	// Insert topic
-	$topic_id = wp_insert_post( $topic_data );
+	$topic_id = wp_insert_post( $topic_data, true );
 
 	/** No Errors *************************************************************/
 
@@ -426,10 +424,15 @@ function bbp_new_topic_handler( $action = '' ) {
 		// Redirect back to new topic
 		bbp_redirect( $redirect_url );
 
-	// Errors
+	/** Errors ****************************************************************/
+
+	// WP_Error
+	} elseif ( is_wp_error( $topic_id ) ) {
+		bbp_add_error( 'bbp_topic_error', sprintf( __( '<strong>ERROR</strong>: The following problem(s) occurred: %s', 'bbpress' ), $topic_id->get_error_message() ) );
+
+	// Generic error
 	} else {
-		$append_error = ( is_wp_error( $topic_id ) && $topic_id->get_error_message() ) ? $topic_id->get_error_message() . ' ' : '';
-		bbp_add_error( 'bbp_topic_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your topic:' . $append_error, 'bbpress' ) );
+		bbp_add_error( 'bbp_topic_error', __( '<strong>ERROR</strong>: The topic was not created.', 'bbpress' ) );
 	}
 }
 
@@ -1469,8 +1472,8 @@ function bbp_merge_topic_count( $destination_topic_id, $source_topic_id, $source
  * @uses wp_get_post_terms() To get the source topic tags
  * @uses wp_set_post_terms() To set the topic tags
  * @uses bbp_get_reply_post_type() To get the reply post type
- * @uses wpdb::prepare() To prepare our sql query
- * @uses wpdb::get_results() To execute the sql query and get results
+ * @uses wpdb::prepare() To prepare our database query
+ * @uses wpdb::get_results() To execute the database query and get results
  * @uses wp_update_post() To update the replies
  * @uses bbp_update_reply_topic_id() To update the reply topic id
  * @uses bbp_get_topic_forum_id() To get the topic forum id
@@ -2343,7 +2346,9 @@ function bbp_toggle_topic( $args = array() ) {
 					$retval['view_all']    = true;
 					$retval['status']      = wp_trash_post( $r['id'] );
 					$retval['message']     = __( '<strong>ERROR</strong>: There was a problem trashing the topic.', 'bbpress' );
-					$retval['redirect_to'] = bbp_get_topic_permalink( $r['id'] );
+					$retval['redirect_to'] = current_user_can( 'view_trash' )
+						? bbp_get_topic_permalink( $r['id'] )
+						: bbp_get_forum_permalink( bbp_get_topic_forum_id( $r['id'] ) );
 
 					break;
 
@@ -2787,7 +2792,7 @@ function bbp_update_topic_reply_count( $topic_id = 0, $reply_count = 0 ) {
  * @uses bbp_get_spam_status_id() To get the spam status id
  * @uses bbp_get_pending_status_id() To get the pending status id
  * @uses bbp_get_reply_post_type() To get the reply post type
- * @uses wpdb::prepare() To prepare our sql query
+ * @uses wpdb::prepare() To prepare our database query
  * @uses wpdb::get_var() To execute our query and get the var back
  * @uses update_post_meta() To update the topic hidden reply count meta
  * @uses apply_filters() Calls 'bbp_update_topic_reply_count_hidden' with the
@@ -2959,6 +2964,7 @@ function bbp_update_topic_last_reply_id( $topic_id = 0, $reply_id = 0 ) {
  * Adjust the total voice count of a topic
  *
  * @since 2.0.0 bbPress (r2567)
+ * @since 2.6.0 bbPress (r6515) This must be called after any engagement changes
  *
  * @param int $topic_id Optional. Topic id to update
  * @uses bbp_is_reply() To check if the passed topic id is a reply
@@ -2967,7 +2973,7 @@ function bbp_update_topic_last_reply_id( $topic_id = 0, $reply_id = 0 ) {
  * @uses bbp_get_reply_topic_id() To get the reply topic id
  * @uses bbp_get_reply_post_type() To get the reply post type
  * @uses bbp_get_topic_post_type() To get the topic post type
- * @uses wpdb::prepare() To prepare our sql query
+ * @uses wpdb::prepare() To prepare our database query
  * @uses wpdb::get_var() To execute our query and get the column back
  * @uses update_post_meta() To update the topic voice count meta
  * @uses apply_filters() Calls 'bbp_update_topic_voice_count' with the voice
@@ -2976,57 +2982,14 @@ function bbp_update_topic_last_reply_id( $topic_id = 0, $reply_id = 0 ) {
  */
 function bbp_update_topic_voice_count( $topic_id = 0 ) {
 
-	// If it's a reply, then get the parent (topic id)
-	if ( bbp_is_reply( $topic_id ) ) {
-		$topic_id = bbp_get_reply_topic_id( $topic_id );
-	} elseif ( bbp_is_topic( $topic_id ) ) {
-		$topic_id = bbp_get_topic_id( $topic_id );
-	} else {
-		return;
-	}
-
-	// Query the DB to get voices in this topic
-	// See: https://bbpress.trac.wordpress.org/ticket/3083
-	$bbp_db  = bbp_db();
-	$sql     = "SELECT DISTINCT( post_author ) FROM (
-			        SELECT post_author FROM {$bbp_db->posts}
-			            WHERE ( ID = %d AND post_type = %s )
-			        UNION
-			        SELECT post_author FROM {$bbp_db->posts}
-				        WHERE ( post_parent = %d AND post_status = %s AND post_type = %s )
-			    ) as u1";
-	$query   = $bbp_db->prepare( $sql, $topic_id, bbp_get_topic_post_type(), $topic_id, bbp_get_public_status_id(), bbp_get_reply_post_type() );
-	$results = $bbp_db->get_col( $query );
-
-	// Parse results into voices
-	$new_voices  = ! is_wp_error( $results )
-		? wp_parse_id_list( array_filter( $results ) )
-		: array();
-
 	// Get the old voices
-	$old_voices = bbp_get_topic_engagements( $topic_id );
-
-	// Get the count
-	$new_count = count( $new_voices );
-	$old_count = count( $old_voices );
-
-	// Only recalculate if count is different
-	if ( $new_count !== $old_count ) {
-
-		// Delete all engagements
-		delete_post_meta( $topic_id, '_bbp_engagement' );
-
-		// Update the voice count for this topic id
-		foreach ( $new_voices as $user_id ) {
-			bbp_add_user_engagement( $user_id, $topic_id );
-		}
-	}
+	$count = count( bbp_get_topic_engagements( $topic_id ) );
 
 	// Update the voice count for this topic id
-	update_post_meta( $topic_id, '_bbp_voice_count', $new_count );
+	update_post_meta( $topic_id, '_bbp_voice_count', $count );
 
 	// Filter & return
-	return (int) apply_filters( 'bbp_update_topic_voice_count', $new_count, $topic_id );
+	return (int) apply_filters( 'bbp_update_topic_voice_count', $count, $topic_id );
 }
 
 /**
@@ -3041,7 +3004,7 @@ function bbp_update_topic_voice_count( $topic_id = 0 ) {
  * @uses bbp_get_reply_topic_id() To get the reply topic id
  * @uses bbp_get_reply_post_type() To get the reply post type
  * @uses bbp_get_topic_post_type() To get the topic post type
- * @uses wpdb::prepare() To prepare our sql query
+ * @uses wpdb::prepare() To prepare our database query
  * @uses wpdb::get_var() To execute our query and get the column back
  * @uses update_post_meta() To update the topic anonymous reply count meta
  * @uses apply_filters() Calls 'bbp_update_topic_anonymous_reply_count' with the

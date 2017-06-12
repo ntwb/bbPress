@@ -13,26 +13,25 @@ defined( 'ABSPATH' ) || exit;
 /** User Relationships ********************************************************/
 
 /**
- * Set a user id on an object
+ * Add a user id to an object
  *
  * @since 2.6.0 bbPress (r6109)
  *
  * @param int    $object_id The object id
  * @param int    $user_id   The user id
  * @param string $meta_key  The relationship key
- * @param string $meta_type The relationship type
+ * @param string $meta_type The relationship type (usually 'post')
+ * @param bool   $unique    Whether metadata should be unique to the object
  *
- * @uses add_post_meta() To set the term on the object
- * @uses apply_filters() Calls 'bbp_add_user_to_object' with the object id, user
- *                        id, and taxonomy
- * @return bool Returns true if the user taxonomy term is added to the object,
- *               otherwise false
+ * @uses add_metadata() To add the user to an object
+ *
+ * @return bool Returns true on success, false on failure
  */
-function bbp_add_user_to_object( $object_id = 0, $user_id = 0, $meta_key = '', $meta_type = 'post' ) {
-	$retval = add_metadata( $meta_type, $object_id, $meta_key, $user_id, false );
+function bbp_add_user_to_object( $object_id = 0, $user_id = 0, $meta_key = '', $meta_type = 'post', $unique = true ) {
+	$retval = add_metadata( $meta_type, $object_id, $meta_key, $user_id, $unique );
 
 	// Filter & return
-	return (bool) apply_filters( 'bbp_add_user_to_object', (bool) $retval, $object_id, $user_id, $meta_key, $meta_type );
+	return (bool) apply_filters( 'bbp_add_user_to_object', (bool) $retval, $object_id, $user_id, $meta_key, $meta_type, $unique );
 }
 
 /**
@@ -40,16 +39,14 @@ function bbp_add_user_to_object( $object_id = 0, $user_id = 0, $meta_key = '', $
  *
  * @since 2.6.0 bbPress (r6109)
  *
- * @param int    $object_id The post id
+ * @param int    $object_id The object id
  * @param int    $user_id   The user id
  * @param string $meta_key  The relationship key
- * @param string $meta_type The relationship type
+ * @param string $meta_type The relationship type (usually 'post')
  *
- * @uses delete_post_meta() To remove the term from the object
- * @uses apply_filters() Calls 'bbp_remove_user_from_object' with the object
- *                        id, user id, and taxonomy
- * @return bool Returns true is the user taxonomy term is removed from the object,
- *               otherwise false
+ * @uses delete_metadata() To remove a user from an objects
+ *
+ * @return bool Returns true on success, false on failure
  */
 function bbp_remove_user_from_object( $object_id = 0, $user_id = 0, $meta_key = '', $meta_type = 'post' ) {
 	$retval = delete_metadata( $meta_type, $object_id, $meta_key, $user_id, false );
@@ -59,7 +56,67 @@ function bbp_remove_user_from_object( $object_id = 0, $user_id = 0, $meta_key = 
 }
 
 /**
- * Get user taxonomy terms for an object
+ * Remove all users from an object
+ *
+ * @since 2.6.0 bbPress (r6109)
+ *
+ * @param int    $object_id The object id
+ * @param int    $user_id   The user id
+ * @param string $meta_key  The relationship key
+ * @param string $meta_type The relationship type (usually 'post')
+ *
+ * @uses delete_metadata() To remove all user from an object
+ *
+ * @return bool Returns true on success, false on failure
+ */
+function bbp_remove_all_users_from_object( $object_id = 0, $meta_key = '', $meta_type = 'post' ) {
+	$retval = delete_metadata( $meta_type, $object_id, $meta_key, null, false );
+
+	// Filter & return
+	return (bool) apply_filters( 'bbp_remove_all_users_from_object', (bool) $retval, $object_id, $meta_key, $meta_type );
+}
+
+/**
+ * Remove a user id from all objects
+ *
+ * @since 2.6.0 bbPress (r6109)
+ *
+ * @param int    $user_id   The user id
+ * @param string $meta_key  The relationship key
+ * @param string $meta_type The relationship type (usually 'post')
+ *
+ * @uses delete_metadata() To remove user from all objects
+ *
+ * @return bool Returns true on success, false on failure
+ */
+function bbp_remove_user_from_all_objects( $user_id = 0, $meta_key = '', $meta_type = 'post' ) {
+	$retval = delete_metadata( $meta_type, null, $meta_key, $user_id, true );
+
+	// Filter & return
+	return (bool) apply_filters( 'bbp_remove_user_from_all_objects', (bool) $retval, $user_id, $meta_key, $meta_type );
+}
+
+/**
+ * Remove all users from all objects
+ *
+ * @since 2.6.0 bbPress (r6109)
+ *
+ * @param string $meta_key  The relationship key
+ * @param string $meta_type The relationship type (usually 'post')
+ *
+ * @uses delete_metadata() To remove users from objects
+ *
+ * @return bool Returns true on success, false on failure
+ */
+function bbp_remove_all_users_from_all_objects( $meta_key = '', $meta_type = 'post' ) {
+	$retval = delete_metadata( $meta_type, null, $meta_key, null, true );
+
+	// Filter & return
+	return (bool) apply_filters( 'bbp_remove_all_users_from_all_objects', (bool) $retval, $meta_key, $meta_type );
+}
+
+/**
+ * Get users of an object
  *
  * @since 2.6.0 bbPress (r6109)
  *
@@ -67,10 +124,9 @@ function bbp_remove_user_from_object( $object_id = 0, $user_id = 0, $meta_key = 
  * @param string $meta_key  The key used to index this relationship
  * @param string $meta_type The type of meta to look in
  *
- * @uses get_post_meta() To get the user taxonomy terms
- * @uses apply_filters() Calls 'bbp_get_users_for_object' with the user
- *                        taxonomy terms, object id, and taxonomy
- * @return array Returns the user taxonomy terms of the object
+ * @uses get_metadata() To get the users of an object
+ *
+ * @return array Returns ids of users
  */
 function bbp_get_users_for_object( $object_id = 0, $meta_key = '', $meta_type = 'post' ) {
 	$meta   = get_metadata( $meta_type, $object_id, $meta_key, false );
@@ -81,20 +137,18 @@ function bbp_get_users_for_object( $object_id = 0, $meta_key = '', $meta_type = 
 }
 
 /**
- * Check if the user id is set on an object
+ * Check if an object has a specific user
  *
  * @since 2.6.0 bbPress (r6109)
  *
  * @param int    $object_id The object id
  * @param int    $user_id   The user id
  * @param string $meta_key  The relationship key
- * @param string $meta_type The relationship type
+ * @param string $meta_type The relationship type (usually 'post')
  *
- * @uses get_post_meta() To check if the user id is set on the object
- * @uses apply_filters() Calls 'bbp_is_object_of_user' with the object id,
- *                        user id, and taxonomy
- * @return bool Returns true if the user id is set on the object for the
- *               taxonomy, otherwise false
+ * @uses bbp_get_users_for_object() To get all users of an object
+ *
+ * @return bool Returns true if object has a user, false if not
  */
 function bbp_is_object_of_user( $object_id = 0, $user_id = 0, $meta_key = '', $meta_type = 'post' ) {
 	$user_ids = bbp_get_users_for_object( $object_id, $meta_key, $meta_type );
@@ -123,6 +177,47 @@ function bbp_get_topic_engagements( $topic_id = 0 ) {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_topic_engagements', $users, $topic_id );
+}
+
+/**
+ * Return the users who have engaged in a topic, directly with a database query
+ *
+ * See: https://bbpress.trac.wordpress.org/ticket/3083
+ *
+ * @since 2.6.0 bbPress (r6522)
+ *
+ * @param int $topic_id
+ *
+ * @return array
+ */
+function bbp_get_topic_engagements_raw( $topic_id = 0 ) {
+
+	// Default variables
+	$topic_id = bbp_get_topic_id( $topic_id );
+	$bbp_db   = bbp_db();
+	$statii   = "'" . implode( "', '", bbp_get_public_topic_statuses() ) . "'";
+
+	// A cool UNION query!
+	$sql = "
+SELECT DISTINCT( post_author ) FROM (
+	SELECT post_author FROM {$bbp_db->posts}
+		WHERE ( ID = %d AND post_status IN ({$statii}) AND post_type = %s )
+UNION
+	SELECT post_author FROM {$bbp_db->posts}
+		WHERE ( post_parent = %d AND post_status = %s AND post_type = %s )
+) as u1";
+
+	// Prepare & get results
+	$query   = $bbp_db->prepare( $sql, $topic_id, bbp_get_topic_post_type(), $topic_id, bbp_get_public_status_id(), bbp_get_reply_post_type() );
+	$results = $bbp_db->get_col( $query );
+
+	// Parse results into voices
+	$engagements = ! is_wp_error( $results )
+		? wp_parse_id_list( array_filter( $results ) )
+		: array();
+
+	// Filter & return
+	return (array) apply_filters( 'bbp_get_topic_engagements_raw', $engagements, $topic_id );
 }
 
 /**
@@ -162,7 +257,7 @@ function bbp_get_user_engagements( $user_id = 0 ) {
  * @uses bbp_get_topic_post_type() To get the topic post type
  * @uses apply_filters() Calls 'bbp_get_user_engaged_topic_ids' with
  *                        the engaged topics and user id
- * @return array|bool Results if user has engaged, otherwise null
+ * @return array Topic ids if user has engaged, otherwise empty array
  */
 function bbp_get_user_engaged_topic_ids( $user_id = 0 ) {
 	$user_id     = bbp_get_user_id( $user_id );
@@ -202,7 +297,7 @@ function bbp_is_user_engaged( $user_id = 0, $topic_id = 0 ) {
 	$retval   = bbp_is_object_of_user( $topic_id, $user_id, '_bbp_engagement' );
 
 	// Filter & return
-	return (bool) apply_filters( 'bbp_is_user_engaged', (bool) $retval, $user_id, $topic_id );
+	return (bool) apply_filters( 'bbp_is_user_engaged', $retval, $user_id, $topic_id );
 }
 
 /**
@@ -255,7 +350,7 @@ function bbp_add_user_engagement( $user_id = 0, $topic_id = 0 ) {
  * @return bool True if the topic was removed from user's engagements, otherwise
  *               false
  */
-function bbp_remove_user_engagement( $user_id, $topic_id ) {
+function bbp_remove_user_engagement( $user_id = 0, $topic_id = 0 ) {
 
 	// Bail if not enough info
 	if ( empty( $user_id ) || empty( $topic_id ) ) {
@@ -275,6 +370,43 @@ function bbp_remove_user_engagement( $user_id, $topic_id ) {
 	do_action( 'bbp_remove_user_engagement', $user_id, $topic_id );
 
 	return true;
+}
+
+/**
+ * Recalculate all of the users who have engaged in a topic.
+ *
+ * You may need to do this when deleting a reply
+ *
+ * @since 2.6.0 bbPress (r6522)
+ *
+ * @param int $topic_id
+ *
+ * @return boolean True if any engagements are added, false otherwise
+ */
+function bbp_recalculate_topic_engagements( $topic_id = 0 ) {
+
+	// Default return value
+	$retval = false;
+
+	// Bail if not enough info
+	$topic_id = bbp_get_topic_id( $topic_id );
+	if ( empty( $topic_id ) ) {
+		return $retval;
+	}
+
+	// Query for engagements
+	$engagements = bbp_get_topic_engagements_raw( $topic_id );
+
+	// Delete all engagements
+	bbp_remove_all_users_from_object( $topic_id, '_bbp_engagement' );
+
+	// Update the voice count for this topic id
+	foreach ( $engagements as $user_id ) {
+		$retval = bbp_add_user_engagement( $user_id, $topic_id );
+	}
+
+	// Filter & return
+	return (bool) apply_filters( 'bbp_recalculate_user_engagements', $retval, $topic_id );
 }
 
 /** Favorites *****************************************************************/
@@ -399,7 +531,7 @@ function bbp_is_user_favorite( $user_id = 0, $topic_id = 0 ) {
 	}
 
 	// Filter & return
-	return (bool) apply_filters( 'bbp_is_user_favorite', (bool) $retval, $user_id, $topic_id, $favorites );
+	return (bool) apply_filters( 'bbp_is_user_favorite', $retval, $user_id, $topic_id, $favorites );
 }
 
 /**
@@ -764,7 +896,7 @@ function bbp_get_user_subscribed_topic_ids( $user_id = 0 ) {
  * @uses bbp_get_forum_post_type() To get the forum post type
  * @uses bbp_get_topic_post_type() To get the topic post type
  * @uses apply_filters() Calls 'bbp_is_user_subscribed' with the bool, user id,
- *                        forum/topic id and subsriptions
+ *                        forum/topic id and subscriptions
  * @return bool True if the forum or topic is in user's subscriptions, otherwise false
  */
 function bbp_is_user_subscribed( $user_id = 0, $object_id = 0 ) {
@@ -861,7 +993,7 @@ function bbp_is_user_subscribed_to_forum( $user_id = 0, $forum_id = 0, $subscrib
 	}
 
 	// Filter & return
-	return (bool) apply_filters( 'bbp_is_user_subscribed_to_forum', (bool) $retval, $user_id, $forum_id, $subscribed_ids );
+	return (bool) apply_filters( 'bbp_is_user_subscribed_to_forum', $retval, $user_id, $forum_id, $subscribed_ids );
 }
 
 /**
@@ -919,7 +1051,7 @@ function bbp_is_user_subscribed_to_topic( $user_id = 0, $topic_id = 0, $subscrib
 	}
 
 	// Filter & return
-	return (bool) apply_filters( 'bbp_is_user_subscribed_to_topic', (bool) $retval, $user_id, $topic_id, $subscribed_ids );
+	return (bool) apply_filters( 'bbp_is_user_subscribed_to_topic', $retval, $user_id, $topic_id, $subscribed_ids );
 }
 
 /**
