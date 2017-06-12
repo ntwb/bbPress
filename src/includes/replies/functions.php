@@ -837,7 +837,7 @@ function bbp_edit_reply_handler( $action = '' ) {
  * @uses bbp_update_reply_forum_id() To update the reply forum id
  * @uses bbp_update_reply_topic_id() To update the reply topic id
  * @uses bbp_update_reply_to() To update the reply to id
- * @uses bbp_update_reply_walker() To update the reply's ancestors' counts
+ * @uses bbp_update_reply_walker() To update the ancestor counts of a reply
  */
 function bbp_update_reply( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymous_data = array(), $author_id = 0, $is_edit = false, $reply_to = 0 ) {
 
@@ -963,12 +963,6 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
 		// Get the topic ID if none was passed
 		if ( empty( $topic_id ) ) {
 			$topic_id = bbp_get_reply_topic_id( $reply_id );
-
-			// Make every effort to get topic id
-			// https://bbpress.trac.wordpress.org/ticket/2529
-			if ( empty( $topic_id ) && ( current_filter() === 'bbp_deleted_reply' ) ) {
-				$topic_id = get_post_field( 'post_parent', $reply_id );
-			}
 		}
 
 		// Get the forum ID if none was passed
@@ -1062,12 +1056,12 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
  * @param int $forum_id Optional. Forum id
  * @uses bbp_get_reply_id() To get the reply id
  * @uses bbp_get_forum_id() To get the forum id
- * @uses get_post_ancestors() To get the reply's forum
+ * @uses get_post_ancestors() To get the ancestors of a reply
  * @uses get_post_field() To get the post type of the post
  * @uses update_post_meta() To update the reply forum id meta
  * @uses apply_filters() Calls 'bbp_update_reply_forum_id' with the forum id
  *                        and reply id
- * @return bool Reply's forum id
+ * @return bool The forum id of the reply
  */
 function bbp_update_reply_forum_id( $reply_id = 0, $forum_id = 0 ) {
 
@@ -1112,12 +1106,12 @@ function bbp_update_reply_forum_id( $reply_id = 0, $forum_id = 0 ) {
  * @param int $topic_id Optional. Topic id
  * @uses bbp_get_reply_id() To get the reply id
  * @uses bbp_get_topic_id() To get the topic id
- * @uses get_post_ancestors() To get the reply's topic
+ * @uses get_post_ancestors() To get the ancestors of a reply
  * @uses get_post_field() To get the post type of the post
  * @uses update_post_meta() To update the reply topic id meta
  * @uses apply_filters() Calls 'bbp_update_reply_topic_id' with the topic id
  *                        and reply id
- * @return bool Reply's topic id
+ * @return bool The topic id of the reply
  */
 function bbp_update_reply_topic_id( $reply_id = 0, $topic_id = 0 ) {
 
@@ -1154,7 +1148,7 @@ function bbp_update_reply_topic_id( $reply_id = 0, $topic_id = 0 ) {
 }
 
 /*
- * Update the reply's meta data with its reply to id
+ * Update the meta data with its parent reply-to id, of a reply
  *
  * @since 2.4.0 bbPress (r4944)
  *
@@ -1164,7 +1158,7 @@ function bbp_update_reply_topic_id( $reply_id = 0, $topic_id = 0 ) {
  * @uses update_post_meta() To update the reply to meta
  * @uses apply_filters() Calls 'bbp_update_reply_to' with the reply id and
  *                        and reply to id
- * @return bool Reply's parent reply id
+ * @return bool The parent reply id of the reply
  */
 function bbp_update_reply_to( $reply_id = 0, $reply_to = 0 ) {
 
@@ -1342,7 +1336,7 @@ function bbp_move_reply_handler( $action = '' ) {
 
 	/** Topic to Move From ***************************************************/
 
-	// Get the reply's current topic
+	// Get the current topic a reply is in
 	$source_topic = bbp_get_topic( $move_reply->post_parent );
 
 	// No topic
@@ -2064,6 +2058,8 @@ function bbp_untrash_reply( $reply_id = 0 ) {
 /**
  * Called after deleting a reply
  *
+ * @since 2.0.0 bbPress (r2993)
+ *
  * @uses bbp_get_reply_id() To get the reply id
  * @uses bbp_is_reply() To check if the passed id is a reply
  * @uses do_action() Calls 'bbp_deleted_reply' with the reply id
@@ -2081,6 +2077,8 @@ function bbp_deleted_reply( $reply_id = 0 ) {
 /**
  * Called after trashing a reply
  *
+ * @since 2.0.0 bbPress (r2993)
+ *
  * @uses bbp_get_reply_id() To get the reply id
  * @uses bbp_is_reply() To check if the passed id is a reply
  * @uses do_action() Calls 'bbp_trashed_reply' with the reply id
@@ -2097,6 +2095,8 @@ function bbp_trashed_reply( $reply_id = 0 ) {
 
 /**
  * Called after untrashing (restoring) a reply
+ *
+ * @since 2.0.0 bbPress (r2993)
  *
  * @uses bbp_get_reply_id() To get the reply id
  * @uses bbp_is_reply() To check if the passed id is a reply
