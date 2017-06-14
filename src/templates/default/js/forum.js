@@ -22,6 +22,6 @@ jQuery( document ).ready( function ( $ ) {
 
 	$( '#subscription-toggle' ).on( 'click', 'span a.subscription-toggle', function( e ) {
 		e.preventDefault();
-		bbp_ajax_call( 'forum_subscription', $( this ).attr( 'data-forum' ), bbpForumJS.subs_nonce, '#subscription-toggle' );
+		bbp_ajax_call( 'forum_subscription', $( this ).attr( 'data-forum' ), $( this ).data( 'bbp-nonce' ), '#subscription-toggle' );
 	} );
 } );
