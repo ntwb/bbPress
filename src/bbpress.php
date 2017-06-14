@@ -74,6 +74,11 @@ final class bbPress {
 	public $options = array();
 
 	/**
+	 * @var array Storage of options not in the database
+	 */
+	public $not_options = array();
+
+	/**
 	 * @var array Overloads get_user_meta()
 	 */
 	public $user_options = array();
@@ -204,7 +209,7 @@ final class bbPress {
 
 		/** Versions **********************************************************/
 
-		$this->version    = '2.6-rc-6535';
+		$this->version    = '2.6-rc-6541';
 		$this->db_version = '262';
 
 		/** Paths *************************************************************/
