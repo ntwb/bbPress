@@ -283,7 +283,7 @@ function bbp_register_template_stack( $location_callback = '', $priority = 10 ) 
  *
  * @param string $location_callback Callback function that returns the
  * @param int $priority
- * @see bbp_register_template_stack()
+ * @return bool Whether stack was removed
  */
 function bbp_deregister_template_stack( $location_callback = '', $priority = 10 ) {
 
@@ -299,8 +299,6 @@ function bbp_deregister_template_stack( $location_callback = '', $priority = 10 
 /**
  * Call the functions added to the 'bbp_template_stack' filter hook, and return
  * an array of the template locations.
- *
- * @see bbp_register_template_stack()
  *
  * @since 2.2.0 bbPress (r4323)
  * @since 2.6.0 bbPress (r5944) Added support for `WP_Hook`
@@ -407,19 +405,25 @@ function bbp_buffer_template_part( $slug, $name = null, $echo = true ) {
 function bbp_get_query_template( $type, $templates = array() ) {
 	$type = preg_replace( '|[^a-z0-9-]+|', '', $type );
 
+	// Fallback template
 	if ( empty( $templates ) ) {
 		$templates = array( "{$type}.php" );
 	}
 
-	// Filter possible templates, try to match one, and set any bbPress theme
-	// compat properties so they can be cross-checked later.
+	// Filter possible templates
 	$templates = apply_filters( "bbp_get_{$type}_template", $templates );
-	$templates = bbp_set_theme_compat_templates( $templates );
-	$template  = bbp_locate_template( $templates );
-	$template  = bbp_set_theme_compat_template( $template );
+
+	// Stash the possible templates for this query, for later use
+	bbp_set_theme_compat_templates( $templates );
+
+	// Try to locate a template in the stack
+	$template = bbp_locate_template( $templates );
+
+	// Stash the located template for this query, for later use
+	bbp_set_theme_compat_template( $template );
 
 	// Filter & return
-	return apply_filters( "bbp_{$type}_template", $template );
+	return apply_filters( "bbp_{$type}_template", $template, $templates );
 }
 
 /**
@@ -428,7 +432,7 @@ function bbp_get_query_template( $type, $templates = array() ) {
  * @since 2.1.0 bbPress (r3738)
  *
  * @param array $templates Templates we are looking for
- * @return array Possible subfolders to look in
+ * @return array Possible subdirectories to look in
  */
 function bbp_get_template_locations( $templates = array() ) {
 	$locations = array(
@@ -463,7 +467,7 @@ function bbp_add_template_stack_locations( $stacks = array() ) {
 	}
 
 	// Filter & return
-	return apply_filters( 'bbp_add_template_stack_locations', array_unique( $retval ), $stacks );
+	return (array) apply_filters( 'bbp_add_template_stack_locations', array_unique( $retval ), $stacks );
 }
 
 /**
