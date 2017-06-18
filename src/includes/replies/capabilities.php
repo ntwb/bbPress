@@ -14,7 +14,6 @@
  *
  * @since 2.0.0 bbPress (r2593)
  *
- * @uses apply_filters() Calls 'bbp_get_reply_caps' with the capabilities
  * @return array Reply capabilities
  */
 function bbp_get_reply_caps() {
@@ -39,12 +38,6 @@ function bbp_get_reply_caps() {
  * @param string $cap Capability name
  * @param int $user_id User id
  * @param array $args Arguments
- * @uses get_post() To get the post
- * @uses get_post_type_object() To get the post type object
- * @uses bbp_get_public_status_id() To get the public status id
- * @uses bbp_is_user_forum_moderator() To check if the user is a forum moderator
- * @uses bbp_get_reply_forum_id() To get the repliy forum id
- * @uses apply_filters() Filter mapped results
  *
  * @return array Actual capabilities for meta capability
  */
@@ -180,7 +173,7 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 
 				// Moderators can always edit forum content
 				} elseif ( user_can( $user_id, 'moderate', $_post->ID ) ) {
-					 $caps = array( 'spectate' );
+					$caps = array( 'spectate' );
 
 				// Unknown so map to delete_others_posts
 				} else {
@@ -204,7 +197,7 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 		/** Admin *************************************************************/
 
 		case 'bbp_replies_admin' :
-			$caps = array( 'moderate' );
+			$caps = array( 'edit_replies' );
 			break;
 	}
 
