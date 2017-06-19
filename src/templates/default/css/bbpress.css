@@ -30,7 +30,6 @@
 
 .entry-content .bbpress-wrapper a,
 .entry-content .bbpress-wrapper a:hover {
-	-webkit-box-shadow: none;
 	box-shadow: none;
 }
 
@@ -667,9 +666,6 @@ td.bbp-topic-counts {
 
 #bbpress-forums fieldset.bbp-form {
 	clear: left;
-}
-
-#bbpress-forums fieldset.bbp-form {
 	border: 1px solid #eee;
 	padding: 10px 20px;
 	margin-bottom: 10px;
@@ -677,6 +673,8 @@ td.bbp-topic-counts {
 
 #bbpress-forums fieldset.bbp-form legend {
 	padding: 5px;
+	width: auto;
+	border: none;
 }
 
 #bbpress-forums fieldset.bbp-form label {
@@ -702,8 +700,6 @@ textarea#bbp_reply_content,
 textarea#bbp_topic_content,
 textarea#bbp_forum_content {
 	width: 97%;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
 
@@ -795,11 +791,22 @@ p.form-allowed-tags {
 	line-height: 1;
 }
 
-#bbpress-forums div.bbp-the-content-wrapper input {
-	font-size: 12px;
-	padding: 5px;
-	margin: 0 2px 0 0;
+#bbpress-forums div.bbp-the-content-wrapper input[type="button"] {
+	padding: 5px 7px;
+	margin: 0 -1px 0 0;
 	line-height: 1;
+	border: 1px solid transparent;
+	background-color: transparent;
+	box-shadow: none;
+	text-shadow: none;
+	border-radius: 0;
+	text-transform: uppercase;
+	font-size: 11px;
+}
+
+#bbpress-forums div.bbp-the-content-wrapper input[type="button"]:hover {
+	border-color: rgba(0, 0, 0, 0.1);
+	background-color: rgba(255, 255, 255, 0.5);
 }
 
 #bbpress-forums div.bbp-the-content-wrapper div.quicktags-toolbar {
@@ -848,16 +855,13 @@ p.form-allowed-tags {
 	width: 60%;
 	background-color: #f9f9f9;
 	border: 1px solid #ddd;
-	-webkit-box-shadow: none;
 	box-shadow: none;
-	-webkit-border-radius: 0;
 	border-radius: 0;
 }
 
 #bbpress-forums #bbp-your-profile fieldset input:focus,
 #bbpress-forums #bbp-your-profile fieldset textarea:focus {
 	border: 1px solid #ccc;
-	-webkit-box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.1);
 	box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.1);
 	outline-color: rgba(240, 255, 240, 0.1);
 }
@@ -929,8 +933,6 @@ p.form-allowed-tags {
 #bbpress-forums #bbp-your-profile fieldset fieldset.password .password-button-wrapper button {
 	width: 46%;
 	margin: 4% 2%;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 	display: inline-block;
 }
@@ -956,8 +958,6 @@ p.form-allowed-tags {
 	margin: 0;
 	padding: 8px;
 	text-align: center;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 	display: inline-block;
 }
@@ -1029,7 +1029,6 @@ div.indicator-hint {
 	border-style: solid;
 	padding: 0 0.6em;
 	margin: 5px 0 15px;
-	-webkit-border-radius: 3px;
 	border-radius: 3px;
 	background-color: #ffffe0;
 	border-color: #e6db55;
@@ -1168,7 +1167,6 @@ div.bbp-template-notice li {
 -------------------------------------------------------------- */
 
 #bbpress-forums img.avatar {
-	-webkit-box-shadow: none;
 	box-shadow: none;
 	display: inline-block;
 }
@@ -1341,7 +1339,6 @@ body.my-account #bbpress-forums {
 	left: 50%;
 	margin-top: -75px;
 	margin-left: -185px;
-	-webkit-border-radius: 3px;
 	border-radius: 3px;
 	border: 1px solid #aaa;
 	padding: 15px 10px 10px;
