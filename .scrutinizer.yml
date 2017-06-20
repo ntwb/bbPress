@@ -1,0 +1,27 @@
+build:
+  environment:
+    php:
+      version: 7.0.8
+  dependencies:
+    before:
+      - composer require --dev wp-coding-standards/wpcs:dev-develop
+  tests:
+    override:
+      - phpcs-run
+tools:
+  php_code_sniffer:
+    enabled: true
+    config:
+      standard: "WordPress-Core"
+  php_cs_fixer: true 
+  php_analyzer:
+    enabled: true  
+    extensions:
+      - php
+filter:
+  paths: [src/*]
+  excluded_paths:
+        - "vendor/*," 
+        - "build/*,"
+        - "node_modules/*,"
+        - "/tests/*"
