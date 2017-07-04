@@ -1039,8 +1039,8 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 
 	/** Topic *****************************************************************/
 
-	// Bail if topic is not published
-	if ( ! bbp_is_topic_published( $topic_id ) ) {
+	// Bail if topic is not public (includes closed)
+	if ( ! bbp_is_topic_public( $topic_id ) ) {
 		return false;
 	}
 
@@ -1057,7 +1057,7 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 	/** Users *****************************************************************/
 
 	// Get topic subscribers and bail if empty
-	$user_ids = bbp_get_topic_subscribers( $topic_id, true );
+	$user_ids = bbp_get_subscribers( $topic_id );
 
 	// Dedicated filter to manipulate user ID's to send emails to
 	$user_ids = (array) apply_filters( 'bbp_topic_subscription_user_ids', $user_ids );
@@ -1080,14 +1080,15 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 
 	// Remove filters from reply content and topic title to prevent content
 	// from being encoded with HTML entities, wrapped in paragraph tags, etc...
-	remove_all_filters( 'bbp_get_reply_content' );
-	remove_all_filters( 'bbp_get_topic_title'   );
+	bbp_remove_all_filters( 'bbp_get_reply_content' );
+	bbp_remove_all_filters( 'bbp_get_topic_title'   );
+	bbp_remove_all_filters( 'the_title'             );
 
 	// Strip tags from text and setup mail data
-	$topic_title   = strip_tags( bbp_get_topic_title( $topic_id ) );
-	$reply_content = strip_tags( bbp_get_reply_content( $reply_id ) );
-	$reply_url     = bbp_get_reply_url( $reply_id );
 	$blog_name     = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$topic_title   = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
+	$reply_content = wp_specialchars_decode( strip_tags( bbp_get_reply_content( $reply_id ) ), ENT_QUOTES );
+	$reply_url     = bbp_get_reply_url( $reply_id );
 
 	// For plugins to filter messages per reply/topic/user
 	$message = sprintf( esc_html__( '%1$s wrote:
@@ -1147,6 +1148,11 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 
 	do_action( 'bbp_post_notify_subscribers', $reply_id, $topic_id, $user_ids );
 
+	// Restore previously removed filters
+	bbp_restore_all_filters( 'bbp_get_topic_content' );
+	bbp_restore_all_filters( 'bbp_get_topic_title'   );
+	bbp_restore_all_filters( 'the_title'             );
+
 	return true;
 }
 
@@ -1193,8 +1199,8 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 
 	/** Topic *****************************************************************/
 
-	// Bail if topic is not published
-	if ( ! bbp_is_topic_published( $topic_id ) ) {
+	// Bail if topic is not public (includes closed)
+	if ( ! bbp_is_topic_public( $topic_id ) ) {
 		return false;
 	}
 
@@ -1204,7 +1210,7 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 	/** Users *****************************************************************/
 
 	// Get topic subscribers and bail if empty
-	$user_ids = bbp_get_forum_subscribers( $forum_id, true );
+	$user_ids = bbp_get_subscribers( $forum_id );
 
 	// Dedicated filter to manipulate user ID's to send emails to
 	$user_ids = (array) apply_filters( 'bbp_forum_subscription_user_ids', $user_ids );
@@ -1227,14 +1233,15 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 
 	// Remove filters from reply content and topic title to prevent content
 	// from being encoded with HTML entities, wrapped in paragraph tags, etc...
-	remove_all_filters( 'bbp_get_topic_content' );
-	remove_all_filters( 'bbp_get_topic_title'   );
+	bbp_remove_all_filters( 'bbp_get_topic_content' );
+	bbp_remove_all_filters( 'bbp_get_topic_title'   );
+	bbp_remove_all_filters( 'the_title'             );
 
 	// Strip tags from text and setup mail data
-	$topic_title   = strip_tags( bbp_get_topic_title( $topic_id ) );
-	$topic_content = strip_tags( bbp_get_topic_content( $topic_id ) );
-	$topic_url     = get_permalink( $topic_id );
 	$blog_name     = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$topic_title   = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
+	$topic_content = wp_specialchars_decode( strip_tags( bbp_get_topic_content( $topic_id ) ), ENT_QUOTES );
+	$topic_url     = get_permalink( $topic_id );
 
 	// For plugins to filter messages per reply/topic/user
 	$message = sprintf( esc_html__( '%1$s wrote:
@@ -1293,6 +1300,11 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	wp_mail( $to_email, $subject, $message, $headers );
 
 	do_action( 'bbp_post_notify_forum_subscribers', $topic_id, $forum_id, $user_ids );
+
+	// Restore previously removed filters
+	bbp_restore_all_filters( 'bbp_get_topic_content' );
+	bbp_restore_all_filters( 'bbp_get_topic_title'   );
+	bbp_restore_all_filters( 'the_title'             );
 
 	return true;
 }

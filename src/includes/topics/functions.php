@@ -1139,7 +1139,7 @@ function bbp_merge_topic_handler( $action = '' ) {
 	/** Subscriptions *********************************************************/
 
 	// Get subscribers from source topic
-	$subscribers = bbp_get_topic_subscribers( $source_topic->ID );
+	$subscribers = bbp_get_subscribers( $source_topic->ID );
 
 	// Maybe migrate subscriptions
 	if ( ! empty( $subscribers ) && ! empty( $_POST['bbp_topic_subscribers'] ) && ( '1' === $_POST['bbp_topic_subscribers'] ) ) {
@@ -1465,7 +1465,7 @@ function bbp_split_topic_handler( $action = '' ) {
 	if ( ! empty( $_POST['bbp_topic_subscribers'] ) && "1" === $_POST['bbp_topic_subscribers'] && bbp_is_subscriptions_active() ) {
 
 		// Get the subscribers
-		$subscribers = bbp_get_topic_subscribers( $source_topic->ID );
+		$subscribers = bbp_get_subscribers( $source_topic->ID );
 
 		if ( ! empty( $subscribers ) ) {
 
@@ -1823,11 +1823,11 @@ function bbp_get_topic_statuses( $topic_id = 0 ) {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_topic_statuses', array(
-		bbp_get_public_status_id()  => _x( 'Open',    'Open the topic',        'bbpress' ),
-		bbp_get_closed_status_id()  => _x( 'Closed',  'Close the topic',       'bbpress' ),
-		bbp_get_spam_status_id()    => _x( 'Spam',    'Spam the topic',        'bbpress' ),
-		bbp_get_trash_status_id()   => _x( 'Trash',   'Trash the topic',       'bbpress' ),
-		bbp_get_pending_status_id() => _x( 'Pending', 'Mark topic as pending', 'bbpress' ),
+		bbp_get_public_status_id()  => _x( 'Open',    'Open the topic',      'bbpress' ),
+		bbp_get_closed_status_id()  => _x( 'Closed',  'Close the topic',     'bbpress' ),
+		bbp_get_spam_status_id()    => _x( 'Spam',    'Spam the topic',      'bbpress' ),
+		bbp_get_trash_status_id()   => _x( 'Trash',   'Trash the topic',     'bbpress' ),
+		bbp_get_pending_status_id() => _x( 'Pending', 'Unapprove the topic', 'bbpress' )
 	), $topic_id );
 }
 

@@ -647,44 +647,18 @@ function bbp_get_user_topic_count_raw( $user_id = 0 ) {
 function bbp_get_user_reply_count_raw( $user_id = 0 ) {
 	$user_id = bbp_get_user_id( $user_id );
 	$bbp_db  = bbp_db();
+	$statii  = "'" . implode( "', '", bbp_get_public_topic_statuses() ) . "'";
 	$sql     = "SELECT COUNT(*)
 			FROM {$bbp_db->posts}
 			WHERE post_author = %d
 				AND post_type = %s
-				AND post_status = %s";
+				AND post_status IN ({$statii})";
 
-	$query   = $bbp_db->prepare( $sql, $user_id, bbp_get_reply_post_type(), bbp_get_public_status_id() );
+	$query   = $bbp_db->prepare( $sql, $user_id, bbp_get_reply_post_type() );
 	$count   = (int) $bbp_db->get_var( $query );
 
 	// Filter & return
 	return (int) apply_filters( 'bbp_get_user_reply_count_raw', $count, $user_id );
-}
-
-/**
- * Return the raw database count of closed topics by a user
- *
- * @since 2.6.0 bbPress (r6113)
- *
- * @param int $user_id User ID to get count for
- *
- * @return int Raw DB count of user closed topics
- */
-function bbp_get_user_closed_topic_count( $user_id = 0 ) {
-	$user_id = bbp_get_user_id( $user_id );
-	$bbp_db  = bbp_db();
-	$count   = (int) $bbp_db->get_var( $bbp_db->prepare(
-		"SELECT COUNT(*)
-			FROM {$bbp_db->posts}
-			WHERE post_type = %s
-				AND post_status = %s
-				AND post_author = %d",
-		bbp_get_topic_post_type(),
-		bbp_get_closed_status_id(),
-		$user_id
-	) );
-
-	// Filter & return
-	return (int) apply_filters( 'bbp_get_user_closed_topic_count', $count, $user_id );
 }
 
 /**
