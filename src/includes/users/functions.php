@@ -620,13 +620,16 @@ function bbp_get_user_nicenames_from_ids( $user_ids = array() ) {
  */
 function bbp_get_user_topic_count_raw( $user_id = 0 ) {
 	$user_id = bbp_get_user_id( $user_id );
-	if ( empty( $user_id ) ) {
-		return false;
-	}
+	$bbp_db  = bbp_db();
+	$statii  = "'" . implode( "', '", bbp_get_public_topic_statuses() ) . "'";
+	$sql     = "SELECT COUNT(*)
+			FROM {$bbp_db->posts}
+			WHERE post_author = %d
+				AND post_type = %s
+				AND post_status IN ({$statii})";
 
-	$count = count_user_posts( $user_id, bbp_get_topic_post_type(), false );
-	// Manually add the user closed topic count, see #2978 and #WP12706
-	$count = $count + bbp_get_user_closed_topic_count( $user_id );
+	$query   = $bbp_db->prepare( $sql, $user_id, bbp_get_topic_post_type() );
+	$count   = (int) $bbp_db->get_var( $query );
 
 	// Filter & return
 	return (int) apply_filters( 'bbp_get_user_topic_count_raw', $count, $user_id );
@@ -643,11 +646,15 @@ function bbp_get_user_topic_count_raw( $user_id = 0 ) {
  */
 function bbp_get_user_reply_count_raw( $user_id = 0 ) {
 	$user_id = bbp_get_user_id( $user_id );
-	if ( empty( $user_id ) ) {
-		return false;
-	}
+	$bbp_db  = bbp_db();
+	$sql     = "SELECT COUNT(*)
+			FROM {$bbp_db->posts}
+			WHERE post_author = %d
+				AND post_type = %s
+				AND post_status %s";
 
-	$count = count_user_posts( $user_id, bbp_get_reply_post_type(), false );
+	$query   = $bbp_db->prepare( $sql, $user_id, bbp_get_reply_post_type(), bbp_get_public_status_id() );
+	$count   = (int) $bbp_db->get_var( $query );
 
 	// Filter & return
 	return (int) apply_filters( 'bbp_get_user_reply_count_raw', $count, $user_id );
@@ -664,12 +671,8 @@ function bbp_get_user_reply_count_raw( $user_id = 0 ) {
  */
 function bbp_get_user_closed_topic_count( $user_id = 0 ) {
 	$user_id = bbp_get_user_id( $user_id );
-	if ( empty( $user_id ) ) {
-		return false;
-	}
-
-	$bbp_db = bbp_db();
-	$count  = (int) $bbp_db->get_var( $bbp_db->prepare(
+	$bbp_db  = bbp_db();
+	$count   = (int) $bbp_db->get_var( $bbp_db->prepare(
 		"SELECT COUNT(*)
 			FROM {$bbp_db->posts}
 			WHERE post_type = %s
@@ -983,17 +986,7 @@ function bbp_user_maybe_convert_pass() {
 		return;
 	}
 
-	// Setup admin (to include converter)
-	require_once bbpress()->includes_dir . 'admin/admin.php';
-
-	// Create the admin object
-	bbp_admin();
-
-	// Convert password
-	require_once bbpress()->admin->admin_dir . 'converter.php';
-	require_once bbpress()->admin->admin_dir . 'converters/' . sanitize_key( $row->meta_value ) . '.php';
-
-	// Create the converter
+	// Try to convert the old password for this user
 	$converter = bbp_new_converter( $row->meta_value );
 
 	// Try to call the conversion method

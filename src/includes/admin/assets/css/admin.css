@@ -10,24 +10,132 @@
 /* Version Badge */
 
 .bbp-badge {
-	font: 400 150px/1 dashicons !important;
-	color: #000;
-	display: inline-block;
+	-webkit-transform-origin: top left;
+	transform-origin: top left;
+	-webkit-animation: swoop 16s infinite linear;
+	animation: swoop 16s infinite linear;
 }
 
-.bbp-badge:before {
+.bbp-bee {
+	font: 400 80px/1 dashicons !important;
+	color: #000;
+	position: absolute;
+	height: 60px;
+	width: 60px;
+}
+
+.bbp-hive {
+	font: 400 150px/1 dashicons !important;
+	color: #ccc;
+	position: absolute;
+	height: 150px;
+	width: 150px;
+	top: 0;
+	right: 0;
+	display: block;
+}
+
+.bbp-bee:before {
 	content: "\f451";
+}
+
+.bbp-hive:before {
+	content: "\f449";
+}
+
+@-webkit-keyframes buzz {
+
+	0% {
+		right: -2px;
+		top: -1px;
+	}
+
+	25% {
+		right: 1px;
+		top: 2px;
+	}
+
+	50% {
+		right: -3px;
+		top: -1px;
+	}
+
+	75% {
+		right: 2px;
+		top: 1px;
+	}
+
+	0% {
+		right: -2px;
+		top: -1px;
+	}
+}
+
+@keyframes buzz {
+
+	0% {
+		right: -2px;
+		top: -1px;
+	}
+
+	25% {
+		right: 1px;
+		top: 2px;
+	}
+
+	50% {
+		right: -3px;
+		top: -1px;
+	}
+
+	75% {
+		right: 2px;
+		top: 1px;
+	}
+
+	0% {
+		right: -2px;
+		top: -1px;
+	}
+}
+
+@-webkit-keyframes swoop {
+
+	0% {
+		-webkit-transform: rotate(95deg);
+		transform: rotate(95deg);
+	}
+
+	100% {
+		-webkit-transform: rotate(455deg);
+		transform: rotate(455deg);
+	}
+}
+
+@keyframes swoop {
+
+	0% {
+		-webkit-transform: rotate(95deg);
+		transform: rotate(95deg);
+	}
+
+	100% {
+		-webkit-transform: rotate(455deg);
+		transform: rotate(455deg);
+	}
 }
 
 .about-wrap .bbp-badge {
 	position: absolute;
-	top: 0;
-	right: 0;
+	right: 50px;
+	top: 50px;
+	height: 25px;
+	width: 25px;
 }
 
 body.rtl .about-wrap .bbp-badge {
 	right: auto;
-	left: 0;
+	left: 50px;
 }
 
 /* Dashicons */
@@ -365,13 +473,12 @@ div.bbp-converter-log .step {
 	display: none;
 }
 
-#bbp-converter-timer {
-	position: absolute;
-	right: 10px;
-	top: 4px;
-	padding: 5px;
-	border: 1px solid #ddd;
-	background-color: #fafafa;
+#bbp-converter-status {
+	font-weight: 400;
+	font-size: 12px;
+	color: #aaa;
+	display: block;
+	margin-top: 2px;
 }
 
 /* Tools */

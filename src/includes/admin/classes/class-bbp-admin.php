@@ -131,10 +131,6 @@ class BBP_Admin {
 		require $this->admin_dir . 'topics.php';
 		require $this->admin_dir . 'replies.php';
 		require $this->admin_dir . 'users.php';
-
-		// Converter
-		require $this->admin_dir . 'classes/class-bbp-converter-base.php';
-		require $this->admin_dir . 'classes/class-bbp-converter.php';
 	}
 
 	/**
@@ -153,15 +149,14 @@ class BBP_Admin {
 
 		/** General Actions ***************************************************/
 
-		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             )     ); // Add menu item to settings menu
-		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              )     ); // Add some general styling to the admin area
-		add_action( 'bbp_admin_notices',           array( $this, 'activation_notice'       )     ); // Add notice if not using a bbPress theme
-		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'    )     ); // Add green admin style
-		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' )     ); // Add settings
-		add_action( 'bbp_activation',              array( $this, 'new_install'             )     ); // Add menu item to settings menu
-		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_styles'          )     ); // Add enqueued CSS
-		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_scripts'         )     ); // Add enqueued JS
-		add_action( 'admin_bar_menu',              array( $this, 'admin_bar_about_link'    ), 15 ); // Add a link to bbPress about page to the admin bar
+		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             ) ); // Add menu item to settings menu
+		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) ); // Add some general styling to the admin area
+		add_action( 'bbp_admin_notices',           array( $this, 'activation_notice'       ) ); // Add notice if not using a bbPress theme
+		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'    ) ); // Add green admin style
+		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' ) ); // Add settings
+		add_action( 'bbp_activation',              array( $this, 'new_install'             ) ); // Add menu item to settings menu
+		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_styles'          ) ); // Add enqueued CSS
+		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_scripts'         ) ); // Add enqueued JS
 
 		/** Ajax **************************************************************/
 
@@ -522,24 +517,6 @@ class BBP_Admin {
 	}
 
 	/**
-	 * Add a link to bbPress about page to the admin bar
-	 *
-	 * @since 2.5.0 bbPress (r5136)
-	 *
-	 * @param WP_Admin_Bar $wp_admin_bar
-	 */
-	public function admin_bar_about_link( $wp_admin_bar ) {
-		if ( is_user_logged_in() && current_user_can( 'bbp_about_page' ) ) {
-			$wp_admin_bar->add_menu( array(
-				'parent' => 'wp-logo',
-				'id'     => 'bbp-about',
-				'title'  => esc_html__( 'About bbPress', 'bbpress' ),
-				'href'   => add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php' ) )
-			) );
-		}
-	}
-
-	/**
 	 * Enqueue any admin scripts we might need
 	 *
 	 * @since 2.2.0 bbPress (r4260)
@@ -555,7 +532,10 @@ class BBP_Admin {
 		// Get the version to use for JS
 		$version = bbp_get_version();
 
-		// Register the JS
+		// Footer JS
+		wp_register_script( 'bbp-admin-badge-js',   $this->js_url . 'badge' . $suffix . '.js', array(), $version, true );
+
+		// Header JS
 		wp_register_script( 'bbp-admin-common-js',  $this->js_url . 'common'    . $suffix . '.js', array( 'jquery', 'suggest'              ), $version );
 		wp_register_script( 'bbp-admin-topics-js',  $this->js_url . 'topics'    . $suffix . '.js', array( 'jquery'                         ), $version );
 		wp_register_script( 'bbp-admin-replies-js', $this->js_url . 'replies'   . $suffix . '.js', array( 'jquery', 'suggest'              ), $version );
@@ -563,7 +543,6 @@ class BBP_Admin {
 
 		// Post type checker (only topics and replies)
 		if ( 'post' === get_current_screen()->base ) {
-
 			switch ( get_current_screen()->post_type ) {
 				case bbp_get_reply_post_type() :
 				case bbp_get_topic_post_type() :
@@ -582,6 +561,10 @@ class BBP_Admin {
 
 					break;
 			}
+
+		// Enqueue the badge JS
+		} elseif ( in_array( get_current_screen()->id, array( 'dashboard_page_bbp-about', 'dashboard_page_bbp-credits' ), true ) ) {
+			wp_enqueue_script( 'bbp-admin-badge-js' );
 		}
 	}
 
@@ -750,18 +733,39 @@ class BBP_Admin {
 	/** About *****************************************************************/
 
 	/**
+	 * Output the shared screen header for about_screen() & credits_screen()
+	 *
+	 * Contains title, subtitle, and badge area
+	 *
+	 * @since 2.6.0 bbPress (r6604)
+	 */
+	private function screen_header() {
+		list( $display_version ) = explode( '-', bbp_get_version() ); ?>
+
+		<h1><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
+		<div class="about-text"><?php printf( esc_html__( 'bbPress is fun to use, contains no artificial colors or preservatives, and is absolutely wonderful in every environment. Your community is going to love using it.', 'bbpress' ), $display_version ); ?></div>
+
+		<span class="bbp-hive" id="bbp-hive"></span>
+		<div class="bbp-badge" id="bbp-badge">
+			<span class="bbp-bee" id="bbp-bee"></span>
+		</div>
+
+		<?php
+	}
+
+	/**
 	 * Output the about screen
 	 *
 	 * @since 2.2.0 bbPress (r4159)
+	 *
+	 * @todo Host this remotely.
 	 */
 	public function about_screen() {
-
-		list( $display_version ) = explode( '-', bbp_get_version() ); ?>
+		?>
 
 		<div class="wrap about-wrap">
-			<h1><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
-			<div class="about-text"><?php printf( esc_html__( 'Thank you for updating! bbPress %s is sweet and savory, contains no artificial flavors or preservatives, is environmentally friendly, and is a great compliment to your site.', 'bbpress' ), $display_version ); ?></div>
-			<div class="bbp-badge"></div>
+
+			<?php $this->screen_header(); ?>
 
 			<h2 class="nav-tab-wrapper">
 				<a class="nav-tab nav-tab-active" href="<?php echo esc_url( add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php' ) ) ); ?>">
@@ -826,19 +830,16 @@ class BBP_Admin {
 	/**
 	 * Output the credits screen
 	 *
-	 * Hardcoding this in here is pretty janky. It's fine for now, but we'll
-	 * want to leverage api.wordpress.org eventually.
-	 *
 	 * @since 2.2.0 bbPress (r4159)
+	 *
+	 * @todo Host this remotely.
 	 */
 	public function credits_screen() {
-
-		list( $display_version ) = explode( '-', bbp_get_version() ); ?>
+		?>
 
 		<div class="wrap about-wrap">
-			<h1><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
-			<div class="about-text"><?php printf( esc_html__( 'Thank you for updating! bbPress %s is sweet and savory, contains no artificial flavors or preservatives, is environmentally friendly, and is a great compliment to your site.', 'bbpress' ), $display_version ); ?></div>
-			<div class="bbp-badge"></div>
+
+			<?php $this->screen_header(); ?>
 
 			<h2 class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php' ) ) ); ?>" class="nav-tab">
@@ -1129,14 +1130,3 @@ class BBP_Admin {
 	}
 }
 endif; // class_exists check
-
-/**
- * Setup bbPress Admin
- *
- * @since 2.0.0 bbPress (r2596)
- */
-function bbp_admin() {
-	bbpress()->admin = new BBP_Admin();
-
-	bbpress()->admin->converter = new BBP_Converter();
-}
