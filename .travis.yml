@@ -27,6 +27,7 @@ php:
 # x.y mirrors the latest from the x.y branch
 env:
   - WP_VERSION=master
+  - WP_VERSION=4.8
   - WP_VERSION=4.7
 
 # Build matrix options
@@ -38,10 +39,16 @@ matrix:
       env: WP_VERSION=master
       dist: precise
     - php: 5.3
+      env: WP_VERSION=4.8
+      dist: precise
+    - php: 5.3
       env: WP_VERSION=4.7
       dist: precise
     - php: 5.2
       env: WP_VERSION=master
+      dist: precise
+    - php: 5.2
+      env: WP_VERSION=4.8
       dist: precise
     - php: 5.2
       env: WP_VERSION=4.7
@@ -93,8 +100,13 @@ before_install:
 
 # before_script: Failures in this section will result in build status 'failed'
 before_script:
-  - stable='^[0-9\.]+$'; if [[ "$TRAVIS_PHP_VERSION" =~ $stable ]]; then phpenv config-rm xdebug.ini; fi
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - |
+    # Remove Xdebug for a huge performance increase:
+    if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
+      phpenv config-rm xdebug.ini
+    else
+      echo "xdebug.ini does not exist"
+    fi  - export PATH="$HOME/.composer/vendor/bin:$PATH"
   - |
     if [[ ${TRAVIS_PHP_VERSION:0:2} == "7." ]]; then
       composer global require "phpunit/phpunit=5.7.*"
