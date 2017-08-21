@@ -127,15 +127,19 @@ class BBP_Converter {
 		// Localize JS
 		wp_localize_script( 'bbp-converter', 'BBP_Converter', array(
 
-			// Vars
+			// Nonce
 			'ajax_nonce' => wp_create_nonce( 'bbp_converter_process' ),
-			'delay'      => (int)  get_option( '_bbp_converter_delay_time', 2 ),
-			'running'    => false,
-			'status'     => false,
-			'started'    => (bool) get_option( '_bbp_converter_step', 0 ),
+
+			// UI State
+			'state' => array(
+				'delay'   => (int)  get_option( '_bbp_converter_delay_time', 2 ),
+				'started' => (bool) get_option( '_bbp_converter_step',       0 ),
+				'running' => false,
+				'status'  => false
+			),
 
 			// Strings
-			'strings'    => array(
+			'strings' => array(
 
 				// Button text
 				'button_start'        => esc_html__( 'Start',    'bbpress' ),
@@ -152,11 +156,11 @@ class BBP_Converter {
 				'import_error_db'     => esc_html__( 'Database Connection Failed.', 'bbpress' ),
 
 				// Status
-				'status_complete'     => esc_html__( 'Finished',         'bbpress' ),
-				'status_stopped'      => esc_html__( 'Stopped',          'bbpress' ),
-				'status_starting'     => esc_html__( 'Starting',         'bbpress' ),
-				'status_up_next'      => esc_html__( 'Doing step %s...', 'bbpress' ),
-				'status_counting'     => esc_html__( 'Next in %s...',    'bbpress' )
+				'status_complete'     => esc_html__( 'Finished',              'bbpress' ),
+				'status_stopped'      => esc_html__( 'Stopped',               'bbpress' ),
+				'status_starting'     => esc_html__( 'Starting',              'bbpress' ),
+				'status_up_next'      => esc_html__( 'Doing step %s...',      'bbpress' ),
+				'status_counting'     => esc_html__( 'Next in %s seconds...', 'bbpress' )
 			)
 		) );
 	}
@@ -252,9 +256,9 @@ class BBP_Converter {
 				? (int) $_POST['_bbp_converter_halt']
 				: 0,
 
-			// Rows
+			// Rows (bound between 1 and 5000)
 			'_bbp_converter_rows' => ! empty( $_POST['_bbp_converter_rows'] )
-				? (int) $_POST['_bbp_converter_rows']
+				? min( max( (int) $_POST['_bbp_converter_rows'], 1 ), 5000 )
 				: 0,
 
 			// Platform
@@ -765,8 +769,10 @@ class BBP_Converter {
 
 		// Defaults
 		$sql              = array();
-		$max_index_length = 191;
 		$charset_collate  = '';
+
+		// https://bbpress.trac.wordpress.org/ticket/3145
+		$max_index_length = 75;
 
 		// Maybe override the character set
 		if ( ! empty( $bbp_db->charset ) ) {
