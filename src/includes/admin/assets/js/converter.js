@@ -9,7 +9,30 @@ jQuery( document ).ready( function ( $ ) {
 		start    = $( '#bbp-converter-start'    ),
 		restart  = $( '#_bbp_converter_restart' ),
 		status   = $( '#bbp-converter-status'   ),
-		settings = $( '#bbp-converter-settings' );
+		settings = $( '#bbp-converter-settings' ),
+		password = $( '#_bbp_converter_db_pass' ),
+		toggle   = $( '.bbp-db-pass-toggle'     ),
+		step_p   = $( '#bbp-converter-step-percentage'  ),
+		total_p  = $( '#bbp-converter-total-percentage' );
+
+	/**
+	 * Show/hide db password button toggle
+	 *
+	 * @since 2.6.0 bbPress (r6676)
+	 *
+	 * @param {element} e
+	 */
+	toggle.on( 'click', function( e ) {
+		password.attr( 'type' ) === 'password'
+			? password.attr( 'type', 'text' )
+			: password.attr( 'type', 'password' );
+
+		toggle
+			.toggleClass( 'password' )
+			.toggleClass( 'text' );
+
+		e.preventDefault();
+	});
 
 	/**
 	 * Start button click
@@ -134,6 +157,7 @@ jQuery( document ).ready( function ( $ ) {
 
 		// Do the step
 		bbp_converter_log( data.progress );
+		bbp_converter_percentages( data.step_percent, data.total_percent );
 		bbp_converter_status( data );
 		bbp_converter_wait();
 
@@ -295,5 +319,17 @@ jQuery( document ).ready( function ( $ ) {
 		text = '<p>' + text + '</p>';
 
 		message.prepend( text );
+	}
+
+	/**
+	 * Prepend some text to the import monitor
+	 *
+	 * @since 2.6.0 bbPress (r6470)
+	 *
+	 * @returns {void}
+	 */
+	function bbp_converter_percentages( step_percent, total_percent ) {
+		step_p.width( step_percent + '%' );
+		total_p.width( total_percent + '%' );
 	}
 } );

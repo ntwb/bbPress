@@ -171,7 +171,7 @@ function bbp_has_replies( $args = array() ) {
 	$r = bbp_parse_args( $args, $default, 'has_replies' );
 
 	// Set posts_per_page value if replies are threaded
-	$replies_per_page = $r['posts_per_page'];
+	$replies_per_page = (int) $r['posts_per_page'];
 	if ( true === $r['hierarchical'] ) {
 		$r['posts_per_page'] = -1;
 	}
@@ -183,8 +183,8 @@ function bbp_has_replies( $args = array() ) {
 	$bbp->reply_query = new WP_Query( $r );
 
 	// Add pagination values to query object
-	$bbp->reply_query->posts_per_page = $replies_per_page;
-	$bbp->reply_query->paged          = $r['paged'];
+	$bbp->reply_query->posts_per_page = (int) $replies_per_page;
+	$bbp->reply_query->paged          = (int) $r['paged'];
 
 	// Never home, regardless of what parse_query says
 	$bbp->reply_query->is_home        = false;
@@ -195,7 +195,7 @@ function bbp_has_replies( $args = array() ) {
 	}
 
 	// Only add reply to if query returned results
-	if ( (int) $bbp->reply_query->found_posts ) {
+	if ( ! empty( $bbp->reply_query->found_posts ) ) {
 
 		// Get reply to for each reply
 		foreach ( $bbp->reply_query->posts as &$post ) {
@@ -216,60 +216,28 @@ function bbp_has_replies( $args = array() ) {
 	}
 
 	// Only add pagination if query returned results
-	if ( (int) $bbp->reply_query->found_posts && (int) $bbp->reply_query->posts_per_page ) {
-
-		// If pretty permalinks are enabled, make our pagination pretty
-		if ( bbp_use_pretty_urls() ) {
-
-			// User's replies
-			if ( bbp_is_single_user_replies() ) {
-				$base = bbp_get_user_replies_created_url( bbp_get_displayed_user_id() );
-
-			// Root profile page
-			} elseif ( bbp_is_single_user() ) {
-				$base = bbp_get_user_profile_url( bbp_get_displayed_user_id() );
-
-			// Page or single post
-			} elseif ( is_page() || is_single() ) {
-				$base = get_permalink();
-
-			// Single topic
-			} else {
-				$base = get_permalink( bbp_get_topic_id() );
-			}
-
-			$base = trailingslashit( $base ) . user_trailingslashit( bbp_get_paged_slug() . '/%#%/' );
-
-		// Unpretty permalinks
-		} else {
-			$base = add_query_arg( 'paged', '%#%' );
-		}
+	if ( ! empty( $bbp->reply_query->found_posts ) && ! empty( $bbp->reply_query->posts_per_page ) ) {
 
 		// Figure out total pages
 		if ( true === $r['hierarchical'] ) {
 			$walker      = new BBP_Walker_Reply;
-			$total_pages = ceil( (int) $walker->get_number_of_root_elements( $bbp->reply_query->posts ) / (int) $replies_per_page );
+			$total_pages = ceil( $walker->get_number_of_root_elements( $bbp->reply_query->posts ) / $bbp->reply_query->posts_per_page );
 		} else {
-			$total_pages = ceil( (int) $bbp->reply_query->found_posts / (int) $replies_per_page );
+
+			// Total for pagination boundaries
+			$total_pages = ( $bbp->reply_query->posts_per_page === $bbp->reply_query->found_posts )
+				? 1
+				: ceil( $bbp->reply_query->found_posts / $bbp->reply_query->posts_per_page );
+
+			// Pagination settings with filter
+			$bbp_replies_pagination = apply_filters( 'bbp_replies_pagination', array(
+				'base'    => bbp_get_replies_pagination_base( bbp_get_topic_id() ),
+				'total'   => $total_pages,
+				'current' => $bbp->reply_query->paged
+			) );
 
 			// Add pagination to query object
-			$bbp->reply_query->pagination_links = paginate_links( apply_filters( 'bbp_replies_pagination', array(
-				'base'      => $base,
-				'format'    => '',
-				'total'     => $total_pages,
-				'current'   => (int) $bbp->reply_query->paged,
-				'prev_text' => is_rtl() ? '&rarr;' : '&larr;',
-				'next_text' => is_rtl() ? '&larr;' : '&rarr;',
-				'mid_size'  => 1,
-				'add_args'  => ( bbp_get_view_all() ) ? array( 'view' => 'all' ) : false
-			) ) );
-
-			// Remove first page from pagination
-			if ( bbp_use_pretty_urls() ) {
-				$bbp->reply_query->pagination_links = str_replace( bbp_get_paged_slug() . '/1/', '', $bbp->reply_query->pagination_links );
-			} else {
-				$bbp->reply_query->pagination_links = preg_replace( '/&#038;paged=1(?=[^0-9])/m', '', $bbp->reply_query->pagination_links );
-			}
+			$bbp->reply_query->pagination_links = bbp_paginate_links( $bbp_replies_pagination );
 		}
 	}
 
@@ -2207,30 +2175,89 @@ function bbp_reply_class( $reply_id = 0, $classes = array() ) {
 	function bbp_get_reply_class( $reply_id = 0, $classes = array() ) {
 		$bbp       = bbpress();
 		$reply_id  = bbp_get_reply_id( $reply_id );
-		$count     = isset( $bbp->reply_query->current_post ) ? $bbp->reply_query->current_post : 1;
-		$classes   = (array) $classes;
-		$classes[] = ( (int) $count % 2 ) ? 'even' : 'odd';
-		$classes[] = 'bbp-parent-forum-'   . bbp_get_reply_forum_id( $reply_id );
-		$classes[] = 'bbp-parent-topic-'   . bbp_get_reply_topic_id( $reply_id );
-		$classes[] = 'bbp-reply-position-' . bbp_get_reply_position( $reply_id, true );
-		$classes[] = 'user-id-' . bbp_get_reply_author_id( $reply_id );
-		$classes[] = ( bbp_get_reply_author_id( $reply_id ) === bbp_get_topic_author_id( bbp_get_reply_topic_id( $reply_id ) ) ? 'topic-author' : '' );
-		$classes   = array_filter( $classes );
-		$classes   = get_post_class( $classes, $reply_id );
-		$classes   = apply_filters( 'bbp_get_reply_class', $classes, $reply_id );
-		$retval    = 'class="' . implode( ' ', $classes ) . '"';
+		$topic_id  = bbp_get_reply_topic_id( $reply_id );
+		$author_id = bbp_get_reply_author_id( $reply_id );
+		$classes   = array_filter( (array) $classes );
+		$count     = isset( $bbp->reply_query->current_post )
+			? (int) $bbp->reply_query->current_post
+			: 1;
 
-		return $retval;
+		// Get reply classes
+		$reply_classes = array(
+			'loop-item-' . $count,
+			( $count % 2                                        )   ? 'even'         : 'odd',
+			( $author_id === bbp_get_topic_author_id( $topic_id ) ) ? 'topic-author' : '',
+			'user-id-' . $author_id,
+			'bbp-parent-forum-'   . bbp_get_reply_forum_id( $reply_id ),
+			'bbp-parent-topic-'   . $topic_id,
+			'bbp-reply-position-' . bbp_get_reply_position( $reply_id, true )
+		);
+
+		// Run the topic classes through the post-class filters, which also
+		// handles the escaping of each individual class.
+		$post_classes = get_post_class( array_merge( $classes, $reply_classes ), $reply_id );
+
+		// Filter
+		$new_classes  = apply_filters( 'bbp_get_reply_class', $post_classes, $reply_id, $classes );
+
+		// Return
+		return 'class="' . implode( ' ', $new_classes ) . '"';
 	}
+
+/** Pagination ****************************************************************/
+
+/**
+ * Return the base URL used inside of pagination links
+ *
+ * @since 2.6.0 bbPress (r6679)
+ *
+ * @param int $topic_id
+ * @return string
+ */
+function bbp_get_replies_pagination_base( $topic_id = 0 ) {
+
+	// If pretty permalinks are enabled, make our pagination pretty
+	if ( bbp_use_pretty_urls() ) {
+
+		// User's replies
+		if ( bbp_is_single_user_replies() ) {
+			$base = bbp_get_user_replies_created_url( bbp_get_displayed_user_id() );
+
+		// Root profile page
+		} elseif ( bbp_is_single_user() ) {
+			$base = bbp_get_user_profile_url( bbp_get_displayed_user_id() );
+
+		// Page or single post
+		} elseif ( is_page() || is_single() ) {
+			$base = get_permalink();
+
+		// Single topic
+		} else {
+			$base = get_permalink( $topic_id );
+		}
+
+		$base = trailingslashit( $base ) . user_trailingslashit( bbp_get_paged_slug() . '/%#%/' );
+
+	// Unpretty permalinks
+	} else {
+		$base = add_query_arg( 'paged', '%#%' );
+	}
+
+	// Filter & return
+	return apply_filters( 'bbp_get_replies_pagination_base', $base, $topic_id );
+}
 
 /**
  * Output the topic pagination count
+ *
+ * The results are unescaped by design, to allow them to be filtered freely via
+ * the 'bbp_get_topic_pagination_count' filter.
  *
  * @since 2.0.0 bbPress (r2519)
  *
  */
 function bbp_topic_pagination_count() {
-	echo esc_html( bbp_get_topic_pagination_count() );
+	echo bbp_get_topic_pagination_count();
 }
 	/**
 	 * Return the topic pagination count
@@ -2246,14 +2273,16 @@ function bbp_topic_pagination_count() {
 		$retstr = '';
 
 		// Set pagination values
+		$count_int = intval( $bbp->reply_query->post_count     );
 		$total_int = intval( $bbp->reply_query->found_posts    );
 		$ppp_int   = intval( $bbp->reply_query->posts_per_page );
 		$start_int = intval( ( $bbp->reply_query->paged - 1 ) * $ppp_int ) + 1;
 		$to_int    = intval( ( $start_int + ( $ppp_int - 1 ) > $total_int )
-				? $total_int
-				: $start_int + ( $ppp_int - 1 ) );
+			? $total_int
+			: $start_int + ( $ppp_int - 1 ) );
 
 		// Format numbers for display
+		$count_num = bbp_number_format( $count_int );
 		$total_num = bbp_number_format( $total_int );
 		$from_num  = bbp_number_format( $start_int );
 		$to_num    = bbp_number_format( $to_int    );
@@ -2273,7 +2302,7 @@ function bbp_topic_pagination_count() {
 
 			// Several replies in a topic with several pages
 			} else {
-				$retstr = sprintf( _n( 'Viewing %2$s replies (of %4$s total)', 'Viewing %1$s replies - %2$s through %3$s (of %4$s total)', $bbp->reply_query->post_count, 'bbpress' ), $bbp->reply_query->post_count, $from_num, $to_num, $total_num );
+				$retstr = sprintf( _n( 'Viewing %2$s replies (of %4$s total)', 'Viewing %1$s replies - %2$s through %3$s (of %4$s total)', $count_int, 'bbpress' ), $count_num, $from_num, $to_num, $total_num );
 			}
 
 		// We are including the lead topic
@@ -2285,9 +2314,12 @@ function bbp_topic_pagination_count() {
 
 			// Several posts in a topic with several pages
 			} else {
-				$retstr = sprintf( _n( 'Viewing %2$s post (of %4$s total)', 'Viewing %1$s posts - %2$s through %3$s (of %4$s total)', $bbp->reply_query->post_count, 'bbpress' ), $bbp->reply_query->post_count, $from_num, $to_num, $total_num );
+				$retstr = sprintf( _n( 'Viewing %2$s post (of %4$s total)', 'Viewing %1$s posts - %2$s through %3$s (of %4$s total)', $count_int, 'bbpress' ), $count_num, $from_num, $to_num, $total_num );
 			}
 		}
+
+		// Escape results of _n()
+		$retstr = esc_html( $retstr );
 
 		// Filter & return
 		return apply_filters( 'bbp_get_topic_pagination_count', $retstr );
