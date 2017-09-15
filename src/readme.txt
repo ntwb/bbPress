@@ -1,19 +1,19 @@
 === bbPress ===
-Contributors: matt, johnjamesjacoby, jmdodd, netweb
+Contributors: matt, johnjamesjacoby, jmdodd, netweb, sergeybiryukov
 Tags: forums, discussion, support, theme, akismet, multisite
 Requires at least: 4.7
-Tested up to: 4.8
-Stable tag: 2.5.12
+Tested up to: 4.9
+Stable tag: 2.5.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-bbPress is forum software, made the WordPress way.
+bbPress is forum software for WordPress.
 
 == Description ==
 
-Are you looking for a timeless, elegant, and streamlined discussion board? bbPress is focused on ease of integration, ease of use, modern web standards, and performance.
+Are you looking for a timeless, elegant, and streamlined discussion board? bbPress is easy to integrate, easy to use, and is built to scale with your growing community.
 
-bbPress is spry & nimble, and allows for great add-on features through WordPress's extensive plugin system. It is intentionally simple yet infinitely powerful forum software, built by contributors to WordPress.
+bbPress is intentionally simple yet infinitely powerful forum software, built by contributors to WordPress.
 
 == Installation ==
 
@@ -54,79 +54,121 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 
 == Changelog ==
 
+= 2.5.14 =
+* Released on September 9, 2016
+
+* Improved support for PHP 7.1 and higher
+* Improved pagination for non-public post statuses
+* Fixed converter row-limit boundaries
+
+= 2.5.13 =
+* Released on May 18, 2017
+
+* Improved support for `post_parent__in` type queries
+
 = 2.5.12 =
+* Released on December 8, 2016
+
 * Bump minimum WordPress version to 4.7
 * Use 'wp_roles_init' action for dynamic roles
 
 = 2.5.11 =
+* Released on September 9, 2016
+
 * Improved support for WordPress 4.7
 * Improved localization of role names
 * Increase minimum WordPress version to 4.2
 
 = 2.5.10 =
+* Released on July 13, 2016
+
 * Improved user display-name rendering
 
 = 2.5.9 =
+* Released on May 2, 2016
+
 * Improved user mentions
 
 = 2.5.8 =
+* Released on July 7, 2015
+
 * Improved ajax actions
 * Improved user query parsing
-* Fix BuddyPress Groups notice
+* Fixed BuddyPress Groups notice
 
 = 2.5.7 =
+* Released on April 20, 2015
+
 * Improved output of certain URLs
 
 = 2.5.6 =
+* Released on March 16, 2015
+
 * Improved notification & subscription email sending
 
 = 2.5.5 =
+* Released on March 6, 2015
+
 * Improved bulk editing of users
 * Improved suggesting of topics & authors for moderators
 * Improved converter tool access
 
 = 2.5.4 =
-* Fix reply editing causing polluted hierarchy
-* Add tool for repairing reply positions within topics
+* Released on June 6, 2014
+
+* Fixed reply editing causing polluted hierarchy
+* Added tool for repairing reply positions within topics
 * Improved custom slug and displayed user field sanitization
 * Improved SSL support when relying on theme compatibility
 
 = 2.5.3 =
+* Released on January 11, 2014
+
 * WordPress 3.8 support (dashicons, new color schemes)
-* Fix dropdown selects in settings pages
-* Fix accidental topic subscription removal on reply form
-* Fix poor grammar in profile title element
-* Fix admin area SSL support
+* Fixed dropdown selects in settings pages
+* Fixed accidental topic subscription removal on reply form
+* Fixed poor grammar in profile title element
+* Fixed admin area SSL support
 
 = 2.5.2 =
-* Fix BuddyPress (1.9.1) Notification integration
+* Released on December 27, 2013
+
+* Fixed BuddyPress (1.9.1) Notification integration
 
 = 2.5.1 =
-* Updated subscriptions setting description
-* Fix forum subscriptions not appearing on profiles for some users
-* Allow links to have targets
-* Improve Windows compatibility
+* Released on December 3, 2013
 
-= 2.5 =
+* Updated subscriptions setting description
+* Fixed forum subscriptions not appearing on profiles for some users
+* Allow links to have targets
+* Improved Windows compatibility
+
+= 2.5.0 =
+* Released on November 25, 2013
+
 * Added forum subscriptions
 * Added importers for AEF, Drupal, FluxBB, Kunena Forums (Joomla), MyBB, Phorum, PHPFox, PHPWind, PunBB, SMF, Xenforo and XMB
 * Added BuddyPress Notifications integration
 * Added ability to enqueue scripts and styles in the template stack
-* Fix various existing importer scripts
-* Fix forum visibility meta saving
-* Fix Akismet anonymous user meta checking
-* Fix inconsistent bbp_dropdown() results
-* Fix topic and reply ping-status inconsistencies
+* Fixed various existing importer scripts
+* Fixed forum visibility meta saving
+* Fixed Akismet anonymous user meta checking
+* Fixed inconsistent bbp_dropdown() results
+* Fixed topic and reply ping-status inconsistencies
 
 = 2.4.1 =
-* Fix forum status saving
-* Fix widget settings saving
-* Fix custom wp_title compatibility
-* Fix search results custom permalink compatibility
-* Fix custom user topics & replies pages
-* Fix hierarchical reply handling in converter
+* Released on October 10, 2013
 
-= 2.4 =
+* Fixed forum status saving
+* Fixed widget settings saving
+* Fixed custom wp_title compatibility
+* Fixed search results custom permalink compatibility
+* Fixed custom user topics & replies pages
+* Fixed hierarchical reply handling in converter
+
+= 2.4.0 =
+* Released on August 24, 2013
+
 * Added hierarchical reply support
 * Added ability to disable forum search
 * Reorganized settings page
@@ -142,16 +184,22 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 * General code clean-up
 
 = 2.3.2 =
+* Released on May 6, 2013
+
 * Improved posting of preformatted code
 * Improved theme compatibility CSS
 * Improved BuddyPress Activity Streams integration
 
 = 2.3.1 =
-* Improved posting of preformatted code
-* Fix deleting of post cache group
-* Fix moderators not having view_trash capability
+* Released on April 26, 2013
 
-= 2.3 =
+* Improved posting of preformatted code
+* Fixed deleting of post cache group
+* Fixed moderators not having view_trash capability
+
+= 2.3.0 =
+* Released on April 13, 2013
+
 * Added forum search functionality
 * Improved BuddyPress Group Forums integration
 * Improved allowed tags in topics and replies
@@ -159,15 +207,21 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 * Added more forum migration options
 
 = 2.2.4 =
+* Released on January 24, 2013
+
 * Prepare converter queries
-* Improve validation and sanitization of form values
+* Improved validation and sanitization of form values
 
 = 2.2.3 =
-* Improve compatibility with some themes
-* Fix integration with BuddyPress Group Forums
-* Fix BuddyPress Activity Stream integration
+* Released on December 11, 2012
+
+* Improved compatibility with some themes
+* Fixed integration with BuddyPress Group Forums
+* Fixed BuddyPress Activity Stream integration
 
 = 2.2.2 =
+* Released on November 23, 2012
+
 * RTL and i18n fixes
 * Improved user profile theme compatibility
 * Fixed incorrect link in credits page
@@ -175,11 +229,15 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 * Fixed template part reference in extras user edit template
 
 = 2.2.1 =
-* Fix role mapping for non-WordPress roles
-* Fix issue with private forums being blocked
+* Released on November 19, 2012
+
+* Fixed role mapping for non-WordPress roles
+* Fixed issue with private forums being blocked
 * Allow moderators to see hidden forums
 
-= 2.2 =
+= 2.2.0 =
+* Released on November 9, 2012
+
 * Improved user roles and capabilities
 * Improved theme compatibility
 * Improved BuddyPress Group Forums integration
@@ -190,12 +248,16 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 * WordPress 3.5 and BuddyPress 1.7 ready
 
 = 2.1.2 =
+* Released on July 31, 2012
+
 * Fixed admin-side help verbiage
 * Fixed reply height CSS
 * Fixed password converter
 * Fixed child post trash and delete functions
 
 = 2.1.1 =
+* Released on July 23, 2012
+
 * Fixed Invision, phpBB, and vBulletin importers
 * Fixed private/hidden forum bugs
 * Fixed topic split meta values
@@ -204,7 +266,9 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 * Fixed missing function cruft
 * Fixed missing filter on displayed user fields
 
-= 2.1 =
+= 2.1.0 =
+* Released on July 8, 2012
+
 * WordPress 3.4 compatibility
 * Deprecate $bbp global, use bbpress() singleton
 * Private forums now visible to registered users
@@ -232,73 +296,59 @@ bbPress is spry & nimble, and allows for great add-on features through WordPress
 * Added fallback theme picker
 * Added tools for importing, resetting, and removing
 
-= 2.0 =
+= 2.0.2 =
+* Released on November 28, 2011
+
+= 2.0.1 =
+* Released on November 23, 2011
+
+= 2.0.0 =
 * Released on September 21, 2011
 
-= 2.0-rc-5 =
+* Initial plugin release <3
+* BuddyPress @mention integration
+* BuddyPress activity action integration
+* GlotPress integration
+* Multisite integration
+* Akismet integration
+* RTL support
+* More future proofing internal API's
+* Green admin color scheme for WordPress 3.2
+* Audit usage of get strings for moderator level and above users
+* Normalize theme, shortcodes, and template parts
+* Added blacklist_keys support
+* Added actions to topic/reply forms
+* Added Forum Participant role for multisite use
+* Added humans.txt
+* Added empty index.php files to prevent snooping
+* Added max length to topic titles (default 80 chars)
+* Added home link support to breadcrumb
+* Added filters for future anti-spam support
+* Added missing breadcrumbs to various template files
+* Improved templates and CSS
+* Improved Theme Compatibility
+* Improved Theme Compat class
+* Improved Akismet user agent handling
+* Improved support for future ajaxification
+* Improved unpretty permalink support
+* Improved importer
+* Improved multisite support
 * Fixed Genesis incompatibilities
 * Fixed BuddyPress activity stream issues
 * Fixed Subscription email sending issues
 * Fixed Theme Compat display issues for some themes
-* Improved Theme Compat class
-* More future proofing internal API's
-
-= 2.0-rc-4 =
-* BuddyPress @mention integration
-* Improved Akismet user agent handling
-* Added blacklist_keys support
 * Fixed spam/deleted user handling
-* Updated green admin color scheme for WordPress 3.2
-* Added actions to topic/reply forms
-* Improved support for future ajaxification
-
-= 2.0-rc-3 =
 * Fixed activation/deactivation
-* Added Forum Participant role for multisite use
-
-= 2.0-rc-2 =
-* BuddyPress activity action integration
-* Multisite integration
 * Fixed a bushel of bugs
 * Fixed tag pagination again
 * Fixed ajax priority loading
-
-= 2.0-rc-1 =
 * Fixed tag pagination
-* Broke tag pagination
-* Squashed a bunch of bugs
-
-= 2.0-beta-3b =
-* Fix regression in forum index theme compatibility template
-* Audit usage of get strings for moderator level and above users
-
-= 2.0-beta-3 =
-* Akismet integration
-* Fixes replies within wp-admin
-* Fixes reply notification links
-* Fixes inconsistent breadcrumb behavior
-* Fixes theme compatibility issues
-* Fixes archive and page conflicts
-* Improvements to unpretty permalink support
-* Improvements to importer
-* Improvements to multisite support
-* Normalize theme, shortcodes, and template parts
-* Add humans.txt
-* Add empty index.php files to prevent snooping
-* Add max length to topic titles (default 80 chars)
-
-= 2.0-beta-2 =
-* GlotPress integration
-* Fixes Forum archive bug
-* Fixes and improvements to importer
-* Adds home link support to breadcrumb
-* Improvements to Theme Compatibility
-* Numerous template and CSS improvements
-* RTL support
-* Improved multisite support
-* Add filters for future anti-spam support
-* Add missing breadcrumbs to various template files
-* Topic/reply trash fixes
-
-= 2.0-beta-1 =
-* In development
+* Fixed regression in forum index theme compatibility template
+* Fixed replies within wp-admin
+* Fixed reply notification links
+* Fixed inconsistent breadcrumb behavior
+* Fixed theme compatibility issues
+* Fixed archive and page conflicts
+* Fixed forum archive bug
+* Fixed and improvements to importer
+* Fixed topic/reply trash

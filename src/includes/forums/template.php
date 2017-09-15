@@ -128,8 +128,8 @@ function bbp_has_forums( $args = array() ) {
 		$default_post_parent = bbp_get_forum_id();
 	}
 
-	// Parse arguments with default forum query for most circumstances
-	$bbp_f = bbp_parse_args( $args, array(
+	// Default argument array
+	$default = array(
 		'post_type'           => bbp_get_forum_post_type(),
 		'post_parent'         => $default_post_parent,
 		'post_status'         => bbp_get_public_status_id(),
@@ -137,12 +137,23 @@ function bbp_has_forums( $args = array() ) {
 		'orderby'             => 'menu_order title',
 		'order'               => 'ASC',
 		'no_found_rows'       => true,
-		'ignore_sticky_posts' => true
-	), 'has_forums' );
+		'ignore_sticky_posts' => true,
+
+		// Conditionally prime the cache for last active posts
+		'update_post_family_cache' => true
+	);
+
+	// Parse arguments with default forum query for most circumstances
+	$r = bbp_parse_args( $args, $default, 'has_forums' );
 
 	// Run the query
 	$bbp              = bbpress();
-	$bbp->forum_query = new WP_Query( $bbp_f );
+	$bbp->forum_query = new WP_Query( $r );
+
+	// Maybe prime last active posts
+	if ( ! empty( $r['update_post_family_cache'] ) ) {
+		bbp_update_post_family_caches( $bbp->forum_query->posts );
+	}
 
 	// Filter & return
 	return apply_filters( 'bbp_has_forums', $bbp->forum_query->have_posts(), $bbp->forum_query );
@@ -728,6 +739,8 @@ function bbp_list_forums( $args = array() ) {
 		// Subforum classes
 		$subforum_classes      = array( 'bbp-forum-link' );
 		$subforum_classes      = apply_filters( 'bbp_list_forums_subforum_classes', $subforum_classes, $sub_forum->ID );
+
+		// This could use bbp_get_forum_class() eventually...
 		$subforum_classes_attr = 'class="' . implode( ' ', array_map( 'esc_attr', $subforum_classes ) ) . '"';
 
 		// Build this sub forums link
@@ -1794,23 +1807,52 @@ function bbp_forum_class( $forum_id = 0, $classes = array() ) {
 	 * @return string Row class of the forum
 	 */
 	function bbp_get_forum_class( $forum_id = 0, $classes = array() ) {
-		$bbp       = bbpress();
-		$forum_id  = bbp_get_forum_id( $forum_id );
-		$parent_id = bbp_get_forum_parent_id( $forum_id );
-		$classes   = array_filter( (array) $classes );
-		$count     = isset( $bbp->forum_query->current_post )
+		$bbp        = bbpress();
+		$forum_id   = bbp_get_forum_id( $forum_id );
+		$parent_id  = bbp_get_forum_parent_id( $forum_id );
+		$author_id  = bbp_get_forum_author_id( $forum_id );
+		$status     = bbp_get_forum_status( $forum_id );
+		$visibility = bbp_get_forum_visibility( $forum_id );
+		$classes    = array_filter( (array) $classes );
+		$count      = isset( $bbp->forum_query->current_post )
 			? (int) $bbp->forum_query->current_post
 			: 1;
 
+		//  Stripes
+		$even_odd = ( $count % 2 )
+			? 'even'
+			: 'odd';
+
+		// User is moderator of forum
+		$forum_moderator = ( bbp_is_user_forum_moderator( $author_id, $forum_id ) === $author_id )
+			? 'forum-mod'
+			: '';
+
+		// Is forum a non-postable category?
+		$category = bbp_is_forum_category( $forum_id )
+			? 'status-category'
+			: '';
+
+		// Forum has children?
+		$subs = bbp_get_forum_subforum_count( $forum_id )
+			? 'bbp-has-subforums'
+			: '';
+
+		// Forum has parent?
+		$parent = ! empty( $parent_id )
+			? 'bbp-parent-forum-' . $parent_id
+			: '';
+
 		// Get forum classes
 		$forum_classes = array(
-			'loop-item-' . $count,
-			( $count % 2 )                            ? 'even'              : 'odd',
-			bbp_is_forum_category( $forum_id )        ? 'status-category'   : '',
-			bbp_get_forum_subforum_count( $forum_id ) ? 'bbp-has-subforums' : '',
-			! empty( $parent_id )                     ? 'bbp-parent-forum-' . $parent_id : '',
-			'bbp-forum-status-'     . bbp_get_forum_status( $forum_id ),
-			'bbp-forum-visibility-' . bbp_get_forum_visibility( $forum_id )
+			'loop-item-'            . $count,
+			'bbp-forum-status-'     . $status,
+			'bbp-forum-visibility-' . $visibility,
+			$even_odd,
+			$forum_moderator,
+			$category,
+			$subs,
+			$parent
 		);
 
 		// Run the topic classes through the post-class filters, which also

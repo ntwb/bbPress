@@ -43,6 +43,29 @@
 	content: "\f449";
 }
 
+.notice-bbpress {
+	border-left: 4px solid #78cd95;
+	padding-left: 36px;
+	background-color: rgb(235, 255, 235);
+	position: relative;
+}
+
+.notice-bbpress .bbpress-logo-icon {
+	position: absolute;
+	height: auto;
+	width: auto;
+	padding: 7px 9px;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	font: 400 24px/1 dashicons !important;
+}
+
+.notice-bbpress .bbpress-logo-icon:before {
+	content: "\f477";
+	color: #555;
+}
+
 @-webkit-keyframes buzz {
 
 	0% {
@@ -484,7 +507,7 @@ div.bbp-converter-log .mini-step {
 	font-weight: 600;
 	border-radius: 6px;
 	background-color: #aaa;
-	color: white;
+	color: #fff;
 }
 
 #bbp-converter-monitor .bbp-progress-bar {
@@ -523,12 +546,12 @@ div.bbp-converter-log .mini-step {
 	position: relative;
 }
 
-#_bbp_converter_db_pass::-webkit-credentials-auto-fill-button {
+.bbp-converter-db-pass::-webkit-credentials-auto-fill-button {
 	display: none;
-    visibility: hidden;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
+	visibility: hidden;
+	pointer-events: none;
+	position: absolute;
+	right: 0;
 }
 
 button.bbp-db-pass-toggle {
@@ -549,14 +572,17 @@ button.bbp-db-pass-toggle {
 button.bbp-db-pass-toggle:hover {
 	color: #888;
 }
+
 button.bbp-db-pass-toggle.text:after {
-	content: '\f530';
+	content: "\f530";
 }
+
 button.bbp-db-pass-toggle.password:after {
-	content: '\f177';
+	content: "\f177";
 }
 
 @media screen and ( max-width: 782px ) {
+
 	.bbp-converter-db-password-wrapper {
 		width: 100%;
 	}

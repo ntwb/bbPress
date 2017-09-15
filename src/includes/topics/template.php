@@ -151,6 +151,9 @@ function bbp_has_topics( $args = array() ) {
 		'paged'          => bbp_get_paged(),           // Page Number
 		'show_stickies'  => $default_show_stickies,    // Ignore sticky topics?
 		'max_num_pages'  => false,                     // Maximum number of pages to show
+
+		// Conditionally prime the cache for related posts
+		'update_post_family_cache' => true
 	);
 
 	// Only add 's' arg if searching for topics
@@ -194,6 +197,11 @@ function bbp_has_topics( $args = array() ) {
 
 	// Call the query
 	$bbp->topic_query = new WP_Query( $r );
+
+	// Maybe prime last active posts
+	if ( ! empty( $r['update_post_family_cache'] ) ) {
+		bbp_update_post_family_caches( $bbp->topic_query->posts );
+	}
 
 	// Set post_parent back to 0 if originally set to 'any'
 	if ( 'any' === $r['post_parent'] ) {
@@ -2253,21 +2261,44 @@ function bbp_topic_class( $topic_id = 0, $classes = array() ) {
 	 * @return string Row class of a topic
 	 */
 	function bbp_get_topic_class( $topic_id = 0, $classes = array() ) {
-		$bbp      = bbpress();
-		$topic_id = bbp_get_topic_id( $topic_id );
-		$classes  = array_filter( (array) $classes );
-		$count    = isset( $bbp->topic_query->current_post )
+		$bbp       = bbpress();
+		$topic_id  = bbp_get_topic_id( $topic_id );
+		$forum_id  = bbp_get_topic_forum_id( $topic_id );
+		$author_id = bbp_get_topic_author_id( $topic_id );
+		$classes   = array_filter( (array) $classes );
+		$count     = isset( $bbp->topic_query->current_post )
 			? (int) $bbp->topic_query->current_post
 			: 1;
 
+		//  Stripes
+		$even_odd = ( $count % 2 )
+			? 'even'
+			: 'odd';
+
+		// Forum moderator replied to topic
+		$forum_moderator = ( bbp_is_user_forum_moderator( $author_id, $forum_id ) === $author_id )
+			? 'forum-mod'
+			: '';
+
+		// Is this topic a sticky?
+		$sticky = bbp_is_topic_sticky( $topic_id, false )
+			? 'sticky'
+			: '';
+
+		// Is this topic a super-sticky?
+		$super_sticky = bbp_is_topic_super_sticky( $topic_id  )
+			? 'super-sticky'
+			: '';
+
 		// Get topic classes
 		$topic_classes = array(
-			'loop-item-' . $count,
-			( $count % 2 )                          ? 'even'         : 'odd',
-			bbp_is_topic_sticky( $topic_id, false ) ? 'sticky'       : '',
-			bbp_is_topic_super_sticky( $topic_id  ) ? 'super-sticky' : '',
-			'bbp-parent-forum-' . bbp_get_topic_forum_id( $topic_id ),
-			'user-id-' . bbp_get_topic_author_id( $topic_id )
+			'loop-item-'        . $count,
+			'user-id-'          . $author_id,
+			'bbp-parent-forum-' . $forum_id,
+			$even_odd,
+			$forum_moderator,
+			$sticky,
+			$super_sticky
 		);
 
 		// Run the topic classes through the post-class filters, which also

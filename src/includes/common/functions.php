@@ -1652,6 +1652,118 @@ function bbp_get_all_child_ids( $parent_id = 0, $post_type = 'post' ) {
 	return (array) apply_filters( 'bbp_get_all_child_ids', $child_ids, $parent_id, $post_type );
 }
 
+/**
+ * Prime familial post caches.
+ *
+ * This function uses _prime_post_caches() to prepare the object cache for
+ * imminent requests to post objects that aren't naturally cached by the primary
+ * WP_Query calls themselves. Post author caches are also primed.
+ *
+ * This is triggered when a `update_post_family_cache` argument is set to true.
+ *
+ * Also see: bbp_update_post_author_caches()
+ *
+ * @since 2.6.0 bbPress (r6699)
+ *
+ * @param array $objects Array of objects, fresh from a query
+ *
+ * @return bool True if some IDs were cached
+ */
+function bbp_update_post_family_caches( $objects = array() ) {
+
+	// Bail if no posts
+	if ( empty( $objects ) ) {
+		return false;
+	}
+
+	// Default value
+	$post_ids = array();
+
+	// Filter the types of IDs to prime
+	$ids = apply_filters( 'bbp_update_post_family_caches', array(
+		'_bbp_last_active_id',
+		'_bbp_last_reply_id',
+		'_bbp_last_topic_id',
+		'_bbp_reply_to'
+	), $objects );
+
+	// Get the last active IDs
+	foreach ( $objects as $object ) {
+		$object = get_post( $object );
+
+		// Meta IDs
+		foreach ( $ids as $key ) {
+			$post_ids[] = get_post_meta( $object->ID, $key, true );
+		}
+
+		// This post ID is already cached, but the post author may not be
+		$post_ids[] = $object->ID;
+	}
+
+	// Unique, non-zero values
+	$post_ids = bbp_get_unique_array_values( $post_ids );
+
+	// Bail if no IDs to prime
+	if ( empty( $post_ids ) ) {
+		return false;
+	}
+
+	// Prime post caches
+	_prime_post_caches( $post_ids, true, true );
+
+	// Prime post author caches
+	bbp_update_post_author_caches( $post_ids );
+
+	// Return
+	return true;
+}
+
+/**
+ * Prime post author caches.
+ *
+ * This function uses cache_users() to prepare the object cache for
+ * imminent requests to user objects that aren't naturally cached by the primary
+ * WP_Query calls themselves.
+ *
+ * This is triggered when a `update_post_author_cache` argument is set to true.
+ *
+ * @since 2.6.0 bbPress (r6699)
+ *
+ * @param array $objects Array of objects, fresh from a query
+ *
+ * @return bool True if some IDs were cached
+ */
+function bbp_update_post_author_caches( $objects = array() ) {
+
+	// Bail if no posts
+	if ( empty( $objects ) ) {
+		return false;
+	}
+
+	// Default value
+	$user_ids = array();
+
+	// Get the user IDs
+	foreach ( $objects as $object ) {
+		$object     = get_post( $object );
+		$user_ids[] = get_post_field( 'post_author', $object->ID );
+	}
+
+	// Unique, non-zero values
+	$user_ids = bbp_get_unique_array_values( $user_ids );
+
+	// Bail if no IDs to prime
+	if ( empty( $user_ids ) ) {
+		return false;
+	}
+
+	// Try to prime user caches
+	cache_users( $user_ids );
+
+	// Return
+	return true;
+}
+
 /** Globals *******************************************************************/
 
 /**
