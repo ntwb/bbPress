@@ -23,7 +23,9 @@
 	height: 1px;
 	width: 1px;
 	overflow: hidden;
-	clip: rect(0 0 0 0);
+	clip: rect(1px, 1px, 1px, 1px);
+	-webkit-clip-path: inset(50%);
+	clip-path: inset(50%);
 	border: 0;
 	word-wrap: normal !important; /* many screen reader and browser combinations announce broken words as they would appear visually */
 }
@@ -34,12 +36,14 @@
 	margin-bottom: 20px;
 	overflow: hidden;
 	font-size: 12px;
+	line-height: 18px;
 }
 
 #bbpress-forums a,
 #bbpress-forums a:hover {
 	box-shadow: none;
 	border: none;
+	transition: none;
 }
 
 #bbpress-forums hr {
@@ -225,16 +229,16 @@ li.bbp-topic-freshness {
 	float: none;
 }
 
-#bbpress-forums div.bbp-forum-author a.bbp-author-name,
-#bbpress-forums div.bbp-topic-author a.bbp-author-name,
-#bbpress-forums div.bbp-reply-author a.bbp-author-name {
+#bbpress-forums div.bbp-forum-author .bbp-author-name,
+#bbpress-forums div.bbp-topic-author .bbp-author-name,
+#bbpress-forums div.bbp-reply-author .bbp-author-name {
 	margin: 0 12px;
 	word-wrap: break-word;
 	display: inline-block;
 }
 
-#bbpress-forums div.bbp-topic-author a.bbp-author-name,
-#bbpress-forums div.bbp-reply-author a.bbp-author-name {
+#bbpress-forums div.bbp-topic-author .bbp-author-name,
+#bbpress-forums div.bbp-reply-author .bbp-author-name {
 	clear: left;
 	display: block;
 }
@@ -542,7 +546,7 @@ td.bbp-topic-counts {
 	border: 1px solid #aca;
 	background-color: #dfd;
 	font-weight: 700;
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .bbp-row-actions #favorite-toggle a:hover {
@@ -570,7 +574,7 @@ td.bbp-topic-counts {
 	border: 1px solid #aca;
 	background-color: #dfd;
 	font-weight: 700;
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .bbp-row-actions #subscription-toggle a:hover {
@@ -617,50 +621,56 @@ td.bbp-topic-counts {
 	display: inline;
 }
 
-.bbp-pagination-links a,
-.bbp-pagination-links span.current {
-	display: block;
-	float: left;
-	padding: 0 5px;
-	margin-left: 5px;
-	border: 1px solid #efefef;
-	text-decoration: none;
-}
-
-.bbp-pagination-links a:hover,
-.bbp-pagination-links span.current {
-	background: #eee;
-	opacity: 0.8;
-	border: 1px solid #ddd;
-}
-
-.bbp-pagination-links span.dots {
-	display: block;
-	float: left;
-	padding: 1px 4px;
-	margin-left: 5px;
-}
-
 .bbp-pagination {
 	float: left;
 	width: 100%;
 	margin-bottom: 15px;
 }
 
-.bbp-topic-pagination {
+#bbpress-forums .bbp-pagination-links a,
+#bbpress-forums .bbp-pagination-links span.current {
+	display: block;
+	float: left;
+	font-size: 12px;
+	line-height: 18px;
+	padding: 0 5px;
+	margin-left: 5px;
+	border: 1px solid #efefef;
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	text-decoration: none;
+}
+
+#bbpress-forums .bbp-pagination-links span.dots {
+	display: block;
+	float: left;
+	padding: 1px 4px;
+	margin-left: 5px;
+}
+
+#bbpress-forums .bbp-topic-pagination {
 	display: inline-block;
 	margin-left: 5px;
 	margin-bottom: 2px;
 }
 
-.bbp-topic-pagination a {
+#bbpress-forums .bbp-topic-pagination a {
 	font-size: 10px;
 	line-height: 10px;
 	padding: 1px 3px;
 	border: 1px solid #ddd;
+	color: inherit;
 	text-decoration: none;
 }
 
+#bbpress-forums .bbp-topic-pagination a:hover,
+#bbpress-forums .bbp-pagination-links a:hover,
+#bbpress-forums .bbp-pagination-links span.current {
+	background: #eee;
+	opacity: 0.8;
+	border: 1px solid #ddd;
+}
 
 /* =Forms
 -------------------------------------------------------------- */
@@ -1411,8 +1421,8 @@ body.my-account #bbpress-forums {
 		width: 100%;
 	}
 
-	#bbpress-forums div.bbp-topic-author a.bbp-author-name,
-	#bbpress-forums div.bbp-reply-author a.bbp-author-name {
+	#bbpress-forums div.bbp-topic-author .bbp-author-name,
+	#bbpress-forums div.bbp-reply-author .bbp-author-name {
 		clear: none;
 		display: inline-block;
 		margin-left: 0;

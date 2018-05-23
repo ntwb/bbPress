@@ -158,6 +158,11 @@ function bbp_new_topic_handler( $action = '' ) {
 		bbp_add_error( 'bbp_topic_title', __( '<strong>ERROR</strong>: Your topic needs a title.', 'bbpress' ) );
 	}
 
+	// Title too long
+	if ( bbp_is_title_too_long( $topic_title ) ) {
+		bbp_add_error( 'bbp_topic_title', __( '<strong>ERROR</strong>: Your title is too long.', 'bbpress' ) );
+	}
+
 	/** Topic Content *********************************************************/
 
 	if ( ! empty( $_POST['bbp_topic_content'] ) ) {
@@ -525,6 +530,11 @@ function bbp_edit_topic_handler( $action = '' ) {
 		bbp_add_error( 'bbp_edit_topic_title', __( '<strong>ERROR</strong>: Your topic needs a title.', 'bbpress' ) );
 	}
 
+	// Title too long
+	if ( bbp_is_title_too_long( $topic_title ) ) {
+		bbp_add_error( 'bbp_topic_title', __( '<strong>ERROR</strong>: Your title is too long.', 'bbpress' ) );
+	}
+
 	/** Topic Content *********************************************************/
 
 	if ( ! empty( $_POST['bbp_topic_content'] ) ) {
@@ -570,7 +580,7 @@ function bbp_edit_topic_handler( $action = '' ) {
 	/** Topic Tags ************************************************************/
 
 	// Either replace terms
-	if ( bbp_allow_topic_tags() && current_user_can( 'assign_topic_tags' ) && ! empty( $_POST['bbp_topic_tags'] ) ) {
+	if ( bbp_allow_topic_tags() && current_user_can( 'assign_topic_tags', $topic_id ) && ! empty( $_POST['bbp_topic_tags'] ) ) {
 
 		// Escape tag input
 		$terms = sanitize_text_field( $_POST['bbp_topic_tags'] );
@@ -1680,7 +1690,7 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 			}
 
 			// Can user edit topic tags?
-			if ( ! current_user_can( 'edit_topic_tags' ) ) {
+			if ( ! current_user_can( 'edit_topic_tag', $tag_id ) ) {
 				bbp_add_error( 'bbp_manage_topic_tag_update_permission', __( '<strong>ERROR</strong>: You do not have permission to edit the topic tags.', 'bbpress' ) );
 				return;
 			}
@@ -1694,7 +1704,11 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 			// Attempt to update the tag
 			$slug        = ! empty( $_POST['tag-slug']        ) ? $_POST['tag-slug']        : '';
 			$description = ! empty( $_POST['tag-description'] ) ? $_POST['tag-description'] : '';
-			$tag         = wp_update_term( $tag_id, bbp_get_topic_tag_tax_id(), array( 'name' => $name, 'slug' => $slug, 'description' => $description ) );
+			$tag         = wp_update_term( $tag_id, bbp_get_topic_tag_tax_id(), array(
+				'name'        => $name,
+				'slug'        => $slug,
+				'description' => $description
+			) );
 
 			// Cannot update tag
 			if ( is_wp_error( $tag ) && $tag->get_error_message() ) {
@@ -1752,7 +1766,10 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 			}
 
 			// Delete the old term
-			$tag = wp_delete_term( $tag_id, bbp_get_topic_tag_tax_id(), array( 'default' => $to_tag, 'force_default' => true ) );
+			$tag = wp_delete_term( $tag_id, bbp_get_topic_tag_tax_id(), array(
+				'default'       => $to_tag,
+				'force_default' => true
+			) );
 
 			// Error merging the terms
 			if ( is_wp_error( $tag ) && $tag->get_error_message() ) {
@@ -1778,7 +1795,7 @@ function bbp_edit_topic_tag_handler( $action = '' ) {
 			}
 
 			// Can user delete topic tags?
-			if ( ! current_user_can( 'delete_topic_tags' ) ) {
+			if ( ! current_user_can( 'delete_topic_tag', $tag_id ) ) {
 				bbp_add_error( 'bbp_manage_topic_tag_delete_permission', __( '<strong>ERROR</strong>: You do not have permission to delete the topic tags.', 'bbpress' ) );
 				return;
 			}
@@ -2718,15 +2735,16 @@ function bbp_close_topic( $topic_id = 0 ) {
 	}
 
 	// Get previous topic status meta
+	$status       = bbp_get_closed_status_id();
 	$topic_status = get_post_meta( $topic_id, '_bbp_status', true );
 
 	// Bail if already closed and topic status meta exists
-	if ( bbp_get_closed_status_id() === $topic->post_status && ! empty( $topic_status ) ) {
+	if ( $status === $topic->post_status && ! empty( $topic_status ) ) {
 		return false;
 	}
 
 	// Set status meta public
-	$topic_status = bbp_get_public_status_id();
+	$topic_status = $topic->post_status;
 
 	// Execute pre close code
 	do_action( 'bbp_close_topic', $topic_id );
@@ -2735,7 +2753,7 @@ function bbp_close_topic( $topic_id = 0 ) {
 	add_post_meta( $topic_id, '_bbp_status', $topic_status );
 
 	// Set closed status
-	$topic->post_status = bbp_get_closed_status_id();
+	$topic->post_status = $status;
 
 	// Toggle revisions off as we are not altering content
 	if ( post_type_supports( bbp_get_topic_post_type(), 'revisions' ) ) {
@@ -2835,8 +2853,11 @@ function bbp_spam_topic( $topic_id = 0 ) {
 		return $topic;
 	}
 
+	// Get new status
+	$status = bbp_get_spam_status_id();
+
 	// Bail if topic is spam
-	if ( bbp_get_spam_status_id() === $topic->post_status ) {
+	if ( $status === $topic->post_status ) {
 		return false;
 	}
 
@@ -2847,7 +2868,7 @@ function bbp_spam_topic( $topic_id = 0 ) {
 	do_action( 'bbp_spam_topic', $topic_id );
 
 	// Set post status to spam
-	$topic->post_status = bbp_get_spam_status_id();
+	$topic->post_status = $status;
 
 	// Empty the topic of its tags
 	$topic->tax_input = bbp_spam_topic_tags( $topic_id );
@@ -3138,8 +3159,11 @@ function bbp_approve_topic( $topic_id = 0 ) {
 		return $topic;
 	}
 
+	// Get new status
+	$status = bbp_get_public_status_id();
+
 	// Bail if already approved
-	if ( bbp_get_pending_status_id() !== $topic->post_status ) {
+	if ( $status === $topic->post_status ) {
 		return false;
 	}
 
@@ -3147,7 +3171,7 @@ function bbp_approve_topic( $topic_id = 0 ) {
 	do_action( 'bbp_approve_topic', $topic_id );
 
 	// Set publish status
-	$topic->post_status = bbp_get_public_status_id();
+	$topic->post_status = $status;
 
 	// No revisions
 	remove_action( 'pre_post_update', 'wp_save_post_revision' );
@@ -3178,8 +3202,11 @@ function bbp_unapprove_topic( $topic_id = 0 ) {
 		return $topic;
 	}
 
-	// Bail if already pending
-	if ( bbp_get_pending_status_id() === $topic->post_status ) {
+	// Get new status
+	$status = bbp_get_pending_status_id();
+
+	// Bail if already unapproved
+	if ( ! bbp_is_topic_public( $topic_id ) ) {
 		return false;
 	}
 
@@ -3187,7 +3214,7 @@ function bbp_unapprove_topic( $topic_id = 0 ) {
 	do_action( 'bbp_unapprove_topic', $topic_id );
 
 	// Set pending status
-	$topic->post_status = bbp_get_pending_status_id();
+	$topic->post_status = $status;
 
 	// No revisions
 	remove_action( 'pre_post_update', 'wp_save_post_revision' );
@@ -3650,7 +3677,7 @@ function bbp_display_topics_feed_rss2( $topics_query = array() ) {
 	}
 
 	// Feed title
-	$title = get_bloginfo_rss( 'name' ) . ' &#187; ' . __( 'All Topics', 'bbpress' );
+	$title = get_bloginfo_rss( 'name' ) . ' &#187; ' . esc_html__( 'All Topics', 'bbpress' );
 	$title = apply_filters( 'wp_title_rss', $title );
 
 	// Display the feed
@@ -3669,12 +3696,12 @@ function bbp_display_topics_feed_rss2( $topics_query = array() ) {
 
 	<channel>
 
-		<title><?php echo $title; ?></title>
+		<title><?php echo $title; // Already escaped ?></title>
 		<atom:link href="<?php self_link(); ?>" rel="self" type="application/rss+xml" />
 		<link><?php self_link(); ?></link>
 		<description><?php //?></description>
 		<lastBuildDate><?php echo date( 'r' ); ?></lastBuildDate>
-		<generator>https://bbpress.org/?v=<?php bbp_version(); ?></generator>
+		<generator><?php echo esc_url_raw( 'https://bbpress.org/?v=' . convert_chars( bbp_get_version() ) ); ?></generator>
 		<language><?php bloginfo_rss( 'language' ); ?></language>
 
 		<?php do_action( 'bbp_feed_head' ); ?>
@@ -3722,7 +3749,7 @@ function bbp_display_topics_feed_rss2( $topics_query = array() ) {
 /** Permissions ***************************************************************/
 
 /**
- * Redirect if unathorized user is attempting to edit a topic
+ * Redirect if unauthorized user is attempting to edit a topic
  *
  * @since 2.1.0 bbPress (r3605)
  */
@@ -3740,7 +3767,7 @@ function bbp_check_topic_edit() {
 }
 
 /**
- * Redirect if unathorized user is attempting to edit a topic tag
+ * Redirect if unauthorized user is attempting to edit a topic tag
  *
  * @since 2.1.0 bbPress (r3605)
  */
@@ -3752,7 +3779,7 @@ function bbp_check_topic_tag_edit() {
 	}
 
 	// Bail if current user cannot edit topic tags
-	if ( ! current_user_can( 'edit_topic_tags', bbp_get_topic_tag_id() ) ) {
+	if ( ! current_user_can( 'edit_topic_tag', bbp_get_topic_tag_id() ) ) {
 		bbp_redirect( bbp_get_topic_tag_link() );
 	}
 }

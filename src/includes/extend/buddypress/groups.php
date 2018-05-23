@@ -37,6 +37,7 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 		$this->setup_actions();
 		$this->setup_filters();
 		$this->maybe_unset_forum_menu();
+		$this->fully_loaded();
 	}
 
 	/**
@@ -47,8 +48,8 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	private function setup_variables() {
 
 		// Component Name
-		$this->name          = __( 'Forum', 'bbpress' );
-		$this->nav_item_name = __( 'Forum', 'bbpress' );
+		$this->name          = esc_html__( 'Forum', 'bbpress' );
+		$this->nav_item_name = esc_html__( 'Forum', 'bbpress' );
 
 		// Component slugs (hardcoded to match bbPress 1.x functionality)
 		$this->slug          = 'forum';
@@ -108,12 +109,6 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	 */
 	private function setup_filters() {
 
-		// Ensure bbp_is_single_forum() returns true on group forums.
-		add_filter( 'bbp_is_single_forum',       array( $this, 'is_single_forum' ) );
-
-		// Ensure bbp_is_single_topic() returns true on group forum topics.
-		add_filter( 'bbp_is_single_topic',       array( $this, 'is_single_topic' ) );
-
 		// Group forum pagination
 		add_filter( 'bbp_topic_pagination',      array( $this, 'topic_pagination'   ) );
 		add_filter( 'bbp_replies_pagination',    array( $this, 'replies_pagination' ) );
@@ -122,7 +117,7 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 		add_filter( 'bbp_new_topic_redirect_to', array( $this, 'new_topic_redirect_to'        ), 10, 3 );
 		add_filter( 'bbp_new_reply_redirect_to', array( $this, 'new_reply_redirect_to'        ), 10, 3 );
 
-		// Map forum/topic/replys permalinks to their groups
+		// Map forum/topic/reply permalinks to their groups
 		add_filter( 'bbp_get_forum_permalink',   array( $this, 'map_forum_permalink_to_group' ), 10, 2 );
 		add_filter( 'bbp_get_topic_permalink',   array( $this, 'map_topic_permalink_to_group' ), 10, 2 );
 		add_filter( 'bbp_get_reply_permalink',   array( $this, 'map_reply_permalink_to_group' ), 10, 2 );
@@ -141,7 +136,13 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 		/** Caps **************************************************************/
 
 		// Only add these filters if inside a group forum
-		if ( bp_is_single_item() && bp_is_groups_component() && bp_is_current_action( 'forum' ) ) {
+		if ( bp_is_single_item() && bp_is_group() && bp_is_current_action( $this->slug ) ) {
+
+			// Ensure bbp_is_single_forum() returns true on group forums.
+			add_filter( 'bbp_is_single_forum', array( $this, 'is_single_forum' ) );
+
+			// Ensure bbp_is_single_topic() returns true on group forum topics.
+			add_filter( 'bbp_is_single_topic', array( $this, 'is_single_topic' ) );
 
 			// Allow group member to view private/hidden forums
 			add_filter( 'bbp_map_meta_caps', array( $this, 'map_group_forum_meta_caps' ), 10, 4 );
@@ -150,6 +151,16 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 			add_filter( 'bbp_current_user_can_access_create_topic_form', array( $this, 'form_permissions' ) );
 			add_filter( 'bbp_current_user_can_access_create_reply_form', array( $this, 'form_permissions' ) );
 		}
+	}
+
+	/**
+	 * Allow the variables, actions, and filters to be modified by third party
+	 * plugins and themes.
+	 *
+	 * @since 2.6.0 bbPress (r6808)
+	 */
+	private function fully_loaded() {
+		do_action_ref_array( 'bbp_buddypress_groups_loaded', array( $this ) );
 	}
 
 	/**
@@ -165,10 +176,8 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	public function is_single_forum( $retval = false ) {
 
 		// Additional BuddyPress specific single-forum conditionals
-		if ( false === $retval ) {
-			if ( bp_is_group() && bp_is_action_variable( $this->forum_slug, 0 ) ) {
-				$retval = true;
-			}
+		if ( ( false === $retval ) && ! bp_is_action_variable( $this->topic_slug, 0 ) ) {
+			$retval = true;
 		}
 
 		return $retval;
@@ -187,10 +196,8 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	public function is_single_topic( $retval = false ) {
 
 		// Additional BuddyPress specific single-topic conditionals
-		if ( false === $retval ) {
-			if ( bp_is_group() && bp_is_action_variable( $this->topic_slug, 0 ) && bp_action_variable( 1 ) ) {
-				$retval = true;
-			}
+		if ( ( false === $retval ) && bp_is_action_variable( $this->topic_slug, 0 ) && bp_action_variable( 1 ) ) {
+			$retval = true;
 		}
 
 		return $retval;
@@ -265,8 +272,7 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 			case 'read_private_forums' :
 				if ( bbp_group_is_banned() ) {
 					$caps = array( 'do_not_allow' );
-
-				} else if ( bbp_group_is_member() || bbp_group_is_mod() || bbp_group_is_admin() ) {
+				} elseif ( bbp_group_is_member() || bbp_group_is_mod() || bbp_group_is_admin() ) {
 					$caps = array( 'participate' );
 				}
 				break;
@@ -649,8 +655,9 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	 *
 	 * @since 2.1.0 bbPress (r3653)
 	 *
-	 * @param type $forum_args
-	 * @return if no forum_id is available
+	 * @param array $forum_args
+	 *
+	 * @return void if no forum_id is available
 	 */
 	public function new_forum( $forum_args = array() ) {
 
@@ -672,8 +679,9 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	 *
 	 * @since 2.1.0 bbPress (r3653)
 	 *
-	 * @param type $forum_args
-	 * @return if no forum_id is available
+	 * @param array $forum_args
+	 *
+	 * @return void if no forum_id is available
 	 */
 	public function remove_forum( $forum_args = array() ) {
 
@@ -1194,11 +1202,6 @@ class BBP_Forums_Group_Extension extends BP_Group_Extension {
 	 * @return bool
 	 */
 	public function form_permissions( $retval = false ) {
-
-		// Bail if not a group
-		if ( ! bp_is_group() ) {
-			return $retval;
-		}
 
 		// Bail if user is not logged in
 		if ( ! is_user_logged_in() ) {

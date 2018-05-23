@@ -256,6 +256,31 @@ function bbp_login_form_login() {
 	do_action( 'bbp_login_form_login' );
 }
 
+
+/**
+ * Add the bbPress-specific post status transition action
+ *
+ * @since 2.6.0 bbPress (r6792)
+ *
+ * @param string  $new_status New post status
+ * @param string  $old_status Old post status
+ * @param WP_Post $post       Post object
+ */
+function bbp_transition_post_status( $new_status = '', $old_status = '', $post = false ) {
+
+	// Get bbPress post types
+	$post_type = get_post_type( $post );
+	$types     = bbp_get_post_types();
+
+	// Bail if post is not a bbPress post type
+	if ( ! in_array( $post_type, $types, true ) ) {
+		return;
+	}
+
+	// Do the action
+	do_action( 'bbp_transition_post_status', $new_status, $old_status, $post );
+}
+
 /** User Actions **************************************************************/
 
 /**
@@ -353,6 +378,11 @@ function bbp_post_request() {
 	// Sanitize the POST action
 	$action = sanitize_key( $_POST['action'] );
 
+	// Bail if action was totally invalid
+	if ( empty( $action ) ) {
+		return;
+	}
+
 	// This dynamic action is probably the one you want to use. It narrows down
 	// the scope of the 'action' without needing to check it in your function.
 	do_action( 'bbp_post_request_' . $action );
@@ -380,6 +410,11 @@ function bbp_get_request() {
 
 	// Sanitize the GET action
 	$action = sanitize_key( $_GET['action'] );
+
+	// Bail if action was totally invalid
+	if ( empty( $action ) ) {
+		return;
+	}
 
 	// This dynamic action is probably the one you want to use. It narrows down
 	// the scope of the 'action' without needing to check it in your function.

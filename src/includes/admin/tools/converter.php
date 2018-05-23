@@ -20,30 +20,34 @@ defined( 'ABSPATH' ) || exit;
  * @return array
  */
 function bbp_get_converters() {
+	static $files = array();
 
-	// Default
-	$files  = array();
-	$path   = bbp_setup_converter()->converters_dir;
-	$curdir = opendir( $path );
+	// Only hit the file system one time per page load
+	if ( empty( $files ) ) {
 
-	// Look for the converter file in the converters directory
-	if ( false !== $curdir ) {
-		while ( $file = readdir( $curdir ) ) {
-			if ( stristr( $file, '.php' ) && stristr( $file, 'index' ) === false ) {
-				$name = preg_replace( '/.php/', '', $file );
-				if ( 'Example' !== $name ) {
-					$files[ $name ] = $path . $file;
+		// Open the converter directory
+		$path   = bbp_setup_converter()->converters_dir;
+		$curdir = opendir( $path );
+
+		// Look for the converter file in the converters directory
+		if ( false !== $curdir ) {
+			while ( $file = readdir( $curdir ) ) {
+				if ( stristr( $file, '.php' ) && stristr( $file, 'index' ) === false ) {
+					$name = preg_replace( '/.php/', '', $file );
+					if ( 'Example' !== $name ) {
+						$files[ $name ] = $path . $file;
+					}
 				}
 			}
 		}
-	}
 
-	// Close the directory
-	closedir( $curdir );
+		// Close the directory
+		closedir( $curdir );
 
-	// Sort keys alphabetically, ignoring upper/lower casing
-	if ( ! empty( $files ) ) {
-		natcasesort( $files );
+		// Sort keys alphabetically, ignoring upper/lower casing
+		if ( ! empty( $files ) ) {
+			natcasesort( $files );
+		}
 	}
 
 	// Filter & return
@@ -58,22 +62,39 @@ function bbp_get_converters() {
  * @since 2.0.0
  *
  * @param string $platform Name of valid platform class.
+ *
+ * @return mixed Object if converter exists, null if not
  */
-function bbp_new_converter( $platform ) {
+function bbp_new_converter( $platform = '' ) {
 
-	// Default value
+	// Default converter
+	$converter = null;
+
+	// Bail if no platform
+	if ( empty( $platform ) ) {
+		return $converter;
+	}
+
+	// Get the available converters
 	$converters = bbp_get_converters();
 
-	// Create a new converter object if it's found
-	if ( isset( $converters[ $platform ] ) ) {
+	// Get the converter file form converters array
+	$converter_file = isset( $converters[ $platform ] )
+		? $converters[ $platform ]
+		: '';
 
-		// Include & create the converter
-		require_once $converters[ $platform ];
+	// Try to create a new converter object
+	if ( ! empty( $converter_file ) ) {
+
+		// Try to include the converter
+		@include_once $converter_file;
+
+		// Try to instantiate the converter object
 		if ( class_exists( $platform ) ) {
-			return new $platform;
+			$converter = new $platform;
 		}
 	}
 
-	// Return null if no converter was found
-	return null;
+	// Filter & return
+	return apply_filters( 'bbp_new_converter', $converter, $platform );
 }

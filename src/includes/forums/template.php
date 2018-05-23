@@ -45,25 +45,37 @@ function bbp_get_forum_post_type_labels() {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_forum_post_type_labels', array(
-		'name'                  => __( 'Forums',                   'bbpress' ),
-		'menu_name'             => __( 'Forums',                   'bbpress' ),
-		'singular_name'         => __( 'Forum',                    'bbpress' ),
-		'all_items'             => __( 'All Forums',               'bbpress' ),
-		'add_new'               => __( 'Add New',                  'bbpress' ),
-		'add_new_item'          => __( 'Create New Forum',         'bbpress' ),
-		'edit'                  => __( 'Edit',                     'bbpress' ),
-		'edit_item'             => __( 'Edit Forum',               'bbpress' ),
-		'new_item'              => __( 'New Forum',                'bbpress' ),
-		'view'                  => __( 'View Forum',               'bbpress' ),
-		'view_item'             => __( 'View Forum',               'bbpress' ),
-		'view_items'            => __( 'View Forums',              'bbpress' ),
-		'search_items'          => __( 'Search Forums',            'bbpress' ),
-		'not_found'             => __( 'No forums found',          'bbpress' ),
-		'not_found_in_trash'    => __( 'No forums found in Trash', 'bbpress' ),
-		'filter_items_list'     => __( 'Filter forums list',       'bbpress' ),
-		'items_list'            => __( 'Forums list',              'bbpress' ),
-		'items_list_navigation' => __( 'Forums list navigation',   'bbpress' ),
-		'parent_item_colon'     => __( 'Parent Forum:',            'bbpress' )
+		'name'                  => esc_attr__( 'Forums',                   'bbpress' ),
+		'menu_name'             => esc_attr__( 'Forums',                   'bbpress' ),
+		'singular_name'         => esc_attr__( 'Forum',                    'bbpress' ),
+		'all_items'             => esc_attr__( 'All Forums',               'bbpress' ),
+		'add_new'               => esc_attr__( 'Add New',                  'bbpress' ),
+		'add_new_item'          => esc_attr__( 'Create New Forum',         'bbpress' ),
+		'edit'                  => esc_attr__( 'Edit',                     'bbpress' ),
+		'edit_item'             => esc_attr__( 'Edit Forum',               'bbpress' ),
+		'new_item'              => esc_attr__( 'New Forum',                'bbpress' ),
+		'view'                  => esc_attr__( 'View Forum',               'bbpress' ),
+		'view_item'             => esc_attr__( 'View Forum',               'bbpress' ),
+		'view_items'            => esc_attr__( 'View Forums',              'bbpress' ),
+		'search_items'          => esc_attr__( 'Search Forums',            'bbpress' ),
+		'not_found'             => esc_attr__( 'No forums found',          'bbpress' ),
+		'not_found_in_trash'    => esc_attr__( 'No forums found in Trash', 'bbpress' ),
+		'filter_items_list'     => esc_attr__( 'Filter forums list',       'bbpress' ),
+		'items_list'            => esc_attr__( 'Forums list',              'bbpress' ),
+		'items_list_navigation' => esc_attr__( 'Forums list navigation',   'bbpress' ),
+		'parent_item_colon'     => esc_attr__( 'Parent Forum:',            'bbpress' ),
+		'all_items'             => esc_attr__( 'All Forums',               'bbpress' ),
+		'archives'              => esc_attr__( 'Forums',                   'bbpress' ),
+		'attributes'            => esc_attr__( 'Forum Attributes',         'bbpress' ),
+		'insert_into_item'      => esc_attr__( 'Insert into forum',        'bbpress' ),
+		'uploaded_to_this_item' => esc_attr__( 'Uploaded to this forum',   'bbpress' ),
+		'featured_image'        => esc_attr__( 'Forum Image',              'bbpress' ),
+		'set_featured_image'    => esc_attr__( 'Set forum image',          'bbpress' ),
+		'remove_featured_image' => esc_attr__( 'Remove forum image',       'bbpress' ),
+		'use_featured_image'    => esc_attr__( 'Use as forum image',       'bbpress' ),
+		'filter_items_list'     => esc_attr__( 'Filter forum list',        'bbpress' ),
+		'items_list_navigation' => esc_attr__( 'Forum list navigation',    'bbpress' ),
+		'items_list'            => esc_attr__( 'Forum list',               'bbpress' )
 	) );
 }
 
@@ -741,7 +753,7 @@ function bbp_list_forums( $args = array() ) {
 		$subforum_classes      = apply_filters( 'bbp_list_forums_subforum_classes', $subforum_classes, $sub_forum->ID );
 
 		// This could use bbp_get_forum_class() eventually...
-		$subforum_classes_attr = 'class="' . implode( ' ', array_map( 'esc_attr', $subforum_classes ) ) . '"';
+		$subforum_classes_attr = 'class="' . implode( ' ', array_map( 'sanitize_html_class', $subforum_classes ) ) . '"';
 
 		// Build this sub forums link
 		$links[] = $r['link_before'] . '<a href="' . esc_url( $permalink ) . '" ' . $subforum_classes_attr . '>' . $title . $counts . '</a>' . $r['link_after'];
@@ -1177,7 +1189,7 @@ function bbp_forum_subforum_count( $forum_id = 0, $integer = false ) {
 	 */
 	function bbp_get_forum_subforum_count( $forum_id = 0, $integer = false ) {
 		$forum_id    = bbp_get_forum_id( $forum_id );
-		$forum_count = bbp_number_not_negative( get_post_meta( $forum_id, '_bbp_forum_subforum_count', true ) );
+		$forum_count = get_post_meta( $forum_id, '_bbp_forum_subforum_count', true );
 		$filter      = ( true === $integer )
 			? 'bbp_get_forum_subforum_count_int'
 			: 'bbp_get_forum_subforum_count';
@@ -1211,7 +1223,7 @@ function bbp_forum_topic_count( $forum_id = 0, $total_count = true, $integer = f
 	function bbp_get_forum_topic_count( $forum_id = 0, $total_count = true, $integer = false ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$meta_key = empty( $total_count ) ? '_bbp_topic_count' : '_bbp_total_topic_count';
-		$topics   = bbp_number_not_negative( get_post_meta( $forum_id, $meta_key, true ) );
+		$topics   = get_post_meta( $forum_id, $meta_key, true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_topic_count_int'
 			: 'bbp_get_forum_topic_count';
@@ -1245,7 +1257,7 @@ function bbp_forum_reply_count( $forum_id = 0, $total_count = true, $integer = f
 	function bbp_get_forum_reply_count( $forum_id = 0, $total_count = true, $integer = false ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$meta_key = empty( $total_count ) ? '_bbp_reply_count' : '_bbp_total_reply_count';
-		$replies  = bbp_number_not_negative( get_post_meta( $forum_id, $meta_key, true ) );
+		$replies  = get_post_meta( $forum_id, $meta_key, true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_reply_count_int'
 			: 'bbp_get_forum_reply_count';
@@ -1280,10 +1292,10 @@ function bbp_forum_post_count( $forum_id = 0, $total_count = true, $integer = fa
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$topics   = bbp_get_forum_topic_count( $forum_id, $total_count, true );
 		$replies  = bbp_get_forum_reply_count( $forum_id, $total_count, true );
-		$retval   = bbp_number_not_negative( $replies + $topics );
+		$retval   = $replies + $topics;
 		$filter   = ( true === $integer )
-				? 'bbp_get_forum_post_count_int'
-				: 'bbp_get_forum_post_count';
+			? 'bbp_get_forum_post_count_int'
+			: 'bbp_get_forum_post_count';
 
 		return apply_filters( $filter, $retval, $forum_id );
 	}
@@ -1312,7 +1324,7 @@ function bbp_forum_topic_count_hidden( $forum_id = 0, $integer = false ) {
 	 */
 	function bbp_get_forum_topic_count_hidden( $forum_id = 0, $integer = false ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
-		$topics   = bbp_number_not_negative( get_post_meta( $forum_id, '_bbp_topic_count_hidden', true ) );
+		$topics   = get_post_meta( $forum_id, '_bbp_topic_count_hidden', true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_topic_count_hidden_int'
 			: 'bbp_get_forum_topic_count_hidden';
@@ -1910,10 +1922,10 @@ function bbp_single_forum_description( $args = array() ) {
 		remove_filter( 'bbp_get_forum_permalink', 'bbp_add_view_all' );
 
 		// Get some forum data
-		$tc_int      = bbp_get_forum_topic_count( $forum_id, false );
-		$rc_int      = bbp_get_forum_reply_count( $forum_id, false );
-		$topic_count = bbp_get_forum_topic_count( $forum_id );
-		$reply_count = bbp_get_forum_reply_count( $forum_id );
+		$tc_int      = bbp_get_forum_topic_count( $forum_id, true, true  );
+		$rc_int      = bbp_get_forum_reply_count( $forum_id, true, true  );
+		$topic_count = bbp_get_forum_topic_count( $forum_id, true, false );
+		$reply_count = bbp_get_forum_reply_count( $forum_id, true, false );
 		$last_active = bbp_get_forum_last_active_id( $forum_id );
 
 		// Has replies
@@ -2548,7 +2560,7 @@ function bbp_is_forum_form_post_request() {
  *
  * @since 2.0.0 bbPress (r3172)
  *
- * @param type $forum_id Optional. Forum ID.
+ * @param int $forum_id Optional. Forum ID.
  */
 function bbp_forum_topics_feed_link( $forum_id = 0 ) {
 	echo bbp_get_forum_topics_feed_link( $forum_id );
@@ -2600,7 +2612,7 @@ function bbp_forum_topics_feed_link( $forum_id = 0 ) {
  *
  * @since 2.0.0 bbPress (r3172)
  *
- * @param type $forum_id Optional. Forum ID.
+ * @param int $forum_id Optional. Forum ID.
  */
 function bbp_forum_replies_feed_link( $forum_id = 0 ) {
 	echo bbp_get_forum_replies_feed_link( $forum_id );

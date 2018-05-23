@@ -13,6 +13,17 @@
 // Exit if accessed directly
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Return array of bbPress registered post types
+ *
+ * @since 2.6.0 bbPress (r6813)
+ *
+ * @return array
+ */
+function bbp_get_post_types() {
+	return get_post_types( array( 'source' => 'bbpress' ) );
+}
+
 /** URLs **********************************************************************/
 
 /**
@@ -75,13 +86,15 @@ function bbp_remove_view_all( $original_link = '' ) {
  *
  * @since 2.0.0 bbPress (r3325)
  *
+ * @param string $cap Capability used to ensure user can view all
+ *
  * @return bool Whether current user can and is viewing all
  */
 function bbp_get_view_all( $cap = 'moderate' ) {
 	$retval = ( ( ! empty( $_GET['view'] ) && ( 'all' === $_GET['view'] ) && current_user_can( $cap ) ) );
 
 	// Filter & return
-	return apply_filters( 'bbp_get_view_all', (bool) $retval );
+	return (bool) apply_filters( 'bbp_get_view_all', (bool) $retval, $cap );
 }
 
 /**
@@ -179,32 +192,28 @@ function bbp_past_edit_lock( $post_date_gmt = '' ) {
 	// Default value
 	$retval = false;
 
+	// Get number of minutes to allow editing for
+	$minutes = (int) get_option( '_bbp_edit_lock', 5 );
+
+	// Now
+	$cur_time = current_time( 'timestamp', true );
+
+	// Period of time
+	$lockable  = "+{$minutes} minutes";
+
+	// Add lockable time to post time
+	$lock_time = strtotime( $lockable, strtotime( $post_date_gmt ) );
+
 	// Check if date and editing is allowed
 	if ( ! empty( $post_date_gmt ) && bbp_allow_content_edit() ) {
-
-		// Get number of minutes to allow editing for
-		$minutes = (int) get_option( '_bbp_edit_lock', 5 );
 
 		// "0" minutes set, so allow forever
 		if ( 0 === $minutes ) {
 			$retval = true;
 
 		// Not "0" so compare
-		} else {
-
-			// Period of time
-			$lockable  = "+{$minutes} minutes";
-
-			// Now
-			$cur_time  = current_time( 'timestamp', true );
-
-			// Add lockable time to post time
-			$lock_time = strtotime( $lockable, strtotime( $post_date_gmt ) );
-
-			// Compare
-			if ( $cur_time >= $lock_time ) {
-				$retval = true;
-			}
+		} elseif ( $cur_time >= $lock_time ) {
+			$retval = true;
 		}
 	}
 
@@ -277,26 +286,38 @@ function bbp_get_statistics( $args = array() ) {
 
 	// Parse arguments against default values
 	$r = bbp_parse_args( $args, array(
+
+		// Users
 		'count_users'           => true,
+
+		// Forums
 		'count_forums'          => true,
+
+		// Topics
 		'count_topics'          => true,
 		'count_pending_topics'  => true,
 		'count_private_topics'  => true,
 		'count_spammed_topics'  => true,
 		'count_trashed_topics'  => true,
+
+		// Replies
 		'count_replies'         => true,
 		'count_pending_replies' => true,
 		'count_private_replies' => true,
 		'count_spammed_replies' => true,
 		'count_trashed_replies' => true,
+
+		// Topic tags
 		'count_tags'            => true,
 		'count_empty_tags'      => true
+
 	), 'get_statistics' );
 
 	// Defaults
 	$topic_count     = $topic_count_hidden    = 0;
 	$reply_count     = $reply_count_hidden    = 0;
 	$topic_tag_count = $empty_topic_tag_count = 0;
+	$hidden_topic_title = $hidden_reply_title = '';
 
 	// Users
 	$user_count = ! empty( $r['count_users'] )
@@ -464,8 +485,8 @@ function bbp_get_statistics( $args = array() ) {
 
 	// Add the hidden (topic/reply) count title attribute strings because we
 	// don't need to run the math functions on these (see above)
-	$statistics['hidden_topic_title'] = isset( $hidden_topic_title ) ? $hidden_topic_title : '';
-	$statistics['hidden_reply_title'] = isset( $hidden_reply_title ) ? $hidden_reply_title : '';
+	$statistics['hidden_topic_title'] = $hidden_topic_title;
+	$statistics['hidden_reply_title'] = $hidden_reply_title;
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_statistics', $statistics, $r, $args );
@@ -610,11 +631,6 @@ function bbp_update_anonymous_post_author( $post_id = 0, $anonymous_data = array
  */
 function bbp_check_for_duplicate( $post_data = array() ) {
 
-	// No duplicate checks for those who can throttle
-	if ( current_user_can( 'throttle' ) ) {
-		return true;
-	}
-
 	// Parse arguments against default values
 	$r = bbp_parse_args( $post_data, array(
 		'post_author'    => 0,
@@ -624,6 +640,11 @@ function bbp_check_for_duplicate( $post_data = array() ) {
 		'post_status'    => bbp_get_trash_status_id(),
 		'anonymous_data' => array()
 	), 'check_for_duplicate' );
+
+	// No duplicate checks for those who can throttle
+	if ( user_can( (int) $r['post_author'], 'throttle' ) ) {
+		return true;
+	}
 
 	// Get the DB
 	$bbp_db = bbp_db();
@@ -648,7 +669,9 @@ function bbp_check_for_duplicate( $post_data = array() ) {
 
 			// Set clauses
 			$join  = $clauses['join'];
-			$where = $clauses['where'];
+
+			// "'", "%", "$" and are valid characters in email addresses
+			$where = $bbp_db->remove_placeholder_escape( $clauses['where'] );
 		}
 	}
 
@@ -659,16 +682,22 @@ function bbp_check_for_duplicate( $post_data = array() ) {
 	$r = wp_unslash( $r );
 
 	// Prepare duplicate check query
-	$query  = $bbp_db->prepare( "SELECT ID FROM {$bbp_db->posts} {$join} WHERE post_type = %s AND post_status != %s AND post_author = %d AND post_content = %s {$where}", $r['post_type'], $r['post_status'], $r['post_author'], $r['post_content'] );
-	$query .= ! empty( $r['post_parent'] ) ? $bbp_db->prepare( " AND post_parent = %d", $r['post_parent'] ) : '';
+	$query  = "SELECT ID FROM {$bbp_db->posts} {$join}";
+	$query .= $bbp_db->prepare( "WHERE post_type = %s AND post_status != %s AND post_author = %d AND post_content = %s", $r['post_type'], $r['post_status'], $r['post_author'], $r['post_content'] );
+	$query .= ! empty( $r['post_parent'] )
+		? $bbp_db->prepare( " AND post_parent = %d", $r['post_parent'] )
+		: '';
+	$query .= $where;
 	$query .= " LIMIT 1";
 	$dupe   = apply_filters( 'bbp_check_for_duplicate_query', $query, $r );
 
+	// Dupe found
 	if ( $bbp_db->get_var( $dupe ) ) {
 		do_action( 'bbp_check_for_duplicate_trigger', $post_data );
 		return false;
 	}
 
+	// Dupe not found
 	return true;
 }
 
@@ -763,7 +792,7 @@ function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $t
 
 		// Allow for bumping the max to include the user's URL
 		if ( ! empty( $_post['url'] ) ) {
-			$num_links = apply_filters( 'comment_max_links_url', $num_links, $_post['url'] );
+			$num_links = apply_filters( 'comment_max_links_url', $num_links, $_post['url'], $content );
 		}
 
 		// Das ist zu viele links!
@@ -1059,20 +1088,23 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 	// Get topic subscribers and bail if empty
 	$user_ids = bbp_get_subscribers( $topic_id );
 
-	// Dedicated filter to manipulate user ID's to send emails to
-	$user_ids = (array) apply_filters( 'bbp_topic_subscription_user_ids', $user_ids );
-	if ( empty( $user_ids ) ) {
-		return false;
-	}
-
 	// Remove the reply author from the list.
 	$reply_author_key = array_search( (int) $reply_author, $user_ids, true );
 	if ( false !== $reply_author_key ) {
 		unset( $user_ids[ $reply_author_key ] );
 	}
 
+	// Dedicated filter to manipulate user ID's to send emails to
+	$user_ids = (array) apply_filters( 'bbp_topic_subscription_user_ids', $user_ids );
+
 	// Bail of the reply author was the only one subscribed.
 	if ( empty( $user_ids ) ) {
+		return false;
+	}
+
+	// Get email addresses, bail if empty
+	$email_addresses = bbp_get_email_addresses_from_user_ids( $user_ids );
+	if ( empty( $email_addresses ) ) {
 		return false;
 	}
 
@@ -1130,9 +1162,9 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	// Setup the From header
 	$headers = array( 'From: ' . get_bloginfo( 'name' ) . ' <' . $from_email . '>' );
 
-	// Loop through users
-	foreach ( (array) $user_ids as $user_id ) {
-		$headers[] = 'Bcc: ' . get_userdata( $user_id )->user_email;
+	// Loop through addresses
+	foreach ( (array) $email_addresses as $address ) {
+		$headers[] = 'Bcc: ' . $address;
 	}
 
 	/** Send it ***************************************************************/
@@ -1212,20 +1244,23 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 	// Get topic subscribers and bail if empty
 	$user_ids = bbp_get_subscribers( $forum_id );
 
-	// Dedicated filter to manipulate user ID's to send emails to
-	$user_ids = (array) apply_filters( 'bbp_forum_subscription_user_ids', $user_ids );
-	if ( empty( $user_ids ) ) {
-		return false;
-	}
-
 	// Remove the topic author from the list.
 	$topic_author_key = array_search( (int) $topic_author, $user_ids, true );
 	if ( false !== $topic_author_key ) {
 		unset( $user_ids[ $topic_author_key ] );
 	}
 
-	// Bail of the topic author was the only one subscribed.
+	// Dedicated filter to manipulate user ID's to send emails to
+	$user_ids = (array) apply_filters( 'bbp_forum_subscription_user_ids', $user_ids );
+
+	// Bail of the reply author was the only one subscribed.
 	if ( empty( $user_ids ) ) {
+		return false;
+	}
+
+	// Get email addresses, bail if empty
+	$email_addresses = bbp_get_email_addresses_from_user_ids( $user_ids );
+	if ( empty( $email_addresses ) ) {
 		return false;
 	}
 
@@ -1283,9 +1318,9 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	// Setup the From header
 	$headers = array( 'From: ' . get_bloginfo( 'name' ) . ' <' . $from_email . '>' );
 
-	// Loop through users
-	foreach ( (array) $user_ids as $user_id ) {
-		$headers[] = 'Bcc: ' . get_userdata( $user_id )->user_email;
+	// Loop through addresses
+	foreach ( (array) $email_addresses as $address ) {
+		$headers[] = 'Bcc: ' . $address;
 	}
 
 	/** Send it ***************************************************************/
@@ -1332,6 +1367,72 @@ function bbp_notify_subscribers( $reply_id = 0, $topic_id = 0, $forum_id = 0, $a
 	return bbp_notify_topic_subscribers( $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author );
 }
 
+/**
+ * Return an array of user email addresses from an array of user IDs
+ *
+ * @since 2.6.0 bbPress (r6722)
+ *
+ * @param array $user_ids
+ * @return array
+ */
+function bbp_get_email_addresses_from_user_ids( $user_ids = array() ) {
+
+	// Default return value
+	$retval = array();
+
+	// Maximum number of users to get per database query
+	$limit = apply_filters( 'bbp_get_users_chunk_limit', 100 );
+
+	// Only do the work if there are user IDs to query for
+	if ( ! empty( $user_ids ) ) {
+
+		// Get total number of sets
+		$steps = ceil( count( $user_ids ) / $limit );
+		$range = array_map( 'intval', range( 1, $steps ) );
+
+		// Loop through users
+		foreach ( $range as $loop ) {
+
+			// Initial loop has no offset
+			$offset = ( 1 === $loop )
+				? 0
+				: $limit * $loop;
+
+			// Calculate user IDs to include
+			$loop_ids = array_slice( $user_ids, $offset, $limit );
+
+			// Skip if something went wrong
+			if ( empty( $loop_ids ) ) {
+				continue;
+			}
+
+			// Call get_users() in a way that users are cached
+			$loop_users = get_users( array(
+				'blog_id' => 0,
+				'fields'  => 'all_with_meta',
+				'include' => $loop_ids
+			) );
+
+			// Pluck emails from users
+			$loop_emails = wp_list_pluck( $loop_users, 'user_email' );
+
+			// Clean-up memory, for big user sets
+			unset( $loop_users );
+
+			// Merge users into return value
+			if ( ! empty( $loop_emails ) ) {
+				$retval = array_merge( $retval, $loop_emails );
+			}
+		}
+
+		// No duplicates
+		$retval = bbp_get_unique_array_values( $retval );
+	}
+
+	// Filter & return
+	return apply_filters( 'bbp_get_email_addresses_from_user_ids', $retval, $user_ids, $limit );
+}
+
 /** Login *********************************************************************/
 
 /**
@@ -1351,7 +1452,7 @@ function bbp_logout_url( $url = '', $redirect_to = '' ) {
 			$redirect_to = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : '';
 		}
 
-		$redirect_to = ( is_ssl() ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		$redirect_to = bbp_get_url_scheme() . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
 		// Sanitize $redirect_to and add it to full $url
 		$redirect_to = add_query_arg( array( 'loggedout'   => 'true'                    ), esc_url( $redirect_to ) );
@@ -1392,7 +1493,7 @@ function bbp_parse_args( $args, $defaults = array(), $filter_key = '' ) {
 
 	// Passively filter the args before the parse
 	if ( ! empty( $filter_key ) ) {
-		$r = apply_filters( 'bbp_before_' . $filter_key . '_parse_args', $r );
+		$r = apply_filters( "bbp_before_{$filter_key}_parse_args", $r, $args, $defaults );
 	}
 
 	// Parse
@@ -1402,7 +1503,7 @@ function bbp_parse_args( $args, $defaults = array(), $filter_key = '' ) {
 
 	// Aggressively filter the args after the parse
 	if ( ! empty( $filter_key ) ) {
-		$r = apply_filters( 'bbp_after_' . $filter_key . '_parse_args', $r );
+		$r = apply_filters( "bbp_after_{$filter_key}_parse_args", $r, $args, $defaults );
 	}
 
 	// Return the parsed results
@@ -1691,6 +1792,11 @@ function bbp_update_post_family_caches( $objects = array() ) {
 	foreach ( $objects as $object ) {
 		$object = get_post( $object );
 
+		// Skip if post ID is empty.
+		if ( empty( $object->ID ) ) {
+			continue;
+		}
+
 		// Meta IDs
 		foreach ( $ids as $key ) {
 			$post_ids[] = get_post_meta( $object->ID, $key, true );
@@ -1743,10 +1849,17 @@ function bbp_update_post_author_caches( $objects = array() ) {
 	// Default value
 	$user_ids = array();
 
-	// Get the user IDs
+	// Get the user IDs (could use wp_list_pluck() if this is ever a bottleneck)
 	foreach ( $objects as $object ) {
-		$object     = get_post( $object );
-		$user_ids[] = get_post_field( 'post_author', $object->ID );
+		$object = get_post( $object );
+
+		// Skip if post does not have an author ID.
+		if ( empty( $object->post_author ) ) {
+			continue;
+		}
+
+		// If post exists, add post author to the array.
+		$user_ids[] = (int) $object->post_author;
 	}
 
 	// Unique, non-zero values
@@ -1829,7 +1942,7 @@ function bbp_verify_nonce_request( $action = '', $query_arg = '_wpnonce' ) {
 	}
 
 	// Build the currently requested URL
-	$scheme        = is_ssl() ? 'https://' : 'http://';
+	$scheme        = bbp_get_url_scheme();
 	$requested_url = strtolower( $scheme . $request_host . $_SERVER['REQUEST_URI'] );
 
 	/** Look for match ********************************************************/
@@ -1846,7 +1959,9 @@ function bbp_verify_nonce_request( $action = '', $query_arg = '_wpnonce' ) {
 	$matched_url = apply_filters( 'bbp_verify_nonce_request_url', $requested_url );
 
 	// Check the nonce
-	$result = isset( $_REQUEST[ $query_arg ] ) ? wp_verify_nonce( $_REQUEST[ $query_arg ], $action ) : false;
+	$result = isset( $_REQUEST[ $query_arg ] )
+		? wp_verify_nonce( $_REQUEST[ $query_arg ], $action )
+		: false;
 
 	// Nonce check failed
 	if ( empty( $result ) || empty( $action ) || ( strpos( $matched_url, $home_url ) !== 0 ) ) {
@@ -1963,7 +2078,7 @@ function bbp_request_feed_trap( $query_vars = array() ) {
 								'feed'           => true,
 								'post_type'      => bbp_get_reply_post_type(),
 								'post_parent'    => 'any',
-								'post_status'    => bbp_get_public_topic_statuses(),
+								'post_status'    => bbp_get_public_reply_statuses(),
 								'posts_per_page' => bbp_get_replies_per_rss_page(),
 								'order'          => 'DESC',
 								'meta_query'     => $meta_query
@@ -2179,6 +2294,7 @@ function bbp_pre_handle_404( $override = false, $wp_query = false ) {
 			: bbp_set_200();
 	}
 
+	// Return, maybe overridden
 	return $override;
 }
 
@@ -2204,4 +2320,36 @@ function bbp_posts_pre_query( $posts = null, $wp_query = false ) {
 
 	// Return, maybe overridden
 	return $posts;
+}
+
+/**
+ * Get scheme for a URL based on is_ssl() results.
+ *
+ * @since 2.6.0 bbPress (r6759)
+ *
+ * @return string https:// if is_ssl(), otherwise http://
+ */
+function bbp_get_url_scheme() {
+	return is_ssl()
+		? 'https://'
+		: 'http://';
+}
+
+/** Titles ********************************************************************/
+
+/**
+ * Is a title longer that the maximum title length?
+ *
+ * @since 2.6.0 bbPress (r6783)
+ *
+ * @param string $title
+ * @return bool
+ */
+function bbp_is_title_too_long( $title = '' ) {
+	$max    = bbp_get_title_max_length();
+	$len    = mb_strlen( $title, '8bit' );
+	$result = ( $len > $max );
+
+	// Filter & return
+	return (bool) apply_filters( 'bbp_is_title_too_long', $result, $title, $max, $len );
 }

@@ -86,14 +86,14 @@ function bbp_format_buddypress_notifications( $content, $item_id, $secondary_ite
 	// Multiple
 	if ( $action_item_count > 1 ) {
 		$filter = 'bbp_multiple_new_subscription_notification';
-		$text   = sprintf( __( 'You have %d new replies', 'bbpress' ), $action_item_count );
+		$text   = sprintf( esc_html__( 'You have %d new replies', 'bbpress' ), $action_item_count );
 
 	// Single
 	} else {
 		$filter = 'bbp_single_new_subscription_notification';
 		$text   = ! empty( $secondary_item_id )
-			? sprintf( __( 'You have %d new reply to %2$s from %3$s', 'bbpress' ), $action_item_count, $topic_title, bp_core_get_user_displayname( $secondary_item_id ) )
-			: sprintf( __( 'You have %d new reply to %s',             'bbpress' ), $action_item_count, $topic_title );
+			? sprintf( esc_html__( 'You have %d new reply to %2$s from %3$s', 'bbpress' ), $action_item_count, $topic_title, bp_core_get_user_displayname( $secondary_item_id ) )
+			: sprintf( esc_html__( 'You have %d new reply to %s',             'bbpress' ), $action_item_count, $topic_title );
 	}
 
 	// WordPress Toolbar
@@ -152,19 +152,20 @@ function bbp_buddypress_add_notification( $reply_id = 0, $topic_id = 0, $forum_i
 		'date_notified'    => get_post( $reply_id )->post_date,
 	);
 
- 	// Notify the topic author if not the current reply author
- 	if ( $author_id !== $topic_author_id ) {
+	// Notify the topic author if not the current reply author
+	if ( $author_id !== $topic_author_id ) {
 		$args['secondary_item_id'] = $secondary_item_id ;
 
 		bp_notifications_add_notification( $args );
- 	}
+	}
 
- 	// Notify the immediate reply author if not the current reply author
- 	if ( ! empty( $reply_to ) && ( $author_id !== $reply_to_item_id ) ) {
-		$args['secondary_item_id'] = $reply_to_item_id ;
+	// Notify the immediate reply author if not the current reply author
+	if ( ! empty( $reply_to ) && ( $author_id !== $reply_to_item_id ) ) {
+		$args['user_id']           = $reply_to_item_id;
+		$args['secondary_item_id'] = $topic_author_id;
 
 		bp_notifications_add_notification( $args );
- 	}
+	}
 }
 
 /**

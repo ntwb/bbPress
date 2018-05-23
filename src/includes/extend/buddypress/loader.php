@@ -39,7 +39,7 @@ class BBP_Forums_Component extends BP_Component {
 	public function __construct() {
 		parent::start(
 			'forums',
-			__( 'Forums', 'bbpress' ),
+			esc_html__( 'Forums', 'bbpress' ),
 			bbpress()->includes_dir . 'extend/buddypress/'
 		);
 		$this->includes();
@@ -74,7 +74,19 @@ class BBP_Forums_Component extends BP_Component {
 			$includes[] = 'groups.php';
 		}
 
-		parent::includes( $includes );
+		// Require files if they exist
+		foreach ( $includes as $file ) {
+			if ( @is_file( $this->path . $file ) ) {
+				require $this->path . $file;
+			}
+		}
+
+		/**
+		 * Hook for plugins to include files, if necessary.
+		 *
+		 * @since 2.6.0 bbPress (r3552)
+		 */
+		do_action( "bp_{$this->id}_includes" );
 	}
 
 	/**
@@ -104,7 +116,7 @@ class BBP_Forums_Component extends BP_Component {
 			'slug'          => BP_FORUMS_SLUG,
 			'root_slug'     => isset( $bp->pages->forums->slug ) ? $bp->pages->forums->slug : BP_FORUMS_SLUG,
 			'has_directory' => false,
-			'search_string' => __( 'Search Forums...', 'bbpress' ),
+			'search_string' => esc_html__( 'Search Forums...', 'bbpress' ),
 		);
 
 		parent::setup_globals( $args );
@@ -174,7 +186,7 @@ class BBP_Forums_Component extends BP_Component {
 
 		// Add 'Forums' to the main navigation
 		$main_nav = array(
-			'name'                => __( 'Forums', 'bbpress' ),
+			'name'                => esc_html__( 'Forums', 'bbpress' ),
 			'slug'                => $this->slug,
 			'position'            => 80,
 			'screen_function'     => 'bbp_member_forums_screen_topics',
@@ -196,7 +208,7 @@ class BBP_Forums_Component extends BP_Component {
 
 		// Topics started
 		$sub_nav[] = array(
-			'name'            => __( 'Topics Started', 'bbpress' ),
+			'name'            => esc_html__( 'Topics Started', 'bbpress' ),
 			'slug'            => bbp_get_topic_archive_slug(),
 			'parent_url'      => $forums_link,
 			'parent_slug'     => $this->slug,
@@ -207,7 +219,7 @@ class BBP_Forums_Component extends BP_Component {
 
 		// Replies to topics
 		$sub_nav[] = array(
-			'name'            => __( 'Replies Created', 'bbpress' ),
+			'name'            => esc_html__( 'Replies Created', 'bbpress' ),
 			'slug'            => bbp_get_reply_archive_slug(),
 			'parent_url'      => $forums_link,
 			'parent_slug'     => $this->slug,
@@ -219,7 +231,7 @@ class BBP_Forums_Component extends BP_Component {
 		// Engagements
 		if ( bbp_is_engagements_active() ) {
 			$sub_nav[] = array(
-				'name'            => __( 'Engagements', 'bbpress' ),
+				'name'            => esc_html__( 'Engagements', 'bbpress' ),
 				'slug'            => bbp_get_user_engagements_slug(),
 				'parent_url'      => $forums_link,
 				'parent_slug'     => $this->slug,
@@ -232,7 +244,7 @@ class BBP_Forums_Component extends BP_Component {
 		// Favorite topics
 		if ( bbp_is_favorites_active() ){
 			$sub_nav[] = array(
-				'name'            => __( 'Favorites', 'bbpress' ),
+				'name'            => esc_html__( 'Favorites', 'bbpress' ),
 				'slug'            => bbp_get_user_favorites_slug(),
 				'parent_url'      => $forums_link,
 				'parent_slug'     => $this->slug,
@@ -245,7 +257,7 @@ class BBP_Forums_Component extends BP_Component {
 		// Subscribed topics (my profile only)
 		if ( bp_is_my_profile() && bbp_is_subscriptions_active() ) {
 			$sub_nav[] = array(
-				'name'            => __( 'Subscriptions', 'bbpress' ),
+				'name'            => esc_html__( 'Subscriptions', 'bbpress' ),
 				'slug'            => bbp_get_user_subscriptions_slug(),
 				'parent_url'      => $forums_link,
 				'parent_slug'     => $this->slug,
@@ -296,7 +308,7 @@ class BBP_Forums_Component extends BP_Component {
 			$wp_admin_nav[] = array(
 				'parent' => buddypress()->my_account_menu_id,
 				'id'     => 'my-account-' . $this->id,
-				'title'  => __( 'Forums', 'bbpress' ),
+				'title'  => esc_html__( 'Forums', 'bbpress' ),
 				'href'   => $my_account_link
 			);
 
@@ -304,7 +316,7 @@ class BBP_Forums_Component extends BP_Component {
 			$wp_admin_nav[] = array(
 				'parent' => 'my-account-' . $this->id,
 				'id'     => 'my-account-' . $this->id . '-topics',
-				'title'  => __( 'Topics Started', 'bbpress' ),
+				'title'  => esc_html__( 'Topics Started', 'bbpress' ),
 				'href'   => $my_topics_link
 			);
 
@@ -312,7 +324,7 @@ class BBP_Forums_Component extends BP_Component {
 			$wp_admin_nav[] = array(
 				'parent' => 'my-account-' . $this->id,
 				'id'     => 'my-account-' . $this->id . '-replies',
-				'title'  => __( 'Replies Created', 'bbpress' ),
+				'title'  => esc_html__( 'Replies Created', 'bbpress' ),
 				'href'   => $my_replies_link
 			);
 
@@ -321,7 +333,7 @@ class BBP_Forums_Component extends BP_Component {
 				$wp_admin_nav[] = array(
 					'parent' => 'my-account-' . $this->id,
 					'id'     => 'my-account-' . $this->id . '-engagements',
-					'title'  => __( 'Engagements', 'bbpress' ),
+					'title'  => esc_html__( 'Engagements', 'bbpress' ),
 					'href'   => $my_engagements_link
 				);
 			}
@@ -331,7 +343,7 @@ class BBP_Forums_Component extends BP_Component {
 				$wp_admin_nav[] = array(
 					'parent' => 'my-account-' . $this->id,
 					'id'     => 'my-account-' . $this->id . '-favorites',
-					'title'  => __( 'Favorite Topics', 'bbpress' ),
+					'title'  => esc_html__( 'Favorite Topics', 'bbpress' ),
 					'href'   => $my_favorites_link
 				);
 			}
@@ -341,7 +353,7 @@ class BBP_Forums_Component extends BP_Component {
 				$wp_admin_nav[] = array(
 					'parent' => 'my-account-' . $this->id,
 					'id'     => 'my-account-' . $this->id . '-subscriptions',
-					'title'  => __( 'Subscribed Topics', 'bbpress' ),
+					'title'  => esc_html__( 'Subscribed Topics', 'bbpress' ),
 					'href'   => $my_subscriptions_link
 				);
 			}
@@ -361,7 +373,7 @@ class BBP_Forums_Component extends BP_Component {
 		// Adjust title based on view
 		if ( bp_is_forums_component() ) {
 			if ( bp_is_my_profile() ) {
-				$bp->bp_options_title = __( 'Forums', 'bbpress' );
+				$bp->bp_options_title = esc_html__( 'Forums', 'bbpress' );
 			} elseif ( bp_is_user() ) {
 				$bp->bp_options_avatar = bp_core_fetch_avatar( array(
 					'item_id' => bp_displayed_user_id(),

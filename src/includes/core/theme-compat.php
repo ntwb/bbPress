@@ -691,7 +691,7 @@ function bbp_template_include_theme_compat( $template = '' ) {
 		// Reset post
 		bbp_theme_compat_reset_post( array(
 			'ID'             => 0,
-			'post_title'     => __( 'Replies', 'bbpress' ),
+			'post_title'     => esc_html__( 'Replies', 'bbpress' ),
 			'post_author'    => 0,
 			'post_date'      => 0,
 			'post_content'   => $bbp_shortcodes->display_reply_index(),
@@ -791,7 +791,7 @@ function bbp_template_include_theme_compat( $template = '' ) {
 			'post_date'      => 0,
 			'post_content'   => $new_content,
 			'post_type'      => '',
-			'post_title'     => sprintf( __( 'Topic Tag: %s', 'bbpress' ), '<span>' . bbp_get_topic_tag_name() . '</span>' ),
+			'post_title'     => sprintf( esc_html__( 'Topic Tag: %s', 'bbpress' ), '<span>' . bbp_get_topic_tag_name() . '</span>' ),
 			'post_status'    => bbp_get_public_status_id(),
 			'is_tax'         => true,
 			'is_archive'     => true,
@@ -1010,21 +1010,17 @@ function bbp_restore_all_filters( $tag, $priority = false ) {
  * @param int $post_id ID of the post to check
  * @return bool True if open, false if closed
  */
-function bbp_force_comment_status( $open, $post_id = 0 ) {
-
-	// Get the post type of the post ID
-	$post_type = get_post_type( $post_id );
+function bbp_force_comment_status( $open = false, $post_id = 0 ) {
 
 	// Default return value is what is passed in $open
 	$retval = (bool) $open;
 
+	// Get the post type of the post ID
+	$post_type = get_post_type( $post_id );
+
 	// Only force for bbPress post types
-	switch ( $post_type ) {
-		case bbp_get_forum_post_type() :
-		case bbp_get_topic_post_type() :
-		case bbp_get_reply_post_type() :
-			$retval = false;
-			break;
+	if ( in_array( $post_type, bbp_get_post_types(), true ) ) {
+		$retval = false;
 	}
 
 	// Filter & return

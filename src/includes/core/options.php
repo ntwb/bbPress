@@ -262,10 +262,11 @@ function bbp_pre_load_options() {
 		return;
 	}
 
-	// Bail if strategy is overloaded to false|null
-	$strategy = apply_filters( 'bbp_pre_load_options', 'notoptions' );
-	if ( empty( $strategy ) ) {
-		return;
+	// Maybe intercept
+	$strategy  = apply_filters( 'bbp_pre_load_options_strategy', 'notoptions' );
+	$intercept = bbp_maybe_intercept( __FUNCTION__, $strategy );
+	if ( bbp_is_intercepted( $intercept ) ) {
+		return $intercept;
 	}
 
 	// Get variables

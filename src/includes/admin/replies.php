@@ -73,12 +73,15 @@ class BBP_Replies_Admin {
 		add_action( 'save_post',      array( $this, 'save_meta_boxes'    ) );
 
 		// Check if there are any bbp_toggle_reply_* requests on admin_init, also have a message displayed
-		add_action( 'load-edit.php',  array( $this, 'toggle_reply'        ) );
-		add_action( 'admin_notices',  array( $this, 'toggle_reply_notice' ) );
+		add_action( 'load-edit.php', array( $this, 'toggle_reply'        ) );
+		add_action( 'load-edit.php', array( $this, 'toggle_reply_notice' ) );
 
 		// Add ability to filter topics and replies per forum
 		add_filter( 'restrict_manage_posts', array( $this, 'filter_dropdown'  ) );
 		add_filter( 'bbp_request',           array( $this, 'filter_post_rows' ) );
+
+		// Empty spam
+		add_filter( 'manage_posts_extra_tablenav', array( $this, 'filter_empty_spam' ) );
 
 		// Contextual Help
 		add_action( 'load-edit.php',     array( $this, 'edit_help' ) );
@@ -227,9 +230,9 @@ class BBP_Replies_Admin {
 
 		if ( current_user_can( 'moderate' ) ) {
 			if ( bbp_get_spam_status_id() === get_query_var( 'post_status' ) ) {
-				$actions['unspam'] = __( 'Unspam', 'bbpress' );
+				$actions['unspam'] = esc_html__( 'Unspam', 'bbpress' );
 			} else {
-				$actions['spam'] = __( 'Spam', 'bbpress' );
+				$actions['spam'] = esc_html__( 'Spam', 'bbpress' );
 			}
 		}
 
@@ -272,7 +275,7 @@ class BBP_Replies_Admin {
 
 			foreach ( (array) $post_ids as $post_id ) {
 				if ( ! current_user_can( 'moderate', $post_id ) ) {
-					wp_die( __( 'Sorry, you are not allowed to spam this item.', 'bbpress' ) );
+					wp_die( esc_html__( 'Sorry, you are not allowed to spam this item.', 'bbpress' ) );
 				}
 
 				if ( wp_check_post_lock( $post_id ) ) {
@@ -281,7 +284,7 @@ class BBP_Replies_Admin {
 				}
 
 				if ( ! bbp_spam_reply( $post_id ) ) {
-					wp_die( __( 'Error in spamming reply.', 'bbpress' ) );
+					wp_die( esc_html__( 'Error in spamming reply.', 'bbpress' ) );
 				}
 
 				$updated++;
@@ -297,7 +300,7 @@ class BBP_Replies_Admin {
 
 			foreach ( (array) $post_ids as $post_id ) {
 				if ( ! current_user_can( 'moderate', $post_id ) ) {
-					wp_die( __( 'Sorry, you are not allowed to unspam this reply.', 'bbpress' ) );
+					wp_die( esc_html__( 'Sorry, you are not allowed to unspam this reply.', 'bbpress' ) );
 				}
 
 				if ( wp_check_post_lock( $post_id ) ) {
@@ -306,7 +309,7 @@ class BBP_Replies_Admin {
 				}
 
 				if ( ! bbp_unspam_reply( $post_id ) ) {
-					wp_die( __( 'Error in unspamming reply.', 'bbpress' ) );
+					wp_die( esc_html__( 'Error in unspamming reply.', 'bbpress' ) );
 				}
 
 				$updated++;
@@ -330,7 +333,7 @@ class BBP_Replies_Admin {
 	public function attributes_metabox() {
 		add_meta_box(
 			'bbp_reply_attributes',
-			__( 'Reply Attributes', 'bbpress' ),
+			esc_html__( 'Reply Attributes', 'bbpress' ),
 			'bbp_reply_metabox',
 			$this->post_type,
 			'side',
@@ -355,7 +358,7 @@ class BBP_Replies_Admin {
 		// Add the meta-box
 		add_meta_box(
 			'bbp_author_metabox',
-			__( 'Author Information', 'bbpress' ),
+			esc_html__( 'Author Information', 'bbpress' ),
 			'bbp_author_metabox',
 			$this->post_type,
 			'side',
@@ -453,12 +456,12 @@ class BBP_Replies_Admin {
 		// Get reply and die if empty
 		$reply_id = bbp_get_reply_id( $_GET['reply_id'] );
 		if ( ! bbp_get_reply( $reply_id ) ) {
-			wp_die( __( 'The reply was not found.', 'bbpress' ) );
+			wp_die( esc_html__( 'The reply was not found.', 'bbpress' ) );
 		}
 
 		// What is the user doing here?
 		if ( ! current_user_can( 'moderate', $reply_id ) ) {
-			wp_die( __( 'You do not have permission to do that.', 'bbpress' ) );
+			wp_die( esc_html__( 'You do not have permission to do that.', 'bbpress' ) );
 		}
 
 		// Defaults
@@ -470,13 +473,13 @@ class BBP_Replies_Admin {
 			case 'bbp_toggle_reply_approve' :
 				check_admin_referer( 'approve-reply_' . $reply_id );
 
-				$is_approve = bbp_is_reply_pending( $reply_id );
+				$is_approve = bbp_is_reply_public( $reply_id );
 				$message    = ( true === $is_approve )
-					? 'approved'
-					: 'unapproved';
+					? 'unpproved'
+					: 'approved';
 				$success    = ( true === $is_approve )
-					? bbp_approve_reply( $reply_id )
-					: bbp_unapprove_reply( $reply_id );
+					? bbp_unapprove_reply( $reply_id )
+					: bbp_approve_reply( $reply_id );
 
 				break;
 
@@ -556,26 +559,26 @@ class BBP_Replies_Admin {
 		switch ( $notice ) {
 			case 'spammed' :
 				$message = ( $is_failure === true )
-					? sprintf( __( 'There was a problem marking the reply "%1$s" as spam.', 'bbpress' ), $reply_title )
-					: sprintf( __( 'Reply "%1$s" successfully marked as spam.',             'bbpress' ), $reply_title );
+					? sprintf( esc_html__( 'There was a problem marking the reply "%1$s" as spam.', 'bbpress' ), $reply_title )
+					: sprintf( esc_html__( 'Reply "%1$s" successfully marked as spam.',             'bbpress' ), $reply_title );
 				break;
 
 			case 'unspammed' :
 				$message = ( $is_failure === true )
-					? sprintf( __( 'There was a problem unmarking the reply "%1$s" as spam.', 'bbpress' ), $reply_title )
-					: sprintf( __( 'Reply "%1$s" successfully unmarked as spam.',             'bbpress' ), $reply_title );
+					? sprintf( esc_html__( 'There was a problem unmarking the reply "%1$s" as spam.', 'bbpress' ), $reply_title )
+					: sprintf( esc_html__( 'Reply "%1$s" successfully unmarked as spam.',             'bbpress' ), $reply_title );
 				break;
 
 			case 'approved' :
 				$message = ( $is_failure === true )
-					? sprintf( __( 'There was a problem approving the reply "%1$s".', 'bbpress' ), $reply_title )
-					: sprintf( __( 'Reply "%1$s" successfully approved.',             'bbpress' ), $reply_title );
+					? sprintf( esc_html__( 'There was a problem approving the reply "%1$s".', 'bbpress' ), $reply_title )
+					: sprintf( esc_html__( 'Reply "%1$s" successfully approved.',             'bbpress' ), $reply_title );
 				break;
 
 			case 'unapproved' :
 				$message = ( $is_failure === true )
-					? sprintf( __( 'There was a problem unapproving the reply "%1$s".', 'bbpress' ), $reply_title )
-					: sprintf( __( 'Reply "%1$s" successfully unapproved.',             'bbpress' ), $reply_title );
+					? sprintf( esc_html__( 'There was a problem unapproving the reply "%1$s".', 'bbpress' ), $reply_title )
+					: sprintf( esc_html__( 'Reply "%1$s" successfully unapproved.',             'bbpress' ), $reply_title );
 				break;
 		}
 
@@ -585,13 +588,31 @@ class BBP_Replies_Admin {
 			? 'error'
 			: 'updated';
 
-		?>
+		// Add the notice
+		bbp_admin()->add_notice( $message, $class, true );
+	}
 
-		<div id="message" class="<?php echo esc_html( $class ); ?> fade">
-			<p style="line-height: 150%"><?php echo esc_html( $message ); ?></p>
-		</div>
+	/**
+	 * Returns an array of keys used to sort row actions
+	 *
+	 * @since 2.6.0 bbPress (r6771)
+	 *
+	 * @return array
+	 */
+	private function get_row_action_sort_order() {
 
-		<?php
+		// Filter & return
+		return (array) apply_filters( 'bbp_admin_reply_row_action_sort_order', array(
+			'edit',
+			'approved',
+			'unapproved',
+			'spam',
+			'unspam',
+			'trash',
+			'untrash',
+			'delete',
+			'view'
+		) );
 	}
 
 	/**
@@ -640,11 +661,11 @@ class BBP_Replies_Admin {
 	public function column_headers( $columns ) {
 		$columns = array(
 			'cb'                => '<input type="checkbox" />',
-			'title'             => __( 'Title',   'bbpress' ),
-			'bbp_reply_forum'   => __( 'Forum',   'bbpress' ),
-			'bbp_reply_topic'   => __( 'Topic',   'bbpress' ),
-			'bbp_reply_author'  => __( 'Author',  'bbpress' ),
-			'bbp_reply_created' => __( 'Created', 'bbpress' ),
+			'title'             => esc_html__( 'Title',   'bbpress' ),
+			'bbp_reply_forum'   => esc_html__( 'Forum',   'bbpress' ),
+			'bbp_reply_topic'   => esc_html__( 'Topic',   'bbpress' ),
+			'bbp_reply_author'  => esc_html__( 'Author',  'bbpress' ),
+			'bbp_reply_created' => esc_html__( 'Created', 'bbpress' ),
 		);
 
 		// Filter & return
@@ -753,13 +774,14 @@ class BBP_Replies_Admin {
 	 *
 	 * @since 2.0.0 bbPress (r2577)
 	 *
-	 * @param array $actions Actions
-	 * @param array $reply Reply object
+	 * @param array  $actions Actions
+	 * @param object $reply   Reply object
 	 *
 	 * @return array $actions Actions
 	 */
-	public function row_actions( $actions, $reply ) {
+	public function row_actions( $actions = array(), $reply = false ) {
 
+		// Disable quick edit (too much to do here)
 		unset( $actions['inline hide-if-no-js'] );
 
 		// View link
@@ -781,21 +803,21 @@ class BBP_Replies_Admin {
 		// Only show the actions if the user is capable of viewing them
 		if ( current_user_can( 'moderate', $reply->ID ) ) {
 
-			// Show the 'approve' link on pending posts only and 'unapprove' on published posts only
+			// Show the 'approve' link on non-published posts only and 'unapprove' on published posts only
 			$approve_uri = wp_nonce_url( add_query_arg( array( 'reply_id' => $reply->ID, 'action' => 'bbp_toggle_reply_approve' ), remove_query_arg( array( 'bbp_reply_toggle_notice', 'reply_id', 'failed', 'super' ) ) ), 'approve-reply_' . $reply->ID );
-			if ( bbp_is_reply_published( $reply->ID ) ) {
+			if ( bbp_is_reply_public( $reply->ID ) ) {
 				$actions['unapproved'] = '<a href="' . esc_url( $approve_uri ) . '" title="' . esc_attr__( 'Unapprove this reply', 'bbpress' ) . '">' . _x( 'Unapprove', 'Unapprove reply', 'bbpress' ) . '</a>';
-			} elseif ( ! bbp_is_reply_private( $reply->ID ) ) {
+			} else {
 				$actions['approved']   = '<a href="' . esc_url( $approve_uri ) . '" title="' . esc_attr__( 'Approve this reply',   'bbpress' ) . '">' . _x( 'Approve',   'Approve reply',   'bbpress' ) . '</a>';
 			}
 
 			// Show the 'spam' link on published and pending replies and 'not spam' on spammed replies
-			if ( in_array( $reply->post_status, array( bbp_get_public_status_id(), bbp_get_pending_status_id(), bbp_get_spam_status_id() ), true ) ) {
+			if ( in_array( $reply->post_status, array( bbp_get_public_status_id(), bbp_get_trash_status_id(), bbp_get_pending_status_id(), bbp_get_spam_status_id() ), true ) ) {
 				$spam_uri  = wp_nonce_url( add_query_arg( array( 'reply_id' => $reply->ID, 'action' => 'bbp_toggle_reply_spam' ), remove_query_arg( array( 'bbp_reply_toggle_notice', 'reply_id', 'failed', 'super' ) ) ), 'spam-reply_'  . $reply->ID );
-				if ( bbp_is_reply_spam( $reply->ID ) ) {
-					$actions['spam'] = '<a href="' . esc_url( $spam_uri ) . '" title="' . esc_attr__( 'Mark the reply as not spam', 'bbpress' ) . '">' . esc_html__( 'Not spam', 'bbpress' ) . '</a>';
-				} else {
+				if ( ! bbp_is_reply_spam( $reply->ID ) ) {
 					$actions['spam'] = '<a href="' . esc_url( $spam_uri ) . '" title="' . esc_attr__( 'Mark this reply as spam',    'bbpress' ) . '">' . esc_html__( 'Spam',     'bbpress' ) . '</a>';
+				} else {
+					$actions['unspam'] = '<a href="' . esc_url( $spam_uri ) . '" title="' . esc_attr__( 'Mark the reply as not spam', 'bbpress' ) . '">' . esc_html__( 'Not Spam', 'bbpress' ) . '</a>';
 				}
 			}
 		}
@@ -813,12 +835,40 @@ class BBP_Replies_Admin {
 
 			if ( ( bbp_get_trash_status_id() === $reply->post_status ) || empty( $trash_days ) ) {
 				$actions['delete'] = "<a class='submitdelete' title='" . esc_attr__( 'Delete this item permanently', 'bbpress' ) . "' href='" . esc_url( get_delete_post_link( $reply->ID, '', true ) ) . "'>" . esc_html__( 'Delete Permanently', 'bbpress' ) . "</a>";
-			} elseif ( bbp_get_spam_status_id() === $reply->post_status ) {
-				unset( $actions['trash'] );
 			}
 		}
 
-		return $actions;
+		// Sort & return
+		return $this->sort_row_actions( $actions );
+	}
+
+	/**
+	 * Sort row actions by key
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param array $actions
+	 *
+	 * @return array
+	 */
+	private function sort_row_actions( $actions = array() ) {
+
+		// Return value
+		$retval = array();
+
+		// Known row actions, in sort order
+		$known_actions = $this->get_row_action_sort_order();
+
+		// Sort known actions, and keep any unknown ones
+		foreach ( $known_actions as $key ) {
+			if ( isset( $actions[ $key ] ) ) {
+				$retval[ $key ] = $actions[ $key ];
+				unset( $actions[ $key ] );
+			}
+		}
+
+		// Combine & return
+		return $retval + $actions;
 	}
 
 	/**
@@ -830,17 +880,6 @@ class BBP_Replies_Admin {
 	 */
 	public function filter_dropdown() {
 
-		// Add "Empty Spam" button for moderators
-		if ( ! empty( $_GET['post_status'] ) && ( bbp_get_spam_status_id() === $_GET['post_status'] ) && current_user_can( 'moderate' ) ) {
-			wp_nonce_field( 'bulk-destroy', '_destroy_nonce' );
-			submit_button(
-				esc_attr__( 'Empty Spam', 'bbpress' ),
-				'button-secondary apply',
-				'delete_all',
-				false
-			);
-		}
-
 		// Get which forum is selected
 		$selected = ! empty( $_GET['bbp_forum_id'] )
 			? (int) $_GET['bbp_forum_id']
@@ -851,6 +890,34 @@ class BBP_Replies_Admin {
 			'selected'  => $selected,
 			'show_none' => esc_html__( 'In all forums', 'bbpress' )
 		) );
+	}
+
+	/**
+	 * Add "Empty Spam" button for moderators
+	 *
+	 * @since 2.6.0 bbPress (r6791)
+	 */
+	public function filter_empty_spam() {
+
+		// Bail if not viewing spam
+		if ( empty( $_GET['post_status'] ) || ( bbp_get_spam_status_id() !== $_GET['post_status'] ) && current_user_can( 'moderate' ) ) {
+			return;
+		}
+
+		?>
+
+		<div class="alignleft actions"><?php
+
+			// Output the nonce & button
+			wp_nonce_field( 'bulk-destroy', '_destroy_nonce' );
+			submit_button(
+				esc_attr__( 'Empty Spam', 'bbpress' ),
+				'button-secondary apply',
+				'delete_all',
+				false
+			);
+
+		?></div><?php
 	}
 
 	/**
@@ -901,63 +968,63 @@ class BBP_Replies_Admin {
 			// Updated
 			1 =>  sprintf(
 				'%1$s <a href="%2$s">%3$s</a>',
-				__( 'Reply updated.', 'bbpress' ),
+				esc_html__( 'Reply updated.', 'bbpress' ),
 				$topic_url,
-				__( 'View topic', 'bbpress' )
+				esc_html__( 'View topic', 'bbpress' )
 			),
 
 			// Custom field updated
-			2 => __( 'Custom field updated.', 'bbpress' ),
+			2 => esc_html__( 'Custom field updated.', 'bbpress' ),
 
 			// Custom field deleted
-			3 => __( 'Custom field deleted.', 'bbpress' ),
+			3 => esc_html__( 'Custom field deleted.', 'bbpress' ),
 
 			// Reply updated
-			4 => __( 'Reply updated.', 'bbpress' ),
+			4 => esc_html__( 'Reply updated.', 'bbpress' ),
 
 			// Restored from revision
 			// translators: %s: date and time of the revision
 			5 => isset( $_GET['revision'] )
-					? sprintf( __( 'Reply restored to revision from %s', 'bbpress' ), wp_post_revision_title( (int) $_GET['revision'], false ) )
+					? sprintf( esc_html__( 'Reply restored to revision from %s', 'bbpress' ), wp_post_revision_title( (int) $_GET['revision'], false ) )
 					: false,
 
 			// Reply created
 			6 => sprintf(
 				'%1$s <a href="%2$s">%3$s</a>',
-				__( 'Reply created.', 'bbpress' ),
+				esc_html__( 'Reply created.', 'bbpress' ),
 				$topic_url,
-				__( 'View topic', 'bbpress' )
+				esc_html__( 'View topic', 'bbpress' )
 			),
 
 			// Reply saved
-			7 => __( 'Reply saved.', 'bbpress' ),
+			7 => esc_html__( 'Reply saved.', 'bbpress' ),
 
 			// Reply submitted
 			8 => sprintf(
 				'%1$s <a href="%2$s" target="_blank">%3$s</a>',
-				__( 'Reply submitted.', 'bbpress' ),
+				esc_html__( 'Reply submitted.', 'bbpress' ),
 				esc_url( add_query_arg( 'preview', 'true', $topic_url ) ),
-				__( 'Preview topic', 'bbpress' )
+				esc_html__( 'Preview topic', 'bbpress' )
 			),
 
 			// Reply scheduled
 			9 => sprintf(
 				'%1$s <a target="_blank" href="%2$s">%3$s</a>',
 				sprintf(
-					__( 'Reply scheduled for: %s.', 'bbpress' ),
+					esc_html__( 'Reply scheduled for: %s.', 'bbpress' ),
 					// translators: Publish box date format, see http://php.net/date
 					'<strong>' . date_i18n( __( 'M j, Y @ G:i', 'bbpress' ), strtotime( $post_date ) ) . '</strong>'
 				),
 				$topic_url,
-				__( 'Preview topic', 'bbpress' )
+				esc_html__( 'Preview topic', 'bbpress' )
 			),
 
 			// Reply draft updated
 			10 => sprintf(
 				'%1$s <a href="%2$s" target="_blank">%3$s</a>',
-				__( 'Reply draft updated.', 'bbpress' ),
+				esc_html__( 'Reply draft updated.', 'bbpress' ),
 				esc_url( add_query_arg( 'preview', 'true', $topic_url ) ),
-				__( 'Preview topic', 'bbpress' )
+				esc_html__( 'Preview topic', 'bbpress' )
 			),
 		);
 
@@ -984,5 +1051,5 @@ function bbp_admin_replies( $current_screen ) {
 	}
 
 	// Init the replies admin
-	bbpress()->admin->replies = new BBP_Replies_Admin();
+	bbp_admin()->replies = new BBP_Replies_Admin();
 }

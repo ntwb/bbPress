@@ -161,6 +161,11 @@ function bbp_new_forum_handler( $action = '' ) {
 		bbp_add_error( 'bbp_forum_title', __( '<strong>ERROR</strong>: Your forum needs a title.', 'bbpress' ) );
 	}
 
+	// Title too long
+	if ( bbp_is_title_too_long( $forum_title ) ) {
+		bbp_add_error( 'bbp_forum_title', __( '<strong>ERROR</strong>: Your title is too long.', 'bbpress' ) );
+	}
+
 	/** Forum Content *********************************************************/
 
 	if ( ! empty( $_POST['bbp_forum_content'] ) ) {
@@ -443,6 +448,11 @@ function bbp_edit_forum_handler( $action = '' ) {
 	// No forum title
 	if ( empty( $forum_title ) ) {
 		bbp_add_error( 'bbp_edit_forum_title', __( '<strong>ERROR</strong>: Your forum needs a title.', 'bbpress' ) );
+	}
+
+	// Title too long
+	if ( bbp_is_title_too_long( $forum_title ) ) {
+		bbp_add_error( 'bbp_forum_title', __( '<strong>ERROR</strong>: Your title is too long.', 'bbpress' ) );
 	}
 
 	/** Forum Content *********************************************************/
@@ -2048,7 +2058,7 @@ function bbp_pre_get_posts_normalize_forum_visibility( $posts_query = null ) {
 		$posts_query->set( 'post__not_in', $not_in );
 
 	// Some other post type besides Forums, Topics, or Replies
-	} elseif ( ! array_diff( $post_types, get_post_types( array( 'source' => 'bbpress' ) ) ) ) {
+	} elseif ( ! array_diff( $post_types, bbp_get_post_types() ) ) {
 
 		// Get forums to exclude
 		$forum_ids = bbp_exclude_forum_ids( 'meta_query' );
@@ -2368,7 +2378,7 @@ function bbp_trash_forum_topics( $forum_id = 0 ) {
 }
 
 /**
- * Trash all topics inside a forum
+ * Untrash all topics inside a forum
  *
  * @since 2.1.0 bbPress (r3668)
  *

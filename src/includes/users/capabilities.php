@@ -142,7 +142,7 @@ function bbp_map_primary_meta_caps( $caps = array(), $cap = '', $user_id = 0, $a
 }
 
 /**
- * Return a user's main role
+ * Set a user's role in the forums
  *
  * @since 2.1.0 bbPress (r3860)
  *
@@ -373,7 +373,7 @@ function bbp_set_current_user_default_role() {
 
 	// Add the user to the site
 	if ( true === $add_to_site ) {
-		$bbp->current_user->add_role( $new_role );
+		bbp_set_user_role( $user_id, $new_role );
 
 	// Don't add the user, but still give them the correct caps dynamically
 	} else {
@@ -491,8 +491,8 @@ function bbp_make_spam_user( $user_id = 0 ) {
 	// Loop through blogs and remove their posts
 	foreach ( (array) array_keys( $blogs ) as $blog_id ) {
 
-		// Switch to the blog ID
-		switch_to_blog( $blog_id );
+		// Switch to the site ID
+		bbp_switch_to_site( $blog_id );
 
 		// Get topics and replies
 		$query = $bbp_db->prepare( "SELECT ID FROM {$bbp_db->posts} WHERE post_author = %d AND post_status = %s AND post_type IN ( {$post_types} )", $user_id, bbp_get_public_status_id() );
@@ -517,8 +517,8 @@ function bbp_make_spam_user( $user_id = 0 ) {
 			}
 		}
 
-		// Switch back to current blog
-		restore_current_blog();
+		// Switch back to current site
+		bbp_restore_current_site();
 	}
 
 	// Success
@@ -569,8 +569,8 @@ function bbp_make_ham_user( $user_id = 0 ) {
 	// Loop through blogs and remove their posts
 	foreach ( (array) array_keys( $blogs ) as $blog_id ) {
 
-		// Switch to the blog ID
-		switch_to_blog( $blog_id );
+		// Switch to the site ID
+		bbp_switch_to_site( $blog_id );
 
 		// Get topics and replies
 		$query = $bbp_db->prepare( "SELECT ID FROM {$bbp_db->posts} WHERE post_author = %d AND post_status = %s AND post_type IN ( {$post_types} )", $user_id, bbp_get_spam_status_id() );
@@ -595,8 +595,8 @@ function bbp_make_ham_user( $user_id = 0 ) {
 			}
 		}
 
-		// Switch back to current blog
-		restore_current_blog();
+		// Switch back to current site
+		bbp_restore_current_site();
 	}
 
 	// Success

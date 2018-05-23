@@ -29,13 +29,13 @@ function bbp_admin_separator() {
 	// Loop through caps, and look for a reason to show the separator
 	foreach ( $caps as $cap ) {
 		if ( current_user_can( $cap ) ) {
-			bbpress()->admin->show_separator = true;
+			bbp_admin()->show_separator = true;
 			break;
 		}
 	}
 
 	// Bail if no separator
-	if ( false === bbpress()->admin->show_separator ) {
+	if ( false === bbp_admin()->show_separator ) {
 		return;
 	}
 
@@ -53,7 +53,7 @@ function bbp_admin_separator() {
  * @return mixed True if separator, false if not
  */
 function bbp_admin_custom_menu_order( $menu_order = false ) {
-	if ( false === bbpress()->admin->show_separator ) {
+	if ( false === bbp_admin()->show_separator ) {
 		return $menu_order;
 	}
 
@@ -71,7 +71,7 @@ function bbp_admin_custom_menu_order( $menu_order = false ) {
 function bbp_admin_menu_order( $menu_order ) {
 
 	// Bail if user cannot see any top level bbPress menus
-	if ( empty( $menu_order ) || ( false === bbpress()->admin->show_separator ) ) {
+	if ( empty( $menu_order ) || ( false === bbp_admin()->show_separator ) ) {
 		return $menu_order;
 	}
 
@@ -114,29 +114,6 @@ function bbp_admin_menu_order( $menu_order ) {
 }
 
 /**
- * Filter sample permalinks so that certain languages display properly.
- *
- * @since 2.0.0 bbPress (r3336)
- *
- * @param string $post_link Custom post type permalink
- * @param object $_post Post data object
- * @param bool $leavename Optional, defaults to false. Whether to keep post name or page name.
- * @param bool $sample Optional, defaults to false. Is it a sample permalink.
- *
- * @return string The custom post type permalink
- */
-function bbp_filter_sample_permalink( $post_link, $_post, $leavename = false, $sample = false ) {
-
-	// Bail if not on an admin page and not getting a sample permalink
-	if ( ! empty( $sample ) && is_admin() && bbp_is_custom_post_type() ) {
-		return urldecode( $post_link );
-	}
-
-	// Return post link
-	return $post_link;
-}
-
-/**
  * Sanitize permalink slugs when saving the settings page.
  *
  * @since 2.6.0 bbPress (r5364)
@@ -171,52 +148,19 @@ function bbp_sanitize_slug( $slug = '' ) {
  *
  * @since 2.1.0 bbPress (r3765)
  *
- * @param type $site_id
+ * @param int $site_id
  */
 function bbp_do_uninstall( $site_id = 0 ) {
 	if ( empty( $site_id ) ) {
 		$site_id = get_current_blog_id();
 	}
 
-	switch_to_blog( $site_id );
+	bbp_switch_to_site( $site_id );
 	bbp_delete_options();
 	bbp_remove_roles();
 	bbp_remove_caps();
 	flush_rewrite_rules();
-	restore_current_blog();
-}
-
-/**
- * Redirect user to "What's New" page on activation
- *
- * @since 2.2.0 bbPress (r4389)
- *
- * @internal Used internally to redirect bbPress to the about page on activation
- *
- * @return If no transient, or in network admin, or is bulk activation
- */
-function bbp_do_activation_redirect() {
-
-	// Bail if no activation redirect
-	if ( ! get_transient( '_bbp_activation_redirect' ) ) {
-		return;
-	}
-
-	// Delete the redirect transient
-	delete_transient( '_bbp_activation_redirect' );
-
-	// Bail if activating from network, or bulk
-	if ( is_network_admin() || isset( $_GET['activate-multi'] ) ) {
-		return;
-	}
-
-	// Bail if the current user cannot see the about page
-	if ( ! current_user_can( 'bbp_about_page' ) ) {
-		return;
-	}
-
-	// Redirect to bbPress about page
-	bbp_redirect( add_query_arg( array( 'page' => 'bbp-about' ), admin_url( 'index.php' ) ) );
+	bbp_restore_current_site();
 }
 
 /**

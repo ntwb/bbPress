@@ -1252,7 +1252,7 @@ function bbp_redirect_to_field( $redirect_to = '' ) {
 	// Make sure we are directing somewhere
 	if ( empty( $redirect_to ) ) {
 		if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-			$redirect_to = ( is_ssl() ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			$redirect_to = bbp_get_url_scheme() . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 		} else {
 			$redirect_to = wp_get_referer();
 		}
@@ -1696,7 +1696,8 @@ function bbp_reply_form_fields() {
 
 		// Show redirect field if not viewing a specific topic
 		if ( bbp_is_query_name( 'bbp_single_topic' ) ) :
-			bbp_redirect_to_field( get_permalink() );
+			$redirect_to = apply_filters( 'bbp_reply_form_redirect_to', get_permalink() );
+			bbp_redirect_to_field( $redirect_to );
 		endif;
 	endif;
 }
@@ -2052,6 +2053,8 @@ function bbp_view_url( $view = false ) {
 
 		// Pretty permalinks
 		if ( bbp_use_pretty_urls() ) {
+
+			// Run through home_url()
 			$url = trailingslashit( bbp_get_root_url() . bbp_get_view_slug() ) . $view;
 			$url = user_trailingslashit( $url );
 			$url = home_url( $url );
@@ -2176,7 +2179,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 			// Default to 'Home'
 			} else {
-				$pre_front_text = __( 'Home', 'bbpress' );
+				$pre_front_text = esc_html__( 'Home', 'bbpress' );
 			}
 		}
 
@@ -2250,11 +2253,11 @@ function bbp_breadcrumb( $args = array() ) {
 			}
 
 			// Implode the results of the tag data
-			$pre_current_text = sprintf( __( 'Topic Tag: %s', 'bbpress' ), implode( ' ', $tag_data ) );
+			$pre_current_text = sprintf( esc_html__( 'Topic Tag: %s', 'bbpress' ), implode( ' ', $tag_data ) );
 
 		// Edit Topic Tag
 		} elseif ( bbp_is_topic_tag_edit() ) {
-			$pre_current_text = __( 'Edit', 'bbpress' );
+			$pre_current_text = esc_html__( 'Edit', 'bbpress' );
 
 		// Single
 		} else {
@@ -2304,7 +2307,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// Do we want to include a link to home?
 		if ( ! empty( $r['include_home'] ) || empty( $r['home_text'] ) ) {
-			$crumbs[] = '<a href="' . trailingslashit( home_url() ) . '" class="bbp-breadcrumb-home">' . $r['home_text'] . '</a>';
+			$crumbs[] = '<a href="' . esc_url( home_url() ) . '" class="bbp-breadcrumb-home">' . $r['home_text'] . '</a>';
 		}
 
 		// Do we want to include a link to the forum root?
@@ -2365,7 +2368,7 @@ function bbp_breadcrumb( $args = array() ) {
 
 		// Edit topic tag
 		} elseif ( bbp_is_topic_tag_edit() ) {
-			$crumbs[] = '<a href="' . esc_url( get_term_link( bbp_get_topic_tag_id(), bbp_get_topic_tag_tax_id() ) ) . '" class="bbp-breadcrumb-topic-tag">' . sprintf( __( 'Topic Tag: %s', 'bbpress' ), bbp_get_topic_tag_name() ) . '</a>';
+			$crumbs[] = '<a href="' . esc_url( get_term_link( bbp_get_topic_tag_id(), bbp_get_topic_tag_tax_id() ) ) . '" class="bbp-breadcrumb-topic-tag">' . sprintf( esc_html__( 'Topic Tag: %s', 'bbpress' ), bbp_get_topic_tag_name() ) . '</a>';
 
 		// Search
 		} elseif ( bbp_is_search() && bbp_get_search_terms() ) {

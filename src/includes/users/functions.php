@@ -61,7 +61,7 @@ function bbp_is_anonymous() {
  * @param string $key Which value to echo?
  */
 function bbp_current_anonymous_user_data( $key = '' ) {
-	echo bbp_get_current_anonymous_user_data( $key );
+	echo esc_attr( bbp_get_current_anonymous_user_data( $key ) );
 }
 
 	/**
@@ -86,9 +86,6 @@ function bbp_current_anonymous_user_data( $key = '' ) {
 			'comment_author_email' => 'comment_author_email',
 			'comment_author_url'   => 'comment_author_url',
 		);
-
-		// Sanitize core cookies
-		sanitize_comment_cookies();
 
 		// Get the current poster's info from the cookies
 		$bbp_current_poster = wp_get_current_commenter();
@@ -163,7 +160,7 @@ function bbp_current_author_ip() {
  */
 function bbp_current_author_ua() {
 	$retval = ! empty( $_SERVER['HTTP_USER_AGENT'] )
-		? substr( $_SERVER['HTTP_USER_AGENT'], 0, 254 )
+		? mb_substr( $_SERVER['HTTP_USER_AGENT'], 0, 254 )
 		: '';
 
 	// Filter & return
@@ -667,7 +664,7 @@ function bbp_get_user_topic_count_raw( $user_id = 0 ) {
 function bbp_get_user_reply_count_raw( $user_id = 0 ) {
 	$user_id = bbp_get_user_id( $user_id );
 	$bbp_db  = bbp_db();
-	$statii  = "'" . implode( "', '", bbp_get_public_topic_statuses() ) . "'";
+	$statii  = "'" . implode( "', '", bbp_get_public_reply_statuses() ) . "'";
 	$sql     = "SELECT COUNT(*)
 			FROM {$bbp_db->posts}
 			WHERE post_author = %d
@@ -980,11 +977,14 @@ function bbp_user_maybe_convert_pass() {
 		return;
 	}
 
+	// Setup the converter
+	bbp_setup_converter();
+
 	// Try to convert the old password for this user
 	$converter = bbp_new_converter( $row->meta_value );
 
 	// Try to call the conversion method
-	if ( is_a( $converter, 'BBP_Converter_Base' ) && method_exists( $converter, 'callback_pass' ) ) {
+	if ( ( $converter instanceof BBP_Converter_Base ) && method_exists( $converter, 'callback_pass' ) ) {
 		$converter->callback_pass( $username, $_POST['pwd'] );
 	}
 }

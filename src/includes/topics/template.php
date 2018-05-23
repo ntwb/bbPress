@@ -44,25 +44,37 @@ function bbp_get_topic_post_type_labels() {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_topic_post_type_labels', array(
-		'name'                  => __( 'Topics',                   'bbpress' ),
-		'menu_name'             => __( 'Topics',                   'bbpress' ),
-		'singular_name'         => __( 'Topic',                    'bbpress' ),
-		'all_items'             => __( 'All Topics',               'bbpress' ),
-		'add_new'               => __( 'Add New',                  'bbpress' ),
-		'add_new_item'          => __( 'Create New Topic',         'bbpress' ),
-		'edit'                  => __( 'Edit',                     'bbpress' ),
-		'edit_item'             => __( 'Edit Topic',               'bbpress' ),
-		'new_item'              => __( 'New Topic',                'bbpress' ),
-		'view'                  => __( 'View Topic',               'bbpress' ),
-		'view_item'             => __( 'View Topic',               'bbpress' ),
-		'view_items'            => __( 'View Topics',              'bbpress' ),
-		'search_items'          => __( 'Search Topics',            'bbpress' ),
-		'not_found'             => __( 'No topics found',          'bbpress' ),
-		'not_found_in_trash'    => __( 'No topics found in Trash', 'bbpress' ),
-		'filter_items_list'     => __( 'Filter topics list',       'bbpress' ),
-		'items_list'            => __( 'Topics list',              'bbpress' ),
-		'items_list_navigation' => __( 'Topics list navigation',   'bbpress' ),
-		'parent_item_colon'     => __( 'Forum:',                   'bbpress' )
+		'name'                  => esc_attr__( 'Topics',                   'bbpress' ),
+		'menu_name'             => esc_attr__( 'Topics',                   'bbpress' ),
+		'singular_name'         => esc_attr__( 'Topic',                    'bbpress' ),
+		'all_items'             => esc_attr__( 'All Topics',               'bbpress' ),
+		'add_new'               => esc_attr__( 'Add New',                  'bbpress' ),
+		'add_new_item'          => esc_attr__( 'Create New Topic',         'bbpress' ),
+		'edit'                  => esc_attr__( 'Edit',                     'bbpress' ),
+		'edit_item'             => esc_attr__( 'Edit Topic',               'bbpress' ),
+		'new_item'              => esc_attr__( 'New Topic',                'bbpress' ),
+		'view'                  => esc_attr__( 'View Topic',               'bbpress' ),
+		'view_item'             => esc_attr__( 'View Topic',               'bbpress' ),
+		'view_items'            => esc_attr__( 'View Topics',              'bbpress' ),
+		'search_items'          => esc_attr__( 'Search Topics',            'bbpress' ),
+		'not_found'             => esc_attr__( 'No topics found',          'bbpress' ),
+		'not_found_in_trash'    => esc_attr__( 'No topics found in Trash', 'bbpress' ),
+		'filter_items_list'     => esc_attr__( 'Filter topics list',       'bbpress' ),
+		'items_list'            => esc_attr__( 'Topics list',              'bbpress' ),
+		'items_list_navigation' => esc_attr__( 'Topics list navigation',   'bbpress' ),
+		'parent_item_colon'     => esc_attr__( 'Forum:',                   'bbpress' ),
+		'all_items'             => esc_attr__( 'All Topics',               'bbpress' ),
+		'archives'              => esc_attr__( 'Forum Topics',             'bbpress' ),
+		'attributes'            => esc_attr__( 'Topic Attributes',         'bbpress' ),
+		'insert_into_item'      => esc_attr__( 'Insert into topic',        'bbpress' ),
+		'uploaded_to_this_item' => esc_attr__( 'Uploaded to this topic',   'bbpress' ),
+		'featured_image'        => esc_attr__( 'Topic Image',              'bbpress' ),
+		'set_featured_image'    => esc_attr__( 'Set topic image',          'bbpress' ),
+		'remove_featured_image' => esc_attr__( 'Remove topic image',       'bbpress' ),
+		'use_featured_image'    => esc_attr__( 'Use as topic image',       'bbpress' ),
+		'filter_items_list'     => esc_attr__( 'Filter topic list',        'bbpress' ),
+		'items_list_navigation' => esc_attr__( 'Topic list navigation',    'bbpress' ),
+		'items_list'            => esc_attr__( 'Topic list',               'bbpress' )
 	) );
 }
 
@@ -308,9 +320,10 @@ function bbp_the_topic() {
  */
 function bbp_add_sticky_topics( &$query, $args = array() ) {
 
-	// Bail if overloaded
-	if ( null !== apply_filters( 'bbp_pre_add_stick_topics', null, $query, $args ) ) {
-		return;
+	// Bail if intercepted
+	$intercept = bbp_maybe_intercept( __FUNCTION__, func_get_args() );
+	if ( bbp_is_intercepted( $intercept ) ) {
+		return $intercept;
 	}
 
 	// Parse arguments against what gets used locally
@@ -704,7 +717,7 @@ function bbp_topic_excerpt( $topic_id = 0, $length = 100 ) {
 		}
 
 		if ( ! empty( $length ) && ( $excerpt_length > $length ) ) {
-			$excerpt  = substr( $excerpt, 0, $length - 1 );
+			$excerpt  = mb_substr( $excerpt, 0, $length - 1 );
 			$excerpt .= '&hellip;';
 		}
 
@@ -908,9 +921,9 @@ function bbp_topic_revision_log( $topic_id = 0 ) {
 
 			$retval .= "\t" . '<li id="bbp-topic-revision-log-' . esc_attr( $topic_id ) . '-item-' . esc_attr( $revision->ID ) . '" class="bbp-topic-revision-log-item">' . "\n";
 			if ( ! empty( $reason ) ) {
-				$retval .= "\t\t" . sprintf( __( 'This topic was modified %1$s by %2$s. Reason: %3$s', 'bbpress' ), esc_html( $since ), $author, esc_html( $reason ) ) . "\n";
+				$retval .= "\t\t" . sprintf( esc_html__( 'This topic was modified %1$s by %2$s. Reason: %3$s', 'bbpress' ), esc_html( $since ), $author, esc_html( $reason ) ) . "\n";
 			} else {
-				$retval .= "\t\t" . sprintf( __( 'This topic was modified %1$s by %2$s.',              'bbpress' ), esc_html( $since ), $author ) . "\n";
+				$retval .= "\t\t" . sprintf( esc_html__( 'This topic was modified %1$s by %2$s.',              'bbpress' ), esc_html( $since ), $author ) . "\n";
 			}
 			$retval .= "\t" . '</li>' . "\n";
 		}
@@ -964,7 +977,7 @@ function bbp_get_topic_revisions( $topic_id = 0 ) {
  */
 function bbp_get_topic_revision_count( $topic_id = 0, $integer = false ) {
 	$topic_id = bbp_get_topic_id( $topic_id );
-	$count    = bbp_number_not_negative( count( bbp_get_topic_revisions( $topic_id ) ) );
+	$count    = count( bbp_get_topic_revisions( $topic_id ) );
 	$filter   = ( true === $integer )
 		? 'bbp_get_topic_revision_count_int'
 		: 'bbp_get_topic_revision_count';
@@ -1440,10 +1453,11 @@ function bbp_topic_author_link( $args = array() ) {
 
 			// Tweak link title if empty
 			if ( empty( $r['link_title'] ) ) {
-				$author     = bbp_get_topic_author_display_name( $topic_id );
-				$title      = empty( $anonymous )
-					? __( 'View %s\'s profile',  'bbpress' )
-					: __( 'Visit %s\'s website', 'bbpress' );
+				$author = bbp_get_topic_author_display_name( $topic_id );
+				$title  = empty( $anonymous )
+					? esc_attr__( "View %s's profile",  'bbpress' )
+					: esc_attr__( "Visit %s's website", 'bbpress' );
+
 				$link_title = sprintf( $title, $author );
 
 			// Use what was passed if not
@@ -1467,30 +1481,26 @@ function bbp_topic_author_link( $args = array() ) {
 				$author_links['name'] = esc_html( bbp_get_topic_author_display_name( $topic_id ) );
 			}
 
-			// Link class
-			$link_class = ' class="bbp-author-' . esc_attr( $r['type'] ) . '"';
+			// Empty array
+			$links  = array();
+			$sprint = empty( $anonymous ) && bbp_user_has_profile( bbp_get_topic_author_id( $topic_id ) )
+				? '<a href="%1$s"%2$s%3$s>%4$s</a>'
+				: '<span %2$s%3$s>%4$s</span>';
 
-			// Add links if not anonymous
-			if ( empty( $anonymous ) && bbp_user_has_profile( bbp_get_topic_author_id( $topic_id ) ) ) {
-
-				// Empty array
-				$links = array();
-
-				// Assemble the links
-				foreach ( $author_links as $link => $link_text ) {
-					$link_class = ' class="bbp-author-' . esc_attr( $link ) . '"';
-					$links[]    = sprintf( '<a href="%1$s"%2$s%3$s>%4$s</a>', esc_url( $author_url ), $link_title, $link_class, $link_text );
-				}
-
-				// Role is not linked
-				if ( true === $r['show_role'] ) {
-					$links[] = bbp_get_topic_author_role( array( 'topic_id' => $topic_id ) );
-				}
-
-				// Juggle
-				$author_links = $links;
-				unset( $links );
+			// Wrap each link
+			foreach ( $author_links as $link => $link_text ) {
+				$link_class = ' class="bbp-author-' . esc_attr( $link ) . '"';
+				$links[]    = sprintf( $sprint, esc_url( $author_url ), $link_title, $link_class, $link_text );
 			}
+
+			// Role is not linked
+			if ( true === $r['show_role'] ) {
+				$links[] = bbp_get_topic_author_role( array( 'topic_id' => $topic_id ) );
+			}
+
+			// Juggle
+			$author_links = $links;
+			unset( $links );
 
 			// Filter sections
 			$sections    = apply_filters( 'bbp_get_topic_author_links', $author_links, $r, $args );
@@ -1782,13 +1792,14 @@ function bbp_topic_subscription_link( $args = array() ) {
 
 		// Defaults
 		$retval      = false;
+		$user_id     = bbp_get_current_user_id();
 		$redirect_to = bbp_is_subscriptions()
-			? bbp_get_subscriptions_permalink()
+			? bbp_get_subscriptions_permalink( $user_id )
 			: '';
 
 		// Parse the arguments
 		$r = bbp_parse_args( $args, array(
-			'user_id'     => bbp_get_current_user_id(),
+			'user_id'     => $user_id,
 			'object_id'   => bbp_get_topic_id(),
 			'object_type' => 'post',
 			'before'      => '&nbsp;|&nbsp;',
@@ -1829,13 +1840,14 @@ function bbp_topic_favorite_link( $args = array() ) {
 
 		// No link
 		$retval      = false;
+		$user_id     = bbp_get_current_user_id();
 		$redirect_to = bbp_is_favorites()
-			? bbp_get_favorites_permalink()
+			? bbp_get_favorites_permalink( $user_id )
 			: '';
 
 		// Parse the arguments
 		$r = bbp_parse_args( $args, array(
-			'user_id'     => bbp_get_current_user_id(),
+			'user_id'     => $user_id,
 			'object_id'   => bbp_get_topic_id(),
 			'object_type' => 'post',
 			'before'      => '',
@@ -2076,7 +2088,7 @@ function bbp_topic_reply_count( $topic_id = 0, $integer = false ) {
 	 */
 	function bbp_get_topic_reply_count( $topic_id = 0, $integer = false ) {
 		$topic_id = bbp_get_topic_id( $topic_id );
-		$replies  = bbp_number_not_negative( get_post_meta( $topic_id, '_bbp_reply_count', true ) );
+		$replies  = get_post_meta( $topic_id, '_bbp_reply_count', true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_topic_reply_count_int'
 			: 'bbp_get_topic_reply_count';
@@ -2106,7 +2118,7 @@ function bbp_topic_post_count( $topic_id = 0, $integer = false ) {
 	 */
 	function bbp_get_topic_post_count( $topic_id = 0, $integer = false ) {
 		$topic_id = bbp_get_topic_id( $topic_id );
-		$replies  = bbp_number_not_negative( get_post_meta( $topic_id, '_bbp_reply_count', true ) + 1 );
+		$replies  = get_post_meta( $topic_id, '_bbp_reply_count', true ) + 1;
 		$filter   = ( true === $integer )
 			? 'bbp_get_topic_post_count_int'
 			: 'bbp_get_topic_post_count';
@@ -2138,7 +2150,7 @@ function bbp_topic_reply_count_hidden( $topic_id = 0, $integer = false ) {
 	 */
 	function bbp_get_topic_reply_count_hidden( $topic_id = 0, $integer = false ) {
 		$topic_id = bbp_get_topic_id( $topic_id );
-		$replies  = bbp_number_not_negative( get_post_meta( $topic_id, '_bbp_reply_count_hidden', true ) );
+		$replies  = get_post_meta( $topic_id, '_bbp_reply_count_hidden', true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_topic_reply_count_hidden_int'
 			: 'bbp_get_topic_reply_count_hidden';
@@ -2166,7 +2178,7 @@ function bbp_topic_voice_count( $topic_id = 0, $integer = false ) {
 	 */
 	function bbp_get_topic_voice_count( $topic_id = 0, $integer = false ) {
 		$topic_id = bbp_get_topic_id( $topic_id );
-		$voices   = bbp_number_not_negative( get_post_meta( $topic_id, '_bbp_voice_count', true ) );
+		$voices   = get_post_meta( $topic_id, '_bbp_voice_count', true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_topic_voice_count_int'
 			: 'bbp_get_topic_voice_count';
@@ -2549,7 +2561,7 @@ function bbp_topic_trash_link( $args = array() ) {
 		}
 
 		if ( bbp_is_topic_trash( $topic->ID ) || empty( $trash_days ) ) {
-			$actions['delete']  = '<a title="' . esc_attr__( 'Delete this item permanently',     'bbpress' ) . '" href="' . esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'bbp_toggle_topic_trash', 'sub_action' => 'delete',  'topic_id' => $topic->ID ) ), 'delete-'  . $topic->post_type . '_' . $topic->ID ) ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete that permanently?', 'bbpress' ) ) . '\' );" class="bbp-topic-delete-link">' . $r['delete_text'] . '</a>';
+			$actions['delete']  = '<a title="' . esc_attr__( 'Delete this item permanently',     'bbpress' ) . '" href="' . esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'bbp_toggle_topic_trash', 'sub_action' => 'delete',  'topic_id' => $topic->ID ) ), 'delete-'  . $topic->post_type . '_' . $topic->ID ) ) . '" onclick="return confirm(\'' . esc_js( esc_html__( 'Are you sure you want to delete that permanently?', 'bbpress' ) ) . '\' );" class="bbp-topic-delete-link">' . $r['delete_text'] . '</a>';
 		}
 
 		// Process the admin links
@@ -3060,12 +3072,12 @@ function bbp_topic_notices() {
 
 		// Spam notice
 		case bbp_get_spam_status_id() :
-			$notice_text = __( 'This topic is marked as spam.', 'bbpress' );
+			$notice_text = esc_html__( 'This topic is marked as spam.', 'bbpress' );
 			break;
 
 		// Trashed notice
 		case bbp_get_trash_status_id() :
-			$notice_text = __( 'This topic is in the trash.',   'bbpress' );
+			$notice_text = esc_html__( 'This topic is in the trash.',   'bbpress' );
 			break;
 
 		// Standard status
@@ -3376,20 +3388,28 @@ function bbp_get_topic_tag_tax_labels() {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_topic_tag_tax_labels', array(
-		'name'                       => __( 'Topic Tags',                      'bbpress' ),
-		'singular_name'              => __( 'Topic Tag',                       'bbpress' ),
-		'search_items'               => __( 'Search Tags',                     'bbpress' ),
-		'popular_items'              => __( 'Popular Tags',                    'bbpress' ),
-		'all_items'                  => __( 'All Tags',                        'bbpress' ),
-		'edit_item'                  => __( 'Edit Tag',                        'bbpress' ),
-		'update_item'                => __( 'Update Tag',                      'bbpress' ),
-		'add_new_item'               => __( 'Add New Tag',                     'bbpress' ),
-		'new_item_name'              => __( 'New Tag Name',                    'bbpress' ),
-		'view_item'                  => __( 'View Topic Tag',                  'bbpress' ),
-		'view_items'                 => __( 'View Topic Tags',                 'bbpress' ),
-		'items_list'                 => __( 'Topic tags list',                 'bbpress' ),
-		'items_list_navigation'      => __( 'Topic tags list navigation',      'bbpress' ),
-		'separate_items_with_commas' => __( 'Separate topic tags with commas', 'bbpress' )
+		'name'                       => esc_attr__( 'Topic Tags',                      'bbpress' ),
+		'menu_name'                  => esc_attr__( 'Topic Tags',                      'bbpress' ),
+		'singular_name'              => esc_attr__( 'Topic Tag',                       'bbpress' ),
+		'search_items'               => esc_attr__( 'Search Tags',                     'bbpress' ),
+		'popular_items'              => esc_attr__( 'Popular Tags',                    'bbpress' ),
+		'all_items'                  => esc_attr__( 'All Tags',                        'bbpress' ),
+		'parent_item'                => esc_attr__( 'Parent Tag',                      'bbpress' ),
+		'parent_item_colon'          => esc_attr__( 'Parent Tag:',                     'bbpress' ),
+		'edit_item'                  => esc_attr__( 'Edit Tag',                        'bbpress' ),
+		'view_item'                  => esc_attr__( 'View Topic Tag',                  'bbpress' ),
+		'update_item'                => esc_attr__( 'Update Tag',                      'bbpress' ),
+		'add_new_item'               => esc_attr__( 'Add New Tag',                     'bbpress' ),
+		'new_item_name'              => esc_attr__( 'New Tag Name',                    'bbpress' ),
+		'separate_items_with_commas' => esc_attr__( 'Separate topic tags with commas', 'bbpress' ),
+		'add_or_remove_items'        => esc_attr__( 'Add or remove tags',              'bbpress' ),
+		'choose_from_most_used'      => esc_attr__( 'Choose from the most used tags',  'bbpress' ),
+		'not_found'                  => esc_attr__( 'No topic tags found.',            'bbpress' ),
+		'no_terms'                   => esc_attr__( 'No topic tags',                   'bbpress' ),
+		'items_list_navigation'      => esc_attr__( 'Topic tags list navigation',      'bbpress' ),
+		'items_list'                 => esc_attr__( 'Topic tags list',                 'bbpress' ),
+		'most_used'                  => esc_attr__( 'Most used topic tags',            'bbpress' ),
+		'back_to_items'              => esc_attr__( '&larr; Back to Tags',             'bbpress' )
 	) );
 }
 

@@ -115,15 +115,15 @@ class BBP_Tests_Replies_Template_Reply extends BBP_UnitTestCase {
 		add_filter( 'bbp_show_lead_topic', '__return_true' );
 
 		// 1st reply is on the first page, 3 replies and 1 topic per page.
-		$reply_url = bbp_get_topic_permalink( $t ) . '/#post-' . bbp_get_reply_id( $r[0] );
+		$reply_url = bbp_get_topic_permalink( $t ) . '#post-' . bbp_get_reply_id( $r[0] );
 		$this->assertSame( $reply_url, bbp_get_reply_url( $r[0] ) );
 
 		// 2nd reply is on the first page, 3 replies and 1 topic per page.
-		$reply_url = bbp_get_topic_permalink( $t ) . '/#post-' . bbp_get_reply_id( $r[1] );
+		$reply_url = bbp_get_topic_permalink( $t ) . '#post-' . bbp_get_reply_id( $r[1] );
 		$this->assertSame( $reply_url, bbp_get_reply_url( $r[1] ) );
 
 		// 3rd reply is on the first page, 3 replies and 1 topic per page.
-		$reply_url = bbp_get_topic_permalink( $t ) . '/#post-' . bbp_get_reply_id( $r[2] );
+		$reply_url = bbp_get_topic_permalink( $t ) . '#post-' . bbp_get_reply_id( $r[2] );
 		$this->assertSame( $reply_url, bbp_get_reply_url( $r[2] ) );
 
 		// 4th reply is on the second page, 3 replies and 1 topic per page.
@@ -149,11 +149,11 @@ class BBP_Tests_Replies_Template_Reply extends BBP_UnitTestCase {
 		add_filter( 'bbp_show_lead_topic', '__return_false' );
 
 		// 1st reply is on the first page, 2 replies and 1 topic per first page.
-		$reply_url = bbp_get_topic_permalink( $t ) . '/#post-' . bbp_get_reply_id( $r[0] );
+		$reply_url = bbp_get_topic_permalink( $t ) . '#post-' . bbp_get_reply_id( $r[0] );
 		$this->assertSame( $reply_url, bbp_get_reply_url( $r[0] ) );
 
 		// 2nd reply is on the first page, 2 replies and 1 topic per first page.
-		$reply_url = bbp_get_topic_permalink( $t ) . '/#post-' . bbp_get_reply_id( $r[1] );
+		$reply_url = bbp_get_topic_permalink( $t ) . '#post-' . bbp_get_reply_id( $r[1] );
 		$this->assertSame( $reply_url, bbp_get_reply_url( $r[1] ) );
 
 		// 3rd reply is on the second page, 2 replies and 1 topic per first page.
@@ -529,10 +529,7 @@ class BBP_Tests_Replies_Template_Reply extends BBP_UnitTestCase {
 		$this->assertSame( 4, $position );
 
 		// Force a reply's 'menu_order' to 0.
-		wp_update_post( array(
-			'ID'         => $r[3],
-			'menu_order' => 0,
-		) );
+		bbp_update_reply_position( $r[3], 0 );
 
 		$position = get_post_field( 'menu_order', $r[3] );
 		$this->assertSame( 0, $position );
@@ -559,10 +556,7 @@ class BBP_Tests_Replies_Template_Reply extends BBP_UnitTestCase {
 		$this->assertSame( 5, $position );
 
 		// Force a reply's 'menu_order' to 0.
-		wp_update_post( array(
-			'ID'         => $r[3],
-			'menu_order' => 0,
-		) );
+		bbp_update_reply_position( $r[3], 0 );
 
 		$position = get_post_field( 'menu_order', $r[3] );
 		$this->assertSame( 0, $position );

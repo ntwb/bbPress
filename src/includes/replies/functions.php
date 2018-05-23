@@ -274,6 +274,11 @@ function bbp_new_reply_handler( $action = '' ) {
 	// Filter and sanitize
 	$reply_title = apply_filters( 'bbp_new_reply_pre_title', $reply_title );
 
+	// Title too long
+	if ( bbp_is_title_too_long( $reply_title ) ) {
+		bbp_add_error( 'bbp_reply_title', __( '<strong>ERROR</strong>: Your title is too long.', 'bbpress' ) );
+	}
+
 	/** Reply Content *********************************************************/
 
 	if ( ! empty( $_POST['bbp_reply_content'] ) ) {
@@ -334,7 +339,7 @@ function bbp_new_reply_handler( $action = '' ) {
 	/** Topic Tags ************************************************************/
 
 	// Either replace terms
-	if ( bbp_allow_topic_tags() && current_user_can( 'assign_topic_tags' ) && ! empty( $_POST['bbp_topic_tags'] ) ) {
+	if ( bbp_allow_topic_tags() && current_user_can( 'assign_topic_tags', $topic_id ) && ! empty( $_POST['bbp_topic_tags'] ) ) {
 		$terms = sanitize_text_field( $_POST['bbp_topic_tags'] );
 
 	// ...or remove them.
@@ -586,6 +591,11 @@ function bbp_edit_reply_handler( $action = '' ) {
 	// Filter and sanitize
 	$reply_title = apply_filters( 'bbp_edit_reply_pre_title', $reply_title, $reply_id );
 
+	// Title too long
+	if ( bbp_is_title_too_long( $reply_title ) ) {
+		bbp_add_error( 'bbp_reply_title', __( '<strong>ERROR</strong>: Your title is too long.', 'bbpress' ) );
+	}
+
 	/** Reply Content *********************************************************/
 
 	if ( ! empty( $_POST['bbp_reply_content'] ) ) {
@@ -631,7 +641,7 @@ function bbp_edit_reply_handler( $action = '' ) {
 	/** Topic Tags ************************************************************/
 
 	// Either replace terms
-	if ( bbp_allow_topic_tags() && current_user_can( 'assign_topic_tags' ) && ! empty( $_POST['bbp_topic_tags'] ) ) {
+	if ( bbp_allow_topic_tags() && current_user_can( 'assign_topic_tags', $topic_id ) && ! empty( $_POST['bbp_topic_tags'] ) ) {
 		$terms = sanitize_text_field( $_POST['bbp_topic_tags'] );
 
 	// ...or remove them.
@@ -1617,7 +1627,7 @@ function bbp_get_reply_statuses( $reply_id = 0 ) {
 		bbp_get_public_status_id()  => _x( 'Publish', 'Publish the reply',     'bbpress' ),
 		bbp_get_spam_status_id()    => _x( 'Spam',    'Spam the reply',        'bbpress' ),
 		bbp_get_trash_status_id()   => _x( 'Trash',   'Trash the reply',       'bbpress' ),
-		bbp_get_pending_status_id() => _x( 'Pending', 'Mark reply as pending', 'bbpress' ),
+		bbp_get_pending_status_id() => _x( 'Pending', 'Mark reply as pending', 'bbpress' )
 	), $reply_id );
 }
 
@@ -1749,8 +1759,11 @@ function bbp_approve_reply( $reply_id = 0 ) {
 		return $reply;
 	}
 
+	// Get new status
+	$status = bbp_get_public_status_id();
+
 	// Bail if already approved
-	if ( bbp_get_pending_status_id() !== $reply->post_status ) {
+	if ( $status === $reply->post_status ) {
 		return false;
 	}
 
@@ -1758,7 +1771,7 @@ function bbp_approve_reply( $reply_id = 0 ) {
 	do_action( 'bbp_approve_reply', $reply_id );
 
 	// Set publish status
-	$reply->post_status = bbp_get_public_status_id();
+	$reply->post_status = $status;
 
 	// No revisions
 	remove_action( 'pre_post_update', 'wp_save_post_revision' );
@@ -1789,8 +1802,11 @@ function bbp_unapprove_reply( $reply_id = 0 ) {
 		return $reply;
 	}
 
+	// Get new status
+	$status = bbp_get_pending_status_id();
+
 	// Bail if already pending
-	if ( bbp_get_pending_status_id() === $reply->post_status ) {
+	if ( $status === $reply->post_status ) {
 		return false;
 	}
 
@@ -1798,7 +1814,7 @@ function bbp_unapprove_reply( $reply_id = 0 ) {
 	do_action( 'bbp_unapprove_reply', $reply_id );
 
 	// Set pending status
-	$reply->post_status = bbp_get_pending_status_id();
+	$reply->post_status = $status;
 
 	// No revisions
 	remove_action( 'pre_post_update', 'wp_save_post_revision' );
@@ -2075,12 +2091,12 @@ function bbp_display_replies_feed_rss2( $replies_query = array() ) {
 
 	<channel>
 
-		<title><?php echo $title; ?></title>
+		<title><?php echo $title; // Already escaped ?></title>
 		<atom:link href="<?php self_link(); ?>" rel="self" type="application/rss+xml" />
 		<link><?php self_link(); ?></link>
 		<description><?php //?></description>
 		<lastBuildDate><?php echo date( 'r' ); ?></lastBuildDate>
-		<generator>https://bbpress.org/?v=<?php bbp_version(); ?></generator>
+		<generator><?php echo esc_url_raw( 'https://bbpress.org/?v=' . convert_chars( bbp_get_version() ) ); ?></generator>
 		<language><?php bloginfo_rss( 'language' ); ?></language>
 
 		<?php do_action( 'bbp_feed_head' ); ?>
@@ -2186,7 +2202,7 @@ function bbp_check_reply_edit() {
  *
  * @return mixed
  */
-function bbp_update_reply_position( $reply_id = 0, $reply_position = 0 ) {
+function bbp_update_reply_position( $reply_id = 0, $reply_position = false ) {
 
 	// Bail if reply_id is empty
 	$reply_id = bbp_get_reply_id( $reply_id );
@@ -2194,27 +2210,37 @@ function bbp_update_reply_position( $reply_id = 0, $reply_position = 0 ) {
 		return false;
 	}
 
-	// If no position was passed, get it from the db and update the menu_order
-	if ( empty( $reply_position ) ) {
-		$reply_position = bbp_get_reply_position_raw( $reply_id, bbp_get_reply_topic_id( $reply_id ) );
+	// Prepare the reply position
+	$reply_position = is_numeric( $reply_position )
+		? (int) $reply_position
+		: bbp_get_reply_position_raw( $reply_id, bbp_get_reply_topic_id( $reply_id ) );
+
+	// Get the current reply position
+	$current_position = get_post_field( 'menu_order', $reply_id );
+
+	// Bail if no change
+	if ( $reply_position === $current_position ) {
+		return false;
 	}
 
+	// Filters not removed
+	$removed = false;
+
 	// Toggle revisions off as we are not altering content
-	if ( post_type_supports( bbp_get_reply_post_type(), 'revisions' ) ) {
-		$revisions_removed = true;
-		remove_post_type_support( bbp_get_reply_post_type(), 'revisions' );
+	if ( has_filter( 'clean_post_cache', 'bbp_clean_post_cache' ) ) {
+		$removed = true;
+		remove_filter( 'clean_post_cache', 'bbp_clean_post_cache', 10, 2 );
 	}
 
 	// Update the replies' 'menu_order' with the reply position
-	wp_update_post( array(
-		'ID'         => $reply_id,
-		'menu_order' => $reply_position
-	) );
+	$bbp_db = bbp_db();
+	$bbp_db->update( $bbp_db->posts, array( 'menu_order' => $reply_position ), array( 'ID' => $reply_id ) );
+	clean_post_cache( $reply_id );
 
 	// Toggle revisions back on
-	if ( true === $revisions_removed ) {
-		$revisions_removed = false;
-		add_post_type_support( bbp_get_reply_post_type(), 'revisions' );
+	if ( true === $removed ) {
+		$removed = false;
+		add_filter( 'clean_post_cache', 'bbp_clean_post_cache', 10, 2 );
 	}
 
 	return (int) $reply_position;
@@ -2232,9 +2258,11 @@ function bbp_update_reply_position( $reply_id = 0, $reply_position = 0 ) {
 function bbp_get_reply_position_raw( $reply_id = 0, $topic_id = 0 ) {
 
 	// Get required data
-	$reply_id       = bbp_get_reply_id( $reply_id );
-	$topic_id       = ! empty( $topic_id ) ? bbp_get_topic_id( $topic_id ) : bbp_get_reply_topic_id( $reply_id );
 	$reply_position = 0;
+	$reply_id       = bbp_get_reply_id( $reply_id );
+	$topic_id       = ! empty( $topic_id )
+		? bbp_get_topic_id( $topic_id )
+		: bbp_get_reply_topic_id( $reply_id );
 
 	// If reply is actually the first post in a topic, return 0
 	if ( $reply_id !== $topic_id ) {

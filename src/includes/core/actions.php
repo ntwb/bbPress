@@ -53,6 +53,7 @@ add_action( 'wp_roles_init',            'bbp_roles_init',             10    );
 add_action( 'wp_enqueue_scripts',       'bbp_enqueue_scripts',        10    );
 add_action( 'wp_head',                  'bbp_head',                   10    );
 add_action( 'wp_footer',                'bbp_footer',                 10    );
+add_action( 'transition_post_status',   'bbp_transition_post_status', 10, 3 );
 
 /**
  * bbp_loaded - Attached to 'plugins_loaded' above
@@ -149,18 +150,16 @@ add_action( 'bbp_widgets_init', array( 'BBP_Topics_Widget',  'register_widget' )
 add_action( 'bbp_widgets_init', array( 'BBP_Replies_Widget', 'register_widget' ), 10 );
 add_action( 'bbp_widgets_init', array( 'BBP_Stats_Widget',   'register_widget' ), 10 );
 
-// Notices (loaded after bbp_init for translations)
-add_action( 'bbp_head',             'bbp_login_notices'    );
-add_action( 'bbp_head',             'bbp_topic_notices'    );
-add_action( 'bbp_template_notices', 'bbp_template_notices' );
+// Notices
+add_action( 'bbp_template_notices', 'bbp_template_notices',                20 );
+add_action( 'bbp_template_notices', 'bbp_login_notices'                       );
+add_action( 'bbp_template_notices', 'bbp_topic_notices'                       );
+add_action( 'bbp_template_notices', 'bbp_notice_edit_user_success'            );
+add_action( 'bbp_template_notices', 'bbp_notice_edit_user_pending_email'      );
+add_action( 'bbp_template_notices', 'bbp_notice_edit_user_is_super_admin', 2  );
 
 // Always exclude private/hidden forums if needed
 add_action( 'pre_get_posts', 'bbp_pre_get_posts_normalize_forum_visibility', 4 );
-
-// Profile Page Messages
-add_action( 'bbp_template_notices', 'bbp_notice_edit_user_success'           );
-add_action( 'bbp_template_notices', 'bbp_notice_edit_user_pending_email'     );
-add_action( 'bbp_template_notices', 'bbp_notice_edit_user_is_super_admin', 2 );
 
 // Before Delete/Trash/Untrash Forum
 add_action( 'wp_trash_post',      'bbp_trash_forum'   );
@@ -437,5 +436,3 @@ add_action( 'bbp_get_request', 'bbp_search_results_redirect',     10 );
 
 // Maybe convert the users password
 add_action( 'bbp_login_form_login', 'bbp_user_maybe_convert_pass' );
-
-add_action( 'bbp_activation', 'bbp_add_activation_redirect' );

@@ -35,7 +35,7 @@ function bbp_filter_dashboard_glance_items( $elements = array() ) {
 		'count_spammed_replies' => false,
 		'count_trashed_replies' => false,
 		'count_empty_tags'      => false
-	));
+	) );
 
 	// Users
 	if ( isset( $r['user_count'] ) ) {
@@ -555,9 +555,9 @@ function bbp_reply_metabox( $post ) {
  *
  * @since 2.6.0 bbPress (r5886)
  *
- * @param type $topic
+ * @param object $topic
  *
- * @return type
+ * @return void
  */
 function bbp_topic_replies_metabox( $topic = false ) {
 
@@ -568,7 +568,7 @@ function bbp_topic_replies_metabox( $topic = false ) {
 
 	// Pull in the list table class
 	if ( ! class_exists( 'BBP_Topic_Replies_List_Table' ) ) {
-		require_once bbpress()->admin->admin_dir . '/classes/class-bbp-topic-replies-list-table.php';
+		require_once bbp_admin()->admin_dir . '/classes/class-bbp-topic-replies-list-table.php';
 	}
 
 	// Look for pagination value
@@ -748,7 +748,9 @@ function bbp_topic_subscriptions_metabox( $post ) {
 	$user_ids = bbp_get_subscribers( $post->ID );
 
 	// Output
-	?><p><?php
+	?>
+	<input name="bbp_topic_subscription" id="bbp_topic_subscription" type="hidden" value="bbp_subscribe" <?php bbp_form_topic_subscribed(); ?> />
+	<p><?php
 
 		// Relationships
 		$args = array(

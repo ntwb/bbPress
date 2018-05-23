@@ -75,6 +75,13 @@ class BBP_Admin {
 	 */
 	public $tools = array();
 
+	/** Notices ***************************************************************/
+
+	/**
+	 * @var array Array of notices to output to the current user
+	 */
+	public $notices = array();
+
 	/** Functions *************************************************************/
 
 	/**
@@ -149,16 +156,18 @@ class BBP_Admin {
 
 		/** General Actions ***************************************************/
 
-		add_action( 'bbp_admin_init',              array( $this, 'setup_notices'           ) );
-		add_action( 'bbp_admin_init',              array( $this, 'hide_notices'            ) );
 		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             ) ); // Add menu item to settings menu
-		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) ); // Add some general styling to the admin area
-		add_action( 'bbp_admin_notices',           array( $this, 'activation_notice'       ) ); // Add notice if not using a bbPress theme
+		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) ); // Add general styling to the admin area
 		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'    ) ); // Add green admin style
 		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' ) ); // Add settings
-		add_action( 'bbp_activation',              array( $this, 'new_install'             ) ); // Add menu item to settings menu
 		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_styles'          ) ); // Add enqueued CSS
 		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_scripts'         ) ); // Add enqueued JS
+
+		/** Notices ***********************************************************/
+
+		add_action( 'bbp_admin_init',    array( $this, 'setup_notices'  ) );
+		add_action( 'bbp_admin_init',    array( $this, 'hide_notices'   ) );
+		add_action( 'bbp_admin_notices', array( $this, 'output_notices' ) );
 
 		/** Ajax **************************************************************/
 
@@ -195,6 +204,11 @@ class BBP_Admin {
 	 */
 	public function setup_notices() {
 
+		// Avoid malformed notices variable
+		if ( ! is_array( $this->notices ) ) {
+			$this->notices = array();
+		}
+
 		// Database upgrade skipped?
 		$skipped = get_option( '_bbp_db_upgrade_skipped', 0 );
 
@@ -214,7 +228,7 @@ class BBP_Admin {
 			);
 
 			// Add tools feedback
-			bbp_admin_tools_feedback( $message, 'notice-bbpress', false );
+			$this->add_notice( $message, 'notice-bbpress', false );
 		}
 	}
 
@@ -230,6 +244,11 @@ class BBP_Admin {
 			return;
 		}
 
+		// Bail if user cannot visit upgrade page (cannot clear notice either!)
+		if ( ! current_user_can( 'bbp_tools_upgrade_page' ) ) {
+			return;
+		}
+
 		// Check the admin referer
 		check_admin_referer( 'bbp-hide-notice' );
 
@@ -241,6 +260,112 @@ class BBP_Admin {
 				delete_option( '_bbp_db_upgrade_skipped' );
 				break;
 		}
+	}
+
+	/**
+	 * Output all admin area notices
+	 *
+	 * @since 2.6.0 bbPress (r6771)
+	 */
+	public function output_notices() {
+
+		// Bail if no notices
+		if ( empty( $this->notices ) || ! is_array( $this->notices ) ) {
+			return;
+		}
+
+		// Start an output buffer
+		ob_start();
+
+		// Loop through notices, and add them to buffer
+		foreach ( $this->notices as $notice ) {
+			echo $notice;
+		}
+
+		// Output the current buffer
+		echo ob_get_clean();
+	}
+
+	/**
+	 * Add a notice to the notices array
+	 *
+	 * @since 2.6.0 bbPress (r6771)
+	 *
+	 * @param string|WP_Error $message        A message to be displayed or {@link WP_Error}
+	 * @param string          $class          Optional. A class to be added to the message div
+	 * @param bool            $is_dismissible Optional. True to dismiss, false to persist
+	 *
+	 * @return void
+	 */
+	public function add_notice( $message, $class = false, $is_dismissible = true ) {
+
+		// One message as string
+		if ( is_string( $message ) ) {
+			$message       = '<p>' . $this->esc_notice( $message ) . '</p>';
+			$default_class ='updated';
+
+		// Messages as objects
+		} elseif ( is_wp_error( $message ) ) {
+			$errors  = $message->get_error_messages();
+
+			switch ( count( $errors ) ) {
+				case 0:
+					return false;
+
+				case 1:
+					$message = '<p>' . $this->esc_notice( $errors[0] ) . '</p>';
+					break;
+
+				default:
+					$escaped = array_map( array( $this, 'esc_notice' ), $errors );
+					$message = '<ul>' . "\n\t" . '<li>' . implode( '</li>' . "\n\t" . '<li>', $escaped ) . '</li>' . "\n" . '</ul>';
+					break;
+			}
+
+			$default_class = 'is-error';
+
+		// Message is an unknown format, so bail
+		} else {
+			return false;
+		}
+
+		// CSS Classes
+		$classes = ! empty( $class )
+			? array( $class )
+			: array( $default_class );
+
+		// Add dismissible class
+		if ( ! empty( $is_dismissible ) ) {
+			array_push( $classes, 'is-dismissible' );
+		}
+
+		// Assemble the message
+		$message = '<div id="message" class="notice ' . implode( ' ', array_map( 'sanitize_html_class', $classes ) ) . '">' . $message . '</div>';
+		$message = str_replace( "'", "\'", $message );
+
+		// Avoid malformed notices variable
+		if ( ! is_array( $this->notices ) ) {
+			$this->notices = array();
+		}
+
+		// Add notice to notices array
+		$this->notices[] = $message;
+	}
+
+	/**
+	 * Escape message string output
+	 *
+	 * @since 2.6.0 bbPress (r6775)
+	 *
+	 * @param string $message
+	 *
+	 * @return string
+	 */
+	private function esc_notice( $message = '' ) {
+		$tags = wp_kses_allowed_html();
+		$text = wp_kses( $message, $tags );
+
+		return $text;
 	}
 
 	/**
@@ -358,21 +483,6 @@ class BBP_Admin {
 	}
 
 	/**
-	 * If this is a new installation, create some initial forum content.
-	 *
-	 * @since 2.1.0 bbPress (r3767)
-	 *
-	 * @return type
-	 */
-	public static function new_install() {
-		if ( ! bbp_is_install() ) {
-			return;
-		}
-
-		bbp_create_initial_content();
-	}
-
-	/**
 	 * Register the settings
 	 *
 	 * @since 2.0.0 bbPress (r2737)
@@ -467,13 +577,13 @@ class BBP_Admin {
 			case 'bbp_settings_user_slugs'   : // Settings - User slugs
 			case 'bbp_settings_per_page'     : // Settings - Per page
 			case 'bbp_settings_per_rss_page' : // Settings - Per RSS page
-				$caps = array( bbpress()->admin->minimum_capability );
+				$caps = array( bbp_admin()->minimum_capability );
 				break;
 
 			// Extend - BuddyPress
 			case 'bbp_settings_buddypress' :
 				if ( ( is_plugin_active( 'buddypress/bp-loader.php' ) && defined( 'BP_VERSION' ) && bp_is_root_blog() ) && is_super_admin() ) {
-					$caps = array( bbpress()->admin->minimum_capability );
+					$caps = array( bbp_admin()->minimum_capability );
 				} else {
 					$caps = array( 'do_not_allow' );
 				}
@@ -483,7 +593,7 @@ class BBP_Admin {
 			// Extend - Akismet
 			case 'bbp_settings_akismet' :
 				if ( ( is_plugin_active( 'akismet/akismet.php' ) && defined( 'AKISMET_VERSION' ) ) && is_super_admin() ) {
-					$caps = array( bbpress()->admin->minimum_capability );
+					$caps = array( bbp_admin()->minimum_capability );
 				} else {
 					$caps = array( 'do_not_allow' );
 				}
@@ -527,17 +637,6 @@ class BBP_Admin {
 				require $import_file;
 			}
 		}
-	}
-
-	/**
-	 * Admin area activation notice
-	 *
-	 * Shows a nag message in admin area about the theme not supporting bbPress
-	 *
-	 * @since 2.0.0 bbPress (r2743)
-	 */
-	public function activation_notice() {
-		// @todo - something fun
 	}
 
 	/**
@@ -1135,8 +1234,8 @@ class BBP_Admin {
 								wp_die( sprintf( esc_html__( 'Warning! Problem updating %1$s. Your server may not be able to connect to sites running on it. Error message: %2$s', 'bbpress' ), $site_url, '<em>' . $response->get_error_message() . '</em>' ) );
 							}
 
-							// Switch to the new blog
-							switch_to_blog( $details[ 'blog_id' ] );
+							// Switch to the new site
+							bbp_switch_to_site( $details[ 'blog_id' ] );
 
 							$basename = bbpress()->basename;
 
@@ -1145,8 +1244,8 @@ class BBP_Admin {
 								bbp_version_updater();
 							}
 
-							// restore original blog
-							restore_current_blog();
+							// Restore original site
+							bbp_restore_current_site();
 
 							// Do some actions to allow plugins to do things too
 							do_action( 'after_bbpress_upgrade', $response             );

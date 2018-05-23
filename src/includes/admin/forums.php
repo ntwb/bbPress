@@ -66,8 +66,8 @@ class BBP_Forums_Admin {
 		add_action( 'save_post',      array( $this, 'save_meta_boxes'       ) );
 
 		// Check if there are any bbp_toggle_forum_* requests on admin_init, also have a message displayed
-		add_action( 'load-edit.php',  array( $this, 'toggle_forum'        ) );
-		add_action( 'admin_notices',  array( $this, 'toggle_forum_notice' ) );
+		add_action( 'load-edit.php', array( $this, 'toggle_forum'        ) );
+		add_action( 'load-edit.php', array( $this, 'toggle_forum_notice' ) );
 
 		// Contextual Help
 		add_action( 'load-edit.php',     array( $this, 'edit_help' ) );
@@ -210,7 +210,7 @@ class BBP_Forums_Admin {
 	public function attributes_metabox() {
 		add_meta_box(
 			'bbp_forum_attributes',
-			__( 'Forum Attributes', 'bbpress' ),
+			esc_html__( 'Forum Attributes', 'bbpress' ),
 			'bbp_forum_metabox',
 			$this->post_type,
 			'side',
@@ -233,7 +233,7 @@ class BBP_Forums_Admin {
 		// Moderators
 		add_meta_box(
 			'bbp_moderator_assignment_metabox',
-			__( 'Forum Moderators', 'bbpress' ),
+			esc_html__( 'Forum Moderators', 'bbpress' ),
 			'bbp_moderator_assignment_metabox',
 			$this->post_type,
 			'side',
@@ -263,7 +263,7 @@ class BBP_Forums_Admin {
 		// Add the meta-box
 		add_meta_box(
 			'bbp_forum_subscriptions_metabox',
-			__( 'Subscriptions', 'bbpress' ),
+			esc_html__( 'Subscriptions', 'bbpress' ),
 			'bbp_forum_subscriptions_metabox',
 			$this->post_type,
 			'normal',
@@ -357,12 +357,12 @@ class BBP_Forums_Admin {
 		// Bail if forum is missing
 		$forum_id = bbp_get_forum_id( $_GET['forum_id'] );
 		if ( ! bbp_get_forum( $forum_id ) ) {
-			wp_die( __( 'The forum was not found.', 'bbpress' ) );
+			wp_die( esc_html__( 'The forum was not found.', 'bbpress' ) );
 		}
 
 		// What is the user doing here?
 		if ( ! current_user_can( 'edit_forum', $forum_id ) ) {
-			wp_die( __( 'You do not have permission to do that.', 'bbpress' ) );
+			wp_die( esc_html__( 'You do not have permission to do that.', 'bbpress' ) );
 		}
 
 		// Defaults
@@ -417,7 +417,7 @@ class BBP_Forums_Admin {
 	 */
 	public function toggle_forum_notice() {
 
-		// Bail if missing topic toggle action
+		// Bail if missing forum toggle action
 		if ( ! bbp_is_get_request() || empty( $_GET['forum_id'] ) || empty( $_GET['bbp_forum_toggle_notice'] ) ) {
 			return;
 		}
@@ -447,14 +447,14 @@ class BBP_Forums_Admin {
 		switch ( $notice ) {
 			case 'opened' :
 				$message = ( $is_failure === true )
-					? sprintf( __( 'There was a problem opening the forum "%1$s".', 'bbpress' ), $forum_title )
-					: sprintf( __( 'Forum "%1$s" successfully opened.',             'bbpress' ), $forum_title );
+					? sprintf( esc_html__( 'There was a problem opening the forum "%1$s".', 'bbpress' ), $forum_title )
+					: sprintf( esc_html__( 'Forum "%1$s" successfully opened.',             'bbpress' ), $forum_title );
 				break;
 
 			case 'closed' :
 				$message = ( $is_failure === true )
-					? sprintf( __( 'There was a problem closing the forum "%1$s".', 'bbpress' ), $forum_title )
-					: sprintf( __( 'Forum "%1$s" successfully closed.',             'bbpress' ), $forum_title );
+					? sprintf( esc_html__( 'There was a problem closing the forum "%1$s".', 'bbpress' ), $forum_title )
+					: sprintf( esc_html__( 'Forum "%1$s" successfully closed.',             'bbpress' ), $forum_title );
 				break;
 		}
 
@@ -464,13 +464,28 @@ class BBP_Forums_Admin {
 			? 'error'
 			: 'updated';
 
-		?>
+		// Add the notice
+		bbp_admin()->add_notice( $message, $class, true );
+	}
 
-		<div id="message" class="<?php echo esc_html( $class ); ?> fade">
-			<p style="line-height: 150%"><?php echo esc_html( $message ); ?></p>
-		</div>
+	/**
+	 * Returns an array of keys used to sort row actions
+	 *
+	 * @since 2.6.0 bbPress (r6771)
+	 *
+	 * @return array
+	 */
+	private function get_row_action_sort_order() {
 
-		<?php
+		// Filter & return
+		return (array) apply_filters( 'bbp_admin_forum_row_action_sort_order', array(
+			'edit',
+			'closed',
+			'trash',
+			'untrash',
+			'delete',
+			'view'
+		) );
 	}
 
 	/**
@@ -518,13 +533,13 @@ class BBP_Forums_Admin {
 		// Set list table column headers
 		$columns = array(
 			'cb'                    => '<input type="checkbox" />',
-			'title'                 => __( 'Forum',      'bbpress' ),
-			'bbp_forum_topic_count' => __( 'Topics',     'bbpress' ),
-			'bbp_forum_reply_count' => __( 'Replies',    'bbpress' ),
-			'bbp_forum_mods'        => __( 'Moderators', 'bbpress' ),
-			'author'                => __( 'Creator',    'bbpress' ),
-			'bbp_forum_created'     => __( 'Created' ,   'bbpress' ),
-			'bbp_forum_freshness'   => __( 'Last Post',  'bbpress' )
+			'title'                 => esc_html__( 'Forum',      'bbpress' ),
+			'bbp_forum_topic_count' => esc_html__( 'Topics',     'bbpress' ),
+			'bbp_forum_reply_count' => esc_html__( 'Replies',    'bbpress' ),
+			'bbp_forum_mods'        => esc_html__( 'Moderators', 'bbpress' ),
+			'author'                => esc_html__( 'Creator',    'bbpress' ),
+			'bbp_forum_created'     => esc_html__( 'Created' ,   'bbpress' ),
+			'bbp_forum_freshness'   => esc_html__( 'Last Post',  'bbpress' )
 		);
 
 		// Remove forum mods column if not enabled
@@ -595,12 +610,14 @@ class BBP_Forums_Admin {
 	 *
 	 * @since 2.0.0 bbPress (r2577)
 	 *
-	 * @param array $actions Actions
-	 * @param array $forum Forum object
+	 * @param array  $actions Actions
+	 * @param object $forum   Forum object
+	 *
 	 * @return array $actions Actions
 	 */
-	public function row_actions( $actions, $forum ) {
+	public function row_actions( $actions = array(), $forum = false ) {
 
+		// Disable quick edit (too much to do here)
 		unset( $actions['inline hide-if-no-js'] );
 
 		// Only show the actions if the user is capable of viewing them :)
@@ -620,7 +637,37 @@ class BBP_Forums_Admin {
 		// simple hack to show the forum description under the title
 		bbp_forum_content( $forum->ID );
 
-		return $actions;
+		// Sort & return
+		return $this->sort_row_actions( $actions );
+	}
+
+	/**
+	 * Sort row actions by key
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param array $actions
+	 *
+	 * @return array
+	 */
+	private function sort_row_actions( $actions = array() ) {
+
+		// Return value
+		$retval = array();
+
+		// Known row actions, in sort order
+		$known_actions = $this->get_row_action_sort_order();
+
+		// Sort known actions, and keep any unknown ones
+		foreach ( $known_actions as $key ) {
+			if ( isset( $actions[ $key ] ) ) {
+				$retval[ $key ] = $actions[ $key ];
+				unset( $actions[ $key ] );
+			}
+		}
+
+		// Combine & return
+		return $retval + $actions;
 	}
 
 	/**
@@ -650,50 +697,50 @@ class BBP_Forums_Admin {
 			// Updated
 			1 =>  sprintf(
 				'%1$s <a href="%2$s">%3$s</a>',
-				__( 'Forum updated.', 'bbpress' ),
+				esc_html__( 'Forum updated.', 'bbpress' ),
 				$forum_url,
-				__( 'View forum', 'bbpress' )
+				esc_html__( 'View forum', 'bbpress' )
 			),
 
 			// Custom field updated
-			2 => __( 'Custom field updated.', 'bbpress' ),
+			2 => esc_html__( 'Custom field updated.', 'bbpress' ),
 
 			// Custom field deleted
-			3 => __( 'Custom field deleted.', 'bbpress' ),
+			3 => esc_html__( 'Custom field deleted.', 'bbpress' ),
 
 			// Forum updated
-			4 => __( 'Forum updated.', 'bbpress' ),
+			4 => esc_html__( 'Forum updated.', 'bbpress' ),
 
 			// Restored from revision
 			// translators: %s: date and time of the revision
 			5 => isset( $_GET['revision'] )
-					? sprintf( __( 'Forum restored to revision from %s', 'bbpress' ), wp_post_revision_title( (int) $_GET['revision'], false ) )
-					: false,
+				? sprintf( esc_html__( 'Forum restored to revision from %s', 'bbpress' ), wp_post_revision_title( (int) $_GET['revision'], false ) )
+				: false,
 
 			// Forum created
 			6 => sprintf(
 				'%1$s <a href="%2$s">%3$s</a>',
-				__( 'Forum created.', 'bbpress' ),
+				esc_html__( 'Forum created.', 'bbpress' ),
 				$forum_url,
-				__( 'View forum', 'bbpress' )
+				esc_html__( 'View forum', 'bbpress' )
 			),
 
 			// Forum saved
-			7 => __( 'Forum saved.', 'bbpress' ),
+			7 => esc_html__( 'Forum saved.', 'bbpress' ),
 
 			// Forum submitted
 			8 => sprintf(
 				'%1$s <a href="%2$s" target="_blank">%3$s</a>',
-				__( 'Forum submitted.', 'bbpress' ),
+				esc_html__( 'Forum submitted.', 'bbpress' ),
 				esc_url( add_query_arg( 'preview', 'true', $forum_url ) ),
-				__( 'Preview forum', 'bbpress' )
+				esc_html__( 'Preview forum', 'bbpress' )
 			),
 
 			// Forum scheduled
 			9 => sprintf(
 				'%1$s <a target="_blank" href="%2$s">%3$s</a>',
 				sprintf(
-					__( 'Forum scheduled for: %s.', 'bbpress' ),
+					esc_html__( 'Forum scheduled for: %s.', 'bbpress' ),
 					// translators: Publish box date format, see http://php.net/date
 					'<strong>' . date_i18n( __( 'M j, Y @ G:i', 'bbpress' ), strtotime( $post_date ) ) . '</strong>'
 				),
@@ -704,9 +751,9 @@ class BBP_Forums_Admin {
 			// Forum draft updated
 			10 => sprintf(
 				'%1$s <a href="%2$s" target="_blank">%3$s</a>',
-				__( 'Forum draft updated.', 'bbpress' ),
+				esc_html__( 'Forum draft updated.', 'bbpress' ),
 				esc_url( add_query_arg( 'preview', 'true', $forum_url ) ),
-				__( 'Preview forum', 'bbpress' )
+				esc_html__( 'Preview forum', 'bbpress' )
 			),
 		);
 
@@ -733,5 +780,5 @@ function bbp_admin_forums( $current_screen ) {
 	}
 
 	// Init the forums admin
-	bbpress()->admin->forums = new BBP_Forums_Admin();
+	bbp_admin()->forums = new BBP_Forums_Admin();
 }

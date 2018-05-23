@@ -10,9 +10,7 @@
 /* Version Badge */
 
 .bbp-badge {
-	-webkit-transform-origin: top left;
 	transform-origin: top left;
-	-webkit-animation: swoop 16s infinite linear;
 	animation: swoop 16s infinite linear;
 }
 
@@ -66,34 +64,6 @@
 	color: #555;
 }
 
-@-webkit-keyframes buzz {
-
-	0% {
-		right: -2px;
-		top: -1px;
-	}
-
-	25% {
-		right: 1px;
-		top: 2px;
-	}
-
-	50% {
-		right: -3px;
-		top: -1px;
-	}
-
-	75% {
-		right: 2px;
-		top: 1px;
-	}
-
-	0% {
-		right: -2px;
-		top: -1px;
-	}
-}
-
 @keyframes buzz {
 
 	0% {
@@ -122,28 +92,13 @@
 	}
 }
 
-@-webkit-keyframes swoop {
-
-	0% {
-		-webkit-transform: rotate(95deg);
-		transform: rotate(95deg);
-	}
-
-	100% {
-		-webkit-transform: rotate(455deg);
-		transform: rotate(455deg);
-	}
-}
-
 @keyframes swoop {
 
 	0% {
-		-webkit-transform: rotate(95deg);
 		transform: rotate(95deg);
 	}
 
 	100% {
-		-webkit-transform: rotate(455deg);
 		transform: rotate(455deg);
 	}
 }
@@ -385,6 +340,7 @@ body.post-type-reply strong.label {
 	width: 10% !important;
 }
 
+.column-bbp_user_role,
 .column-bbp_forum_created,
 .column-bbp_topic_created,
 .column-bbp_reply_created {
@@ -412,33 +368,61 @@ body.post-type-reply strong.label {
 	border-color: #ccc #fff #fff #ccc;
 }
 
-#the-list .status-closed {
+body.post-type-forum #the-list .status-closed,
+body.post-type-topic #the-list .status-closed,
+body.post-type-reply #the-list .status-closed {
 	background-color: #f5f5f5;
 }
 
-#the-list .status-closed:nth-child(odd) {
+body.post-type-forum #the-list .status-closed:nth-child(odd),
+body.post-type-topic #the-list .status-closed:nth-child(odd),
+body.post-type-reply #the-list .status-closed:nth-child(odd) {
 	background-color: #f0f0f0;
 }
 
-#the-list .status-spam {
+body.post-type-forum #the-list .status-spam,
+body.post-type-topic #the-list .status-spam,
+body.post-type-reply #the-list .status-spam,
+#bbp-reply-list .status-trash {
 	background-color: #fee;
 }
 
-#the-list .status-spam:nth-child(odd) {
+body.post-type-forum #the-list .status-spam:nth-child(odd),
+body.post-type-topic #the-list .status-spam:nth-child(odd),
+body.post-type-reply #the-list .status-spam:nth-child(odd),
+#bbp-reply-list .status-trash:nth-child(odd) {
 	background-color: #fdd;
 }
 
-#the-list .status-pending {
+body.post-type-forum #the-list .status-pending,
+body.post-type-topic #the-list .status-pending,
+body.post-type-reply #the-list .status-pending {
 	background-color: #fff2e8;
 }
 
-#the-list .status-pending:nth-child(odd) {
+body.post-type-forum #the-list .status-pending:nth-child(odd),
+body.post-type-topic #the-list .status-pending:nth-child(odd),
+body.post-type-reply #the-list .status-pending:nth-child(odd) {
 	background-color: #fff7f1;
 }
 
-#the-list .status-closed td,
-#the-list .status-spam td {
+body.post-type-forum #the-list .status-closed td,
+body.post-type-topic #the-list .status-closed td,
+body.post-type-reply #the-list .status-closed td,
+body.post-type-forum #the-list .status-spam td,
+body.post-type-topic #the-list .status-spam td,
+body.post-type-reply #the-list .status-spam td,
+#bbp-reply-list .status-trash td {
 	color: #999;
+}
+
+body.post-type-forum #the-list .row-actions .unspam a,
+body.post-type-topic #the-list .row-actions .unspam a,
+body.post-type-reply #the-list .row-actions .unspam a,
+body.post-type-forum #the-list .row-actions .approved a,
+body.post-type-topic #the-list .row-actions .approved a,
+body.post-type-reply #the-list .row-actions .approved a {
+	color: #006505;
 }
 
 /* User Relationships */

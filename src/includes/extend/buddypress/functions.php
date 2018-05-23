@@ -370,8 +370,9 @@ function bbp_maybe_create_group_forum_root() {
 /**
  * Get forum ID's for a group
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_get_group_forum_ids( $group_id = 0 ) {
 
@@ -398,8 +399,9 @@ function bbp_get_group_forum_ids( $group_id = 0 ) {
 /**
  * Get group ID's for a forum
  *
- * @param type $forum_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $forum_id
  */
 function bbp_get_forum_group_ids( $forum_id = 0 ) {
 
@@ -426,8 +428,9 @@ function bbp_get_forum_group_ids( $forum_id = 0 ) {
 /**
  * Get forum ID's for a group
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_update_group_forum_ids( $group_id = 0, $forum_ids = array() ) {
 
@@ -446,8 +449,9 @@ function bbp_update_group_forum_ids( $group_id = 0, $forum_ids = array() ) {
 /**
  * Update group ID's for a forum
  *
- * @param type $forum_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $forum_id
  */
 function bbp_update_forum_group_ids( $forum_id = 0, $group_ids = array() ) {
 	$forum_id = bbp_get_forum_id( $forum_id );
@@ -462,8 +466,9 @@ function bbp_update_forum_group_ids( $forum_id = 0, $group_ids = array() ) {
 /**
  * Add a group to a forum
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_add_group_id_to_forum( $forum_id = 0, $group_id = 0 ) {
 
@@ -488,8 +493,9 @@ function bbp_add_group_id_to_forum( $forum_id = 0, $group_id = 0 ) {
 /**
  * Remove a forum from a group
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_add_forum_id_to_group( $group_id = 0, $forum_id = 0 ) {
 
@@ -514,8 +520,9 @@ function bbp_add_forum_id_to_group( $group_id = 0, $forum_id = 0 ) {
 /**
  * Remove a group from a forum
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_remove_group_id_from_forum( $forum_id = 0, $group_id = 0 ) {
 
@@ -540,8 +547,9 @@ function bbp_remove_group_id_from_forum( $forum_id = 0, $group_id = 0 ) {
 /**
  * Remove a forum from a group
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_remove_forum_id_from_group( $group_id = 0, $forum_id = 0 ) {
 
@@ -566,8 +574,9 @@ function bbp_remove_forum_id_from_group( $group_id = 0, $forum_id = 0 ) {
 /**
  * Remove a group from all forums
  *
- * @param type $group_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $group_id
  */
 function bbp_remove_group_id_from_all_forums( $group_id = 0 ) {
 
@@ -588,8 +597,9 @@ function bbp_remove_group_id_from_all_forums( $group_id = 0 ) {
 /**
  * Remove a forum from all groups
  *
- * @param type $forum_id
  * @since 2.1.0 bbPress (r3653)
+ *
+ * @param int $forum_id
  */
 function bbp_remove_forum_id_from_all_groups( $forum_id = 0 ) {
 
@@ -766,8 +776,8 @@ function bbp_get_activity_actions() {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_activity_actions', array(
-		'topic' => __( '%1$s started the topic %2$s in the forum %3$s',    'bbpress' ),
-		'reply' => __( '%1$s replied to the topic %2$s in the forum %3$s', 'bbpress' )
+		'topic' => esc_html__( '%1$s started the topic %2$s in the forum %3$s',    'bbpress' ),
+		'reply' => esc_html__( '%1$s replied to the topic %2$s in the forum %3$s', 'bbpress' )
 	) );
 }
 
@@ -793,18 +803,10 @@ function bbp_format_activity_action_new_post( $type = '', $action = '', $activit
 		return $action;
 	}
 
-	/**
-	 * Overrides the formatted activity action new activity string.
-	 *
-	 * @since 2.6.0 bbPress (r6370)
-	 *
-	 * @param string               $activity_action Activity action string value
-	 * @param string               $type            The type of post. Expects `topic` or `reply`.
-	 * @param string               $action          The current action string.
-	 * @param BP_Activity_Activity $activity        The BuddyPress activity object.
-	 */
-	if ( $pre = apply_filters( 'bbp_pre_format_activity_action_new_post', false, $type, $action, $activity ) ) {
-		return $pre;
+	// Bail if intercepted
+	$intercept = bbp_maybe_intercept( __FUNCTION__, func_get_args() );
+	if ( bbp_is_intercepted( $intercept ) ) {
+		return $intercept;
 	}
 
 	// Groups component

@@ -30,8 +30,9 @@ class BBP_Login_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_login_widget_options', array(
-			'classname'   => 'bbp_widget_login',
-			'description' => esc_html__( 'A simple login form with optional links to sign-up and lost password pages.', 'bbpress' )
+			'classname'                   => 'bbp_widget_login',
+			'description'                 => esc_html__( 'A simple login form with optional links to sign-up and lost password pages.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Login Widget', 'bbpress' ), $widget_ops );
@@ -76,12 +77,12 @@ class BBP_Login_Widget extends WP_Widget {
 		if ( ! is_user_logged_in() ) : ?>
 
 			<form method="post" action="<?php bbp_wp_login_action( array( 'context' => 'login_post' ) ); ?>" class="bbp-login-form">
-				<fieldset>
+				<fieldset class="bbp-form">
 					<legend><?php esc_html_e( 'Log In', 'bbpress' ); ?></legend>
 
 					<div class="bbp-username">
 						<label for="user_login"><?php esc_html_e( 'Username', 'bbpress' ); ?>: </label>
-						<input type="text" name="log" value="<?php bbp_sanitize_val( 'user_login', 'text' ); ?>" size="20" id="user_login" />
+						<input type="text" name="log" value="<?php bbp_sanitize_val( 'user_login', 'text' ); ?>" size="20" maxlength="100" id="user_login" autocomplete="off" />
 					</div>
 
 					<div class="bbp-password">
@@ -90,13 +91,13 @@ class BBP_Login_Widget extends WP_Widget {
 					</div>
 
 					<div class="bbp-remember-me">
-						<input type="checkbox" name="rememberme" value="forever" <?php checked( bbp_get_sanitize_val( 'rememberme', 'checkbox' ), true, true ); ?> id="rememberme" />
-						<label for="rememberme"><?php esc_html_e( 'Remember Me', 'bbpress' ); ?></label>
+						<input type="checkbox" name="rememberme" value="forever" <?php checked( bbp_get_sanitize_val( 'rememberme', 'checkbox' ) ); ?> id="rememberme" />
+						<label for="rememberme"><?php esc_html_e( 'Keep me signed in', 'bbpress' ); ?></label>
 					</div>
 
-					<div class="bbp-submit-wrapper">
+					<?php do_action( 'login_form' ); ?>
 
-						<?php do_action( 'login_form' ); ?>
+					<div class="bbp-submit-wrapper">
 
 						<button type="submit" name="user-submit" id="user-submit" class="button submit user-submit"><?php esc_html_e( 'Log In', 'bbpress' ); ?></button>
 
@@ -222,8 +223,9 @@ class BBP_Views_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_views_widget_options', array(
-			'classname'   => 'widget_display_views',
-			'description' => esc_html__( 'A list of registered optional topic views.', 'bbpress' )
+			'classname'                   => 'widget_display_views',
+			'description'                 => esc_html__( 'A list of registered optional topic views.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Topic Views List', 'bbpress' ), $widget_ops );
@@ -355,8 +357,9 @@ class BBP_Search_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_search_widget_options', array(
-			'classname'   => 'widget_display_search',
-			'description' => esc_html__( 'The bbPress forum search form.', 'bbpress' )
+			'classname'                   => 'widget_display_search',
+			'description'                 => esc_html__( 'The bbPress forum search form.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Forum Search Form', 'bbpress' ), $widget_ops );
@@ -471,8 +474,9 @@ class BBP_Forums_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_forums_widget_options', array(
-			'classname'   => 'widget_display_forums',
-			'description' => esc_html__( 'A list of forums with an option to set the parent.', 'bbpress' )
+			'classname'                   => 'widget_display_forums',
+			'description'                 => esc_html__( 'A list of forums with an option to set the parent.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Forums List', 'bbpress' ), $widget_ops );
@@ -643,8 +647,9 @@ class BBP_Topics_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_topics_widget_options', array(
-			'classname'   => 'widget_display_topics',
-			'description' => esc_html__( 'A list of recent topics, sorted by: newness, popularity, or recent replies.', 'bbpress' )
+			'classname'                   => 'widget_display_topics',
+			'description'                 => esc_html__( 'A list of recent topics, sorted by: newness, popularity, or recent replies.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Recent Topics', 'bbpress' ), $widget_ops );
@@ -928,8 +933,9 @@ class BBP_Stats_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_stats_widget_options', array(
-			'classname'   => 'widget_display_stats',
-			'description' => esc_html__( 'Some statistics from your forum.', 'bbpress' )
+			'classname'                   => 'widget_display_stats',
+			'description'                 => esc_html__( 'Some statistics from your forum.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Statistics', 'bbpress' ), $widget_ops );
@@ -1046,8 +1052,9 @@ class BBP_Replies_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		$widget_ops = apply_filters( 'bbp_replies_widget_options', array(
-			'classname'   => 'widget_display_replies',
-			'description' => esc_html__( 'A list of the most recent replies.', 'bbpress' )
+			'classname'                   => 'widget_display_replies',
+			'description'                 => esc_html__( 'A list of the most recent replies.', 'bbpress' ),
+			'customize_selective_refresh' => true
 		) );
 
 		parent::__construct( false, esc_html__( '(bbPress) Recent Replies', 'bbpress' ), $widget_ops );
@@ -1087,7 +1094,7 @@ class BBP_Replies_Widget extends WP_Widget {
 
 			// What and when
 			'post_type'      => bbp_get_reply_post_type(),
-			'post_status'    => bbp_get_public_topic_statuses(),
+			'post_status'    => bbp_get_public_reply_statuses(),
 			'posts_per_page' => (int) $settings['max_shown'],
 
 			// Performance
@@ -1121,7 +1128,9 @@ class BBP_Replies_Widget extends WP_Widget {
 
 					// Verify the reply ID
 					$reply_id   = bbp_get_reply_id( $widget_query->post->ID );
-					$reply_link = '<a class="bbp-reply-topic-title" href="' . esc_url( bbp_get_reply_url( $reply_id ) ) . '" title="' . esc_attr( bbp_get_reply_excerpt( $reply_id, 50 ) ) . '">' . bbp_get_reply_topic_title( $reply_id ) . '</a>';
+					$reply_link = '<a class="bbp-reply-topic-title" href="' . esc_url( bbp_get_reply_url( $reply_id ) ) . '" title="' . esc_attr( bbp_get_reply_excerpt( $reply_id, 50 ) ) . '">' . esc_html( bbp_get_reply_topic_title( $reply_id ) ) . '</a>';
+					$time       = get_the_time( 'U', $reply_id );
+					$show_date  = '<time datetime="' . gmdate( 'Y-m-d H:i:s', $time ) . '">' . esc_html( bbp_get_time_since( $time ) ) . '</time>';
 
 					// Only query user if showing them
 					if ( ! empty( $settings['show_user'] ) ) :
@@ -1134,26 +1143,21 @@ class BBP_Replies_Widget extends WP_Widget {
 					if ( ! empty( $settings['show_date'] ) && ! empty( $author_link ) ) :
 
 						// translators: 1: reply author, 2: reply link, 3: reply timestamp
-						printf( esc_html_x( '%1$s on %2$s %3$s', 'widgets', 'bbpress' ), $author_link, $reply_link, '<div>' . bbp_get_time_since( get_the_time( 'U' ) ) . '</div>' );
+						printf( esc_html_x( '%1$s on %2$s %3$s', 'widgets', 'bbpress' ), $author_link, $reply_link, $show_date );
 
 					// Reply link and timestamp
 					elseif ( ! empty( $settings['show_date'] ) ) :
-
-						// translators: 1: reply link, 2: reply timestamp
-						printf( esc_html_x( '%1$s %2$s',         'widgets', 'bbpress' ), $reply_link,  '<div>' . bbp_get_time_since( get_the_time( 'U' ) ) . '</div>'              );
+						echo $reply_link . ' ' . $show_date;
 
 					// Reply author and title
 					elseif ( ! empty( $author_link ) ) :
 
 						// translators: 1: reply author, 2: reply link
-						printf( esc_html_x( '%1$s on %2$s',      'widgets', 'bbpress' ), $author_link, $reply_link                                                                 );
+						printf( esc_html_x( '%1$s on %2$s', 'widgets', 'bbpress' ), $author_link, $reply_link );
 
 					// Only the reply title
 					else :
-
-						// translators: 1: reply link
-						printf( esc_html_x( '%1$s',              'widgets', 'bbpress' ), $reply_link                                                                               );
-
+						echo $reply_link;
 					endif;
 
 					?>

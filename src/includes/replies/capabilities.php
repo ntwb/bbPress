@@ -34,10 +34,10 @@ function bbp_get_reply_caps() {
  *
  * @since 2.2.0 bbPress (r4242)
  *
- * @param array $caps Capabilities for meta capability
- * @param string $cap Capability name
- * @param int $user_id User id
- * @param array $args Arguments
+ * @param array  $caps    Capabilities for meta capability.
+ * @param string $cap     Capability name.
+ * @param int    $user_id User id.
+ * @param array  $args    Arguments.
  *
  * @return array Actual capabilities for meta capability
  */
@@ -57,7 +57,12 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 			// Do some post ID based logic
 			} else {
 
-				// Get the post
+				// Bail if no post ID
+				if ( empty( $args[0] ) ) {
+					return $caps;
+				}
+
+				// Get the post.
 				$_post = get_post( $args[0] );
 				if ( ! empty( $_post ) ) {
 
@@ -125,7 +130,12 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 		// Used everywhere
 		case 'edit_reply' :
 
-			// Get the post
+			// Bail if no post ID
+			if ( empty( $args[0] ) ) {
+				return $caps;
+			}
+
+			// Get the post.
 			$_post = get_post( $args[0] );
 			if ( ! empty( $_post ) ) {
 
@@ -136,13 +146,17 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 				if ( bbp_is_user_inactive( $user_id ) ) {
 					$caps = array( 'do_not_allow' );
 
-				// User is author so allow edit if not in admin
-				} elseif ( ! is_admin() && ( (int) $user_id === (int) $_post->post_author ) ) {
-					$caps = array( $post_type->cap->edit_posts );
-
 				// Moderators can always edit forum content
 				} elseif ( user_can( $user_id, 'moderate', $_post->ID ) ) {
 					$caps = array( 'spectate' );
+
+				// Allow author or mod to edit if not in admin, unless past edit lock time
+				} elseif ( ! is_admin() && ( (int) $user_id === (int) $_post->post_author ) ) {
+
+					// Only allow if not past the edit-lock period
+					$caps = ! bbp_past_edit_lock( $_post->post_date_gmt )
+						? array( $post_type->cap->edit_posts )
+						: array( 'do_not_allow' );
 
 				// Fallback to edit_others_posts.
 				} else {
@@ -156,6 +170,11 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 
 		case 'delete_reply' :
 
+			// Bail if no post ID
+			if ( empty( $args[0] ) ) {
+				return $caps;
+			}
+
 			// Get the post
 			$_post = get_post( $args[0] );
 			if ( ! empty( $_post ) ) {
@@ -167,13 +186,13 @@ function bbp_map_reply_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 				if ( bbp_is_user_inactive( $user_id ) ) {
 					$caps = array( 'do_not_allow' );
 
-				// User is author so allow delete if not in admin
-				} elseif ( ! is_admin() && ( (int) $user_id === (int) $_post->post_author ) ) {
-					$caps = array( $post_type->cap->delete_posts );
-
 				// Moderators can always edit forum content
 				} elseif ( user_can( $user_id, 'moderate', $_post->ID ) ) {
 					$caps = array( 'spectate' );
+
+				// User is author so allow delete if not in admin
+				} elseif ( ! is_admin() && ( (int) $user_id === (int) $_post->post_author ) ) {
+					$caps = array( $post_type->cap->delete_posts );
 
 				// Unknown so map to delete_others_posts
 				} else {

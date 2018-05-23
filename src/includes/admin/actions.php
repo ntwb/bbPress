@@ -53,7 +53,6 @@ add_action( 'bbp_admin_init', 'bbp_setup_updater',          999 );
 add_action( 'bbp_admin_init', 'bbp_register_importers'          );
 add_action( 'bbp_admin_init', 'bbp_register_admin_style'        );
 add_action( 'bbp_admin_init', 'bbp_register_admin_settings'     );
-add_action( 'bbp_admin_init', 'bbp_do_activation_redirect', 1   );
 
 // Hook on to current_screen
 add_action( 'bbp_current_screen', 'bbp_admin_forums'  );
@@ -67,15 +66,18 @@ add_action( 'bbp_init', 'bbp_setup_admin' );
 add_action( 'bbp_admin_menu', 'bbp_admin_separator' );
 
 // Activation
-add_action( 'bbp_activation', 'bbp_delete_rewrite_rules'        );
-add_action( 'bbp_activation', 'bbp_make_current_user_keymaster' );
+add_action( 'bbp_activation',   'bbp_setup_new_site'              );
+add_action( 'bbp_activation',   'bbp_add_activation_redirect'     );
+add_action( 'bbp_activation',   'bbp_delete_rewrite_rules'        );
+add_action( 'bbp_activation',   'bbp_make_current_user_keymaster' );
+add_action( 'load-plugins.php', 'bbp_do_activation_redirect'      );
 
 // Deactivation
 add_action( 'bbp_deactivation', 'bbp_remove_caps'          );
 add_action( 'bbp_deactivation', 'bbp_delete_rewrite_rules' );
 
 // New Site
-add_action( 'bbp_new_site', 'bbp_create_initial_content', 8 );
+add_action( 'bbp_new_site', 'bbp_setup_new_site', 8 );
 
 // Load the default repair tools
 add_action( 'load-tools_page_bbp-repair',  'bbp_register_default_repair_tools' );
@@ -142,14 +144,14 @@ function bbp_new_site( $blog_id, $user_id, $domain, $path, $site_id, $meta ) {
 		return;
 	}
 
-	// Switch to the new blog
-	switch_to_blog( $blog_id );
+	// Switch to the new site
+	bbp_switch_to_site( $blog_id );
 
 	// Do the bbPress activation routine
 	do_action( 'bbp_new_site', $blog_id, $user_id, $domain, $path, $site_id, $meta );
 
-	// restore original blog
-	restore_current_blog();
+	// Restore original site
+	bbp_restore_current_site();
 }
 
 /**
@@ -205,6 +207,29 @@ function bbp_filter_column_headers( $columns = array() ) {
 	}
 
 	return $columns;
+}
+
+/**
+ * Filter sample permalinks so that certain languages display properly.
+ *
+ * @since 2.0.0 bbPress (r3336)
+ *
+ * @param string $post_link Custom post type permalink
+ * @param object $_post Post data object
+ * @param bool $leavename Optional, defaults to false. Whether to keep post name or page name.
+ * @param bool $sample Optional, defaults to false. Is it a sample permalink.
+ *
+ * @return string The custom post type permalink
+ */
+function bbp_filter_sample_permalink( $post_link, $_post, $leavename = false, $sample = false ) {
+
+	// Bail if not on an admin page and not getting a sample permalink
+	if ( ! empty( $sample ) && is_admin() && bbp_is_custom_post_type() ) {
+		return urldecode( $post_link );
+	}
+
+	// Return post link
+	return $post_link;
 }
 
 /** Sub-Actions ***************************************************************/
