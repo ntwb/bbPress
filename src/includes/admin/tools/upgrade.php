@@ -22,8 +22,9 @@ function bbp_admin_upgrade_page() {
 	$tools = bbp_admin_repair_list( 'upgrade' ); ?>
 
 	<div class="wrap">
-		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Upgrade Forums', 'bbpress' ) ); ?></h2>
+		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
+		<hr class="wp-header-end">
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( 'bbp-upgrade' ); ?></h2>
 
 		<p><?php esc_html_e( 'As bbPress improves, occasionally database upgrades are required but some forums are too large to upgrade automatically. Use the tools below to manually run upgrade routines.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 upgrade at a time.', 'bbpress' ); ?></p>
@@ -50,6 +51,9 @@ function bbp_admin_upgrade_page() {
 
 					<?php bbp_admin_repair_list_components_filter(); ?>
 
+					<?php bbp_admin_repair_list_versions_filter(); ?>
+
+					<input type="submit" name="filter_action" id="components-submit" class="button" value="<?php esc_html_e( 'Filter', 'bbpress' ); ?>">
 				</div>
 				<br class="clear">
 			</div>
@@ -63,6 +67,7 @@ function bbp_admin_upgrade_page() {
 							<input id="cb-select-all-1" type="checkbox">
 						</td>
 						<th scope="col" id="description" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
+						<th scope="col" id="version" class="manage-column column-version"><?php esc_html_e( 'Version', 'bbpress' ); ?></th>
 						<th scope="col" id="components" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
 						<th scope="col" id="overhead" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>
@@ -96,8 +101,15 @@ function bbp_admin_upgrade_page() {
 										<span class="screen-reader-text"><?php esc_html_e( 'Show more details', 'bbpress' ); ?></span>
 									</button>
 								</td>
+								<td class="column-version desc" data-colname="<?php esc_html_e( 'Version', 'bbpress' ); ?>">
+									<div class="bbp-tool-version">
+
+										<?php echo implode( ', ', bbp_get_admin_repair_tool_version( $item ) ); ?>
+
+									</div>
+								</td>
 								<td class="column-components desc" data-colname="<?php esc_html_e( 'Components', 'bbpress' ); ?>">
-									<div class="bbp-tool-overhead">
+									<div class="bbp-tool-components">
 
 										<?php echo implode( ', ', bbp_get_admin_repair_tool_components( $item ) ); ?>
 
@@ -134,6 +146,7 @@ function bbp_admin_upgrade_page() {
 							<input id="cb-select-all-2" type="checkbox">
 						</td>
 						<th scope="col" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
+						<th scope="col" class="manage-column column-version"><?php esc_html_e( 'Version', 'bbpress' ); ?></th>
 						<th scope="col" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
 						<th scope="col" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>

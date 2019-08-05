@@ -253,10 +253,10 @@ function bbp_new_topic_handler( $action = '' ) {
 		bbp_add_error( 'bbp_topic_duplicate', __( '<strong>ERROR</strong>: Duplicate topic detected; it looks as though you&#8217;ve already said that.', 'bbpress' ) );
 	}
 
-	/** Topic Blacklist *******************************************************/
+	/** Topic Bad Words *******************************************************/
 
-	if ( ! bbp_check_for_blacklist( $anonymous_data, $topic_author, $topic_title, $topic_content ) ) {
-		bbp_add_error( 'bbp_topic_blacklist', __( '<strong>ERROR</strong>: Your topic cannot be created at this time.', 'bbpress' ) );
+	if ( ! bbp_check_for_moderation( $anonymous_data, $topic_author, $topic_title, $topic_content, true ) ) {
+		bbp_add_error( 'bbp_topic_moderation', __( '<strong>ERROR</strong>: Your topic cannot be created at this time.', 'bbpress' ) );
 	}
 
 	/** Topic Status **********************************************************/
@@ -268,7 +268,7 @@ function bbp_new_topic_handler( $action = '' ) {
 	if ( ! bbp_check_for_moderation( $anonymous_data, $topic_author, $topic_title, $topic_content ) ) {
 		$topic_status = bbp_get_pending_status_id();
 
-	// Check a whitelist of possible topic status ID's
+	// Check possible topic status ID's
 	} elseif ( ! empty( $_POST['bbp_topic_status'] ) && in_array( $_POST['bbp_topic_status'], array_keys( $topic_statuses ), true ) ) {
 		$topic_status = sanitize_key( $_POST['bbp_topic_status'] );
 
@@ -549,10 +549,10 @@ function bbp_edit_topic_handler( $action = '' ) {
 		bbp_add_error( 'bbp_edit_topic_content', __( '<strong>ERROR</strong>: Your topic cannot be empty.', 'bbpress' ) );
 	}
 
-	/** Topic Blacklist *******************************************************/
+	/** Topic Bad Words *******************************************************/
 
-	if ( ! bbp_check_for_blacklist( $anonymous_data, $topic_author, $topic_title, $topic_content ) ) {
-		bbp_add_error( 'bbp_topic_blacklist', __( '<strong>ERROR</strong>: Your topic cannot be edited at this time.', 'bbpress' ) );
+	if ( ! bbp_check_for_moderation( $anonymous_data, $topic_author, $topic_title, $topic_content, true ) ) {
+		bbp_add_error( 'bbp_topic_moderation', __( '<strong>ERROR</strong>: Your topic cannot be edited at this time.', 'bbpress' ) );
 	}
 
 	/** Topic Status **********************************************************/
@@ -568,7 +568,7 @@ function bbp_edit_topic_handler( $action = '' ) {
 			$topic_status = bbp_get_pending_status_id();
 		}
 
-	// Check a whitelist of possible topic status ID's
+	// Check possible topic status ID's
 	} elseif ( ! empty( $_POST['bbp_topic_status'] ) && in_array( $_POST['bbp_topic_status'], array_keys( $topic_statuses ), true ) ) {
 		$topic_status = sanitize_key( $_POST['bbp_topic_status'] );
 
@@ -782,7 +782,7 @@ function bbp_update_topic( $topic_id = 0, $forum_id = 0, $anonymous_data = array
 	if ( ! empty( $anonymous_data ) ) {
 
 		// Update anonymous meta data (not cookies)
-		bbp_update_anonymous_post_author( $topic_id, $anonymous_data, 'topic' );
+		bbp_update_anonymous_post_author( $topic_id, $anonymous_data, bbp_get_topic_post_type() );
 
 		// Set transient for throttle check (only on new, not edit)
 		if ( empty( $is_edit ) ) {
@@ -832,6 +832,9 @@ function bbp_update_topic( $topic_id = 0, $forum_id = 0, $anonymous_data = array
 		// Walk up ancestors and do the dirty work
 		bbp_update_topic_walker( $topic_id, $last_active, $forum_id, 0, false );
 	}
+
+	// Bump the custom query cache
+	wp_cache_set( 'last_changed', microtime(), 'bbpress_posts' );
 }
 
 /**
@@ -887,9 +890,13 @@ function bbp_update_topic_walker( $topic_id, $last_active_time = '', $forum_id =
 			// If ancestor is a forum, update counts
 			if ( bbp_is_forum( $ancestor ) ) {
 
+				// Get the forum
+				$forum = bbp_get_forum( $ancestor );
+
 				// Update the forum
 				bbp_update_forum( array(
-					'forum_id'           => $ancestor,
+					'forum_id'           => $forum->ID,
+					'post_parent'        => $forum->post_parent,
 					'last_topic_id'      => $topic_id,
 					'last_reply_id'      => $reply_id,
 					'last_active_id'     => $active_id,
@@ -983,7 +990,7 @@ function bbp_move_topic_handler( $topic_id, $old_forum_id, $new_forum_id ) {
 	$old_forum_ancestors = array_values( array_unique( array_merge( array( $old_forum_id ), (array) get_post_ancestors( $old_forum_id ) ) ) );
 
 	// Get reply count.
-	$public_reply_count = count( bbp_get_public_child_ids( $topic_id, bbp_get_reply_post_type() ) );
+	$public_reply_count = bbp_get_public_child_count( $topic_id, bbp_get_reply_post_type() );
 
 	// Topic status.
 	$topic_status = get_post_field( 'post_status', $topic_id );
@@ -2499,7 +2506,7 @@ function bbp_update_topic_reply_count_hidden( $topic_id = 0, $reply_count = 0 ) 
 
 	// Get replies of topic
 	$reply_count = empty( $reply_count )
-		? bbp_get_non_public_child_count( $topic_id, 'reply' )
+		? bbp_get_non_public_child_count( $topic_id, bbp_get_reply_post_type() )
 		: (int) $reply_count;
 
 	update_post_meta( $topic_id, '_bbp_reply_count_hidden', $reply_count );

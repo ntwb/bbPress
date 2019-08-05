@@ -108,7 +108,7 @@ function bbp_admin_get_settings_fields() {
 
 		'bbp_settings_users' => array(
 
-			// Allow global access
+			// Default role setting
 			'_bbp_default_role' => array(
 				'sanitize_callback' => 'sanitize_text_field',
 				'args'              => array()
@@ -275,7 +275,7 @@ function bbp_admin_get_settings_fields() {
 
 		'bbp_settings_per_page' => array(
 
-			// Replies per page setting
+			// Topics per page setting
 			'_bbp_topics_per_page' => array(
 				'title'             => esc_html__( 'Topics', 'bbpress' ),
 				'callback'          => 'bbp_admin_setting_callback_topics_per_page',
@@ -296,7 +296,7 @@ function bbp_admin_get_settings_fields() {
 
 		'bbp_settings_per_rss_page' => array(
 
-			// Replies per page setting
+			// Topics per page setting
 			'_bbp_topics_per_rss_page' => array(
 				'title'             => esc_html__( 'Topics', 'bbpress' ),
 				'callback'          => 'bbp_admin_setting_callback_topics_per_rss_page',
@@ -527,7 +527,7 @@ function bbp_admin_get_settings_fields() {
 				'args'              => array( 'label_for'=> '_bbp_converter_db_user' )
 			),
 
-			// Database User
+			// Database Password
 			'_bbp_converter_db_pass' => array(
 				'title'             => esc_html__( 'Database Password', 'bbpress' ),
 				'callback'          => 'bbp_converter_setting_callback_dbpass',
@@ -535,7 +535,7 @@ function bbp_admin_get_settings_fields() {
 				'args'              => array( 'label_for'=> '_bbp_converter_db_pass' )
 			),
 
-			// Database User
+			// Database Prefix
 			'_bbp_converter_db_prefix' => array(
 				'title'             => esc_html__( 'Table Prefix', 'bbpress' ),
 				'callback'          => 'bbp_converter_setting_callback_dbprefix',
@@ -660,7 +660,7 @@ function bbp_admin_setting_callback_editlock() {
 
 	</label>
 	<label for="_bbp_edit_lock">
-		<input name="_bbp_edit_lock" id="_bbp_edit_lock" type="number" min="0" step="1" value="<?php bbp_form_option( '_bbp_edit_lock', '0' ); ?>" class="small-text"<?php bbp_maybe_admin_setting_disabled( '_bbp_edit_lock' ); ?> />
+		<input name="_bbp_edit_lock" id="_bbp_edit_lock" type="number" min="0" step="1" value="<?php bbp_form_option( '_bbp_edit_lock', '5' ); ?>" class="small-text"<?php bbp_maybe_admin_setting_disabled( '_bbp_edit_lock' ); ?> />
 
 	<?php $select = ob_get_clean(); ?>
 
@@ -1494,7 +1494,7 @@ function bbp_admin_settings() {
 ?>
 
 	<div class="wrap">
-		<h1><?php esc_html_e( 'Forums Settings', 'bbpress' ) ?></h1>
+		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forums Settings', 'bbpress' ) ?></h1>
 		<hr class="wp-header-end">
 
 		<form action="options.php" method="post">
@@ -1773,9 +1773,9 @@ function bbp_converter_settings_page() {
 		: esc_html__( 'Ready to go.', 'bbpress' ); ?>
 
 	<div class="wrap">
-		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
+		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
 		<hr class="wp-header-end">
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Import Forums', 'bbpress' ) ); ?></h2>
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( 'bbp-converter' ); ?></h2>
 
 		<div class="bbp-converter-wrap">
 			<div id="poststuff" class="bbp-converter-monitor-wrap">
@@ -1944,15 +1944,17 @@ function bbp_form_option( $option, $default = '' , $slug = false ) {
 	 *
 	 * @param string $option
 	 * @param string $default
-	 * @param bool $slug
+	 * @param bool   $is_slug
+	 *
+	 * @return mixed
 	 */
-	function bbp_get_form_option( $option, $default = '', $slug = false ) {
+	function bbp_get_form_option( $option, $default = '', $is_slug = false ) {
 
 		// Get the option and sanitize it
 		$value = get_option( $option, $default );
 
 		// Slug?
-		if ( true === $slug ) {
+		if ( true === $is_slug ) {
 			$value = esc_attr( apply_filters( 'editable_slug', $value ) );
 
 		// Not a slug
@@ -1966,7 +1968,7 @@ function bbp_form_option( $option, $default = '' , $slug = false ) {
 		}
 
 		// Filter & return
-		return apply_filters( 'bbp_get_form_option', $value, $option );
+		return apply_filters( 'bbp_get_form_option', $value, $option, $default, $is_slug );
 	}
 
 /**

@@ -222,7 +222,7 @@ $this->tag = false;
 $this->state = BBCODE_LEXSTATE_TEXT;
 if (strlen($this->text) > 0)
 return $this->token = BBCODE_TEXT;
-continue;
+continue 2;
 }
 default:
 $this->tag = false;
@@ -234,11 +234,11 @@ case 91:
 case 123:
 if (preg_match($this->pat_comment, $this->text)) {
 $this->state = BBCODE_LEXSTATE_TEXT;
-continue;
+continue 2;
 }
 if (preg_match($this->pat_comment2, $this->text)) {
 $this->state = BBCODE_LEXSTATE_TEXT;
-continue;
+continue 2;
 }
 if (preg_match($this->pat_wiki, $this->text, $matches)) {
 $this->tag = Array('_name' => 'wiki', '_endtag' => false,
@@ -2087,4 +2087,3 @@ $result = trim($result);
 return $result;
 }
 }
-

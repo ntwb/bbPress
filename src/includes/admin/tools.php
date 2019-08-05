@@ -71,6 +71,7 @@ function bbp_register_repair_tool( $args = array() ) {
 		'callback'    => '',
 		'priority'    => 0,
 		'overhead'    => 'low',
+		'version'     => '',
 		'components'  => array(),
 
 		// @todo
@@ -92,6 +93,7 @@ function bbp_register_repair_tool( $args = array() ) {
 		'callback'    => $r['callback'],
 		'overhead'    => $r['overhead'],
 		'components'  => $r['components'],
+		'version'     => $r['version'],
 
 		// @todo
 		'success'     => $r['success'],
@@ -339,9 +341,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-topic-engagements-move',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Upgrade user topic engagements', 'bbpress' ),
-		'description' => esc_html__( 'Run this if you just upgraded to 2.6.', 'bbpress' ),
+		'description' => esc_html__( 'Copies engagements from user meta to topic meta.', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_user_engagements',
 		'priority'    => 100,
+		'version'     => '2.6.0',
 		'overhead'    => 'high',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_engagements_rewrite_id() )
 	) );
@@ -351,9 +354,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-favorites-move',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Upgrade user topic favorites', 'bbpress' ),
-		'description' => esc_html__( 'Run this if you just upgraded to 2.6.', 'bbpress' ),
+		'description' => esc_html__( 'Copies favorites from user meta to topic meta.', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_user_favorites',
 		'priority'    => 105,
+		'version'     => '2.6.0',
 		'overhead'    => 'high',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_favorites_rewrite_id() )
 	) );
@@ -363,9 +367,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-topic-subscriptions-move',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Upgrade user topic subscriptions', 'bbpress' ),
-		'description' => esc_html__( 'Run this if you just upgraded to 2.6.', 'bbpress' ),
+		'description' => esc_html__( 'Copies topic subscriptions from user meta to topic meta.', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_user_topic_subscriptions',
 		'priority'    => 110,
+		'version'     => '2.6.0',
 		'overhead'    => 'high',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_subscriptions_rewrite_id() )
 	) );
@@ -375,9 +380,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-forum-subscriptions-move',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Upgrade user forum subscriptions', 'bbpress' ),
-		'description' => esc_html__( 'Run this if you just upgraded to 2.6.', 'bbpress' ),
+		'description' => esc_html__( 'Copies forum subscriptions from user meta to forum meta.', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_user_forum_subscriptions',
 		'priority'    => 115,
+		'version'     => '2.6.0',
 		'overhead'    => 'high',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_subscriptions_rewrite_id() )
 	) );
@@ -387,9 +393,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-favorites-delete',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Remove favorites from user-meta', 'bbpress' ),
-		'description' => esc_html__( 'Run this to delete old data, after confirming successful favorites upgrade above.', 'bbpress' ),
+		'description' => esc_html__( 'Run this to delete old data (after confirming successful favorites upgrade)', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_remove_favorites_from_usermeta',
 		'priority'    => 120,
+		'version'     => '2.6.1',
 		'overhead'    => 'medium',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_favorites_rewrite_id() )
 	) );
@@ -399,9 +406,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-topic-subscriptions-delete',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Remove topic subscriptions from user-meta', 'bbpress' ),
-		'description' => esc_html__( 'Run this to delete old data, after confirming successful topic subscriptions upgrade above.', 'bbpress' ),
+		'description' => esc_html__( 'Run this to delete old data (after confirming successful topic subscriptions upgrade)', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_remove_topic_subscriptions_from_usermeta',
 		'priority'    => 125,
+		'version'     => '2.6.1',
 		'overhead'    => 'medium',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_subscriptions_rewrite_id() )
 	) );
@@ -411,9 +419,10 @@ function bbp_register_default_repair_tools() {
 		'id'          => 'bbp-user-forum-subscriptions-delete',
 		'type'        => 'upgrade',
 		'title'       => esc_html__( 'Remove forum subscriptions from user-meta', 'bbpress' ),
-		'description' => esc_html__( 'Run this to delete old data, after confirming successful forum subscriptions upgrade above.', 'bbpress' ),
+		'description' => esc_html__( 'Run this to delete old data (after confirming successful forum subscriptions upgrade)', 'bbpress' ),
 		'callback'    => 'bbp_admin_upgrade_remove_forum_subscriptions_from_usermeta',
 		'priority'    => 130,
+		'version'     => '2.6.1',
 		'overhead'    => 'medium',
 		'components'  => array( bbp_get_user_rewrite_id(), bbp_get_user_subscriptions_rewrite_id() )
 	) );
@@ -468,10 +477,12 @@ function bbp_tools_admin_tabs( $active_tab = '' ) {
 			}
 
 			// Setup tab HTML
-			$is_current = (bool) ( $tab['name'] == $active_tab );
+			$is_current = (bool) ( $tab['page'] === $active_tab );
 			$tab_class  = $is_current ? $active_class : $idle_class;
 			$tab_url    = add_query_arg( array( 'page' => $tab['page'] ), admin_url( 'tools.php' ) );
-			$tabs_html .= '<a href="' . esc_url( $tab_url ) . '" class="' . esc_attr( $tab_class ) . '">' . esc_html( $tab['name'] ) . '</a>';
+
+			// Tab name is not escaped - may contain HTML
+			$tabs_html .= '<a href="' . esc_url( $tab_url ) . '" class="' . esc_attr( $tab_class ) . '">' . $tab['name'] . '</a>';
 		}
 
 		// Output the tabs
@@ -505,7 +516,7 @@ function bbp_get_tools_admin_pages() {
 			'page' => 'bbp-upgrade',
 			'func' => 'bbp_admin_upgrade_page',
 			'cap'  => 'bbp_tools_upgrade_page',
-			'name' => esc_html__( 'Upgrade Forums', 'bbpress' ),
+			'name' => bbp_maybe_append_pending_upgrade_count( esc_html__( 'Upgrade Forums', 'bbpress' ) ),
 
 			// Deprecated 2.6.0
 			'href' => add_query_arg( array( 'page' => 'bbp-upgrade' ), $tools_url )

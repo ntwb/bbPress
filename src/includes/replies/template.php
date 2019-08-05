@@ -46,37 +46,38 @@ function bbp_get_reply_post_type_labels() {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_reply_post_type_labels', array(
-		'name'                  => esc_attr__( 'Replies',                   'bbpress' ),
-		'menu_name'             => esc_attr__( 'Replies',                   'bbpress' ),
-		'singular_name'         => esc_attr_x( 'Reply', 'noun',             'bbpress' ),
-		'all_items'             => esc_attr__( 'All Replies',               'bbpress' ),
-		'add_new'               => esc_attr__( 'Add New',                   'bbpress' ),
-		'add_new_item'          => esc_attr__( 'Create New Reply',          'bbpress' ),
-		'edit'                  => esc_attr__( 'Edit',                      'bbpress' ),
-		'edit_item'             => esc_attr__( 'Edit Reply',                'bbpress' ),
-		'new_item'              => esc_attr__( 'New Reply',                 'bbpress' ),
-		'view'                  => esc_attr__( 'View Reply',                'bbpress' ),
-		'view_item'             => esc_attr__( 'View Reply',                'bbpress' ),
-		'view_items'            => esc_attr__( 'View Replies',              'bbpress' ),
-		'search_items'          => esc_attr__( 'Search Replies',            'bbpress' ),
-		'not_found'             => esc_attr__( 'No replies found',          'bbpress' ),
-		'not_found_in_trash'    => esc_attr__( 'No replies found in Trash', 'bbpress' ),
-		'filter_items_list'     => esc_attr__( 'Filter replies list',       'bbpress' ),
-		'items_list'            => esc_attr__( 'Replies list',              'bbpress' ),
-		'items_list_navigation' => esc_attr__( 'Replies list navigation',   'bbpress' ),
-		'parent_item_colon'     => esc_attr__( 'Parent Topic:',             'bbpress' ),
-		'all_items'             => esc_attr__( 'All Replies',               'bbpress' ),
-		'archives'              => esc_attr__( 'Forum Replies',             'bbpress' ),
-		'attributes'            => esc_attr__( 'Reply Attributes',          'bbpress' ),
-		'insert_into_item'      => esc_attr__( 'Insert into reply',         'bbpress' ),
-		'uploaded_to_this_item' => esc_attr__( 'Uploaded to this reply',    'bbpress' ),
-		'featured_image'        => esc_attr__( 'Reply Image',               'bbpress' ),
-		'set_featured_image'    => esc_attr__( 'Set reply image',           'bbpress' ),
-		'remove_featured_image' => esc_attr__( 'Remove reply image',        'bbpress' ),
-		'use_featured_image'    => esc_attr__( 'Use as reply image',        'bbpress' ),
-		'filter_items_list'     => esc_attr__( 'Filter reply list',         'bbpress' ),
-		'items_list_navigation' => esc_attr__( 'Reply list navigation',     'bbpress' ),
-		'items_list'            => esc_attr__( 'Reply list',                'bbpress' )
+		'name'                     => esc_attr__( 'Replies',                    'bbpress' ),
+		'menu_name'                => esc_attr__( 'Replies',                    'bbpress' ),
+		'singular_name'            => esc_attr_x( 'Reply', 'noun',              'bbpress' ),
+		'all_items'                => esc_attr__( 'All Replies',                'bbpress' ),
+		'add_new'                  => esc_attr__( 'Add New',                    'bbpress' ),
+		'add_new_item'             => esc_attr__( 'Create New Reply',           'bbpress' ),
+		'edit'                     => esc_attr__( 'Edit',                       'bbpress' ),
+		'edit_item'                => esc_attr__( 'Edit Reply',                 'bbpress' ),
+		'new_item'                 => esc_attr__( 'New Reply',                  'bbpress' ),
+		'view'                     => esc_attr__( 'View Reply',                 'bbpress' ),
+		'view_item'                => esc_attr__( 'View Reply',                 'bbpress' ),
+		'view_items'               => esc_attr__( 'View Replies',               'bbpress' ),
+		'search_items'             => esc_attr__( 'Search Replies',             'bbpress' ),
+		'not_found'                => esc_attr__( 'No replies found',           'bbpress' ),
+		'not_found_in_trash'       => esc_attr__( 'No replies found in Trash',  'bbpress' ),
+		'filter_items_list'        => esc_attr__( 'Filter replies list',        'bbpress' ),
+		'items_list'               => esc_attr__( 'Replies list',               'bbpress' ),
+		'items_list_navigation'    => esc_attr__( 'Replies list navigation',    'bbpress' ),
+		'parent_item_colon'        => esc_attr__( 'Parent Topic:',              'bbpress' ),
+		'archives'                 => esc_attr__( 'Forum Replies',              'bbpress' ),
+		'attributes'               => esc_attr__( 'Reply Attributes',           'bbpress' ),
+		'insert_into_item'         => esc_attr__( 'Insert into reply',          'bbpress' ),
+		'uploaded_to_this_item'    => esc_attr__( 'Uploaded to this reply',     'bbpress' ),
+		'featured_image'           => esc_attr__( 'Reply Image',                'bbpress' ),
+		'set_featured_image'       => esc_attr__( 'Set reply image',            'bbpress' ),
+		'remove_featured_image'    => esc_attr__( 'Remove reply image',         'bbpress' ),
+		'use_featured_image'       => esc_attr__( 'Use as reply image',         'bbpress' ),
+		'item_published'           => esc_attr__( 'Reply published.',           'bbpress' ),
+		'item_published_privately' => esc_attr__( 'Reply published privately.', 'bbpress' ),
+		'item_reverted_to_draft'   => esc_attr__( 'Reply reverted to draft.',   'bbpress' ),
+		'item_scheduled'           => esc_attr__( 'Reply scheduled.',           'bbpress' ),
+		'item_updated'             => esc_attr__( 'Reply updated.',             'bbpress' )
 	) );
 }
 
@@ -128,7 +129,7 @@ function bbp_has_replies( $args = array() ) {
 	/** Defaults **************************************************************/
 
 	// Other defaults
-	$default_reply_search   = ! empty( $_REQUEST['rs'] ) ? $_REQUEST['rs'] : false;
+	$default_reply_search   = bbp_sanitize_search_request( 'rs' );
 	$default_post_parent    = ( bbp_is_single_topic() ) ? bbp_get_topic_id() : 'any';
 	$default_post_type      = ( bbp_is_single_topic() && bbp_show_lead_topic() ) ? bbp_get_reply_post_type() : array( bbp_get_topic_post_type(), bbp_get_reply_post_type() );
 	$default_thread_replies = (bool) ( bbp_is_single_topic() && bbp_thread_replies() );
@@ -1224,19 +1225,12 @@ function bbp_reply_author_link( $args = array() ) {
 
 			// Empty array
 			$links  = array();
-			$sprint = empty( $anonymous ) && bbp_user_has_profile( bbp_get_reply_author_id( $reply_id ) )
-				? '<a href="%1$s"%2$s%3$s>%4$s</a>'
-				: '<span %2$s%3$s>%4$s</span>';
+			$sprint = '<span %1$s>%2$s</span>';
 
 			// Wrap each link
 			foreach ( $author_links as $link => $link_text ) {
 				$link_class = ' class="bbp-author-' . esc_attr( $link ) . '"';
-				$links[]    = sprintf( $sprint, esc_url( $author_url ), $link_title, $link_class, $link_text );
-			}
-
-			// Role is not linked
-			if ( true === $r['show_role'] ) {
-				$links[] = bbp_get_reply_author_role( array( 'reply_id' => $reply_id ) );
+				$links[]    = sprintf( $sprint, $link_class, $link_text );
 			}
 
 			// Juggle
@@ -1248,6 +1242,16 @@ function bbp_reply_author_link( $args = array() ) {
 
 			// Assemble sections into author link
 			$author_link = implode( $r['sep'], $sections );
+
+			// Only wrap in link if profile exists
+			if ( empty( $anonymous ) && bbp_user_has_profile( bbp_get_reply_author_id( $reply_id ) ) ) {
+				$author_link = sprintf( '<a href="%1$s"%2$s%3$s>%4$s</a>', esc_url( $author_url ), $link_title, ' class="bbp-author-link"', $author_link );
+			}
+
+			// Role is not linked
+			if ( true === $r['show_role'] ) {
+				$author_link .= bbp_get_reply_author_role( array( 'reply_id' => $reply_id ) );
+			}
 		}
 
 		// Filter & return

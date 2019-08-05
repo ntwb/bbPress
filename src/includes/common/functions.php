@@ -18,10 +18,19 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 2.6.0 bbPress (r6813)
  *
+ * @param array $args Array of arguments to pass into `get_post_types()`
+ *
  * @return array
  */
-function bbp_get_post_types() {
-	return get_post_types( array( 'source' => 'bbpress' ) );
+function bbp_get_post_types( $args = array() ) {
+
+	// Parse args
+	$r = bbp_parse_args( $args, array(
+		'source' => 'bbpress'
+	), 'get_post_types' );
+
+	// Return post types
+	return get_post_types( $r );
 }
 
 /** URLs **********************************************************************/
@@ -181,44 +190,65 @@ function bbp_fix_post_author( $data = array(), $postarr = array() ) {
 /**
  * Check a date against the length of time something can be edited.
  *
+ * It is recommended to leave $utc set to true and to work with UTC/GMT dates.
+ * Turning this off will use the WordPress offset which is likely undesirable.
+ *
  * @since 2.0.0 bbPress (r3133)
+ * @since 2.6.0 bbPress (r6868) Inverted some logic and added unit tests
  *
- * @param string $post_date_gmt
+ * @param string  $datetime Gets run through strtotime()
+ * @param boolean $utc      Default true. Is the timestamp in UTC?
  *
- * @return bool True if date is past, False if not
+ * @return bool True by default, if date is past, or editing is disabled.
  */
-function bbp_past_edit_lock( $post_date_gmt = '' ) {
+function bbp_past_edit_lock( $datetime = '', $utc = true ) {
 
 	// Default value
-	$retval = false;
-
-	// Get number of minutes to allow editing for
-	$minutes = (int) get_option( '_bbp_edit_lock', 5 );
-
-	// Now
-	$cur_time = current_time( 'timestamp', true );
-
-	// Period of time
-	$lockable  = "+{$minutes} minutes";
-
-	// Add lockable time to post time
-	$lock_time = strtotime( $lockable, strtotime( $post_date_gmt ) );
+	$retval = true;
 
 	// Check if date and editing is allowed
-	if ( ! empty( $post_date_gmt ) && bbp_allow_content_edit() ) {
+	if ( bbp_allow_content_edit() ) {
 
-		// "0" minutes set, so allow forever
+		// Get number of minutes to allow editing for
+		$minutes = bbp_get_edit_lock();
+
+		// 0 minutes means forever, so can never be past edit-lock time
 		if ( 0 === $minutes ) {
-			$retval = true;
+			$retval = false;
 
-		// Not "0" so compare
-		} elseif ( $cur_time >= $lock_time ) {
-			$retval = true;
+		// Checking against a specific datetime
+		} elseif ( ! empty( $datetime ) ) {
+
+			// Period of time
+			$lockable = "+{$minutes} minutes";
+			if ( true === $utc ) {
+				$lockable .= " UTC";
+			}
+
+			// Now
+			$cur_time  = current_time( 'timestamp', $utc );
+
+			// Get the duration in seconds
+			$duration  = strtotime( $lockable ) - $cur_time;
+
+			// Diff the times down to seconds
+			$lock_time = strtotime( $lockable, $cur_time );
+			$past_time = strtotime( $datetime, $cur_time );
+			$diff_time = ( $lock_time - $past_time ) - $duration;
+
+			// 0 minutes set, so allow editing forever
+			if ( 0 === $minutes ) {
+				$retval = false;
+
+			// Check if less than lock time
+			} elseif ( $diff_time < $duration ) {
+				$retval = false;
+			}
 		}
 	}
 
 	// Filter & return
-	return (bool) apply_filters( 'bbp_past_edit_lock', $retval, $cur_time, $lock_time, $post_date_gmt );
+	return (bool) apply_filters( 'bbp_past_edit_lock', $retval, $datetime, $utc );
 }
 
 /**
@@ -763,19 +793,55 @@ function bbp_check_for_flood( $anonymous_data = array(), $author_id = 0 ) {
  * @param int $author_id Topic or reply author ID
  * @param string $title The title of the content
  * @param string $content The content being posted
+ * @param mixed  $strict  False for moderation_keys. True for blacklist_keys.
+ *                        String for custom keys.
  * @return bool True if test is passed, false if fail
  */
-function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $title = '', $content = '' ) {
+function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $title = '', $content = '', $strict = false ) {
+
+	// Custom moderation option key
+	if ( is_string( $strict ) ) {
+		$strict = sanitize_key( $strict );
+
+		// Use custom key
+		if ( ! empty( $strict ) ) {
+			$hook_name   = $strict;
+			$option_name = "{$strict}_keys";
+
+		// Key was invalid, so default to moderation keys
+		} else {
+			$strict = false;
+		}
+	}
+
+	// Strict mode uses WordPress "blacklist" settings
+	if ( true === $strict ) {
+		$hook_name   = 'blacklist';
+		$option_name = 'blacklist_keys';
+
+	// Non-strict uses WordPress "moderation" settings
+	} elseif ( false === $strict ) {
+		$hook_name   = 'moderation';
+		$option_name = 'moderation_keys';
+	}
 
 	// Allow for moderation check to be skipped
-	if ( apply_filters( 'bbp_bypass_check_for_moderation', false, $anonymous_data, $author_id, $title, $content ) ) {
+	if ( apply_filters( "bbp_bypass_check_for_{$hook_name}", false, $anonymous_data, $author_id, $title, $content, $strict ) ) {
 		return true;
 	}
 
-	// Bail if user can moderate
-	// https://bbpress.trac.wordpress.org/ticket/2726
-	if ( ! empty( $author_id ) && user_can( $author_id, 'moderate' ) ) {
-		return true;
+	// Maybe perform some author-specific capability checks
+	if ( ! empty( $author_id ) ) {
+
+		// Bail if user is a keymaster
+		if ( bbp_is_user_keymaster( $author_id ) ) {
+			return true;
+
+		// Bail if user can moderate
+		// https://bbpress.trac.wordpress.org/ticket/2726
+		} elseif ( ( false === $strict ) && user_can( $author_id, 'moderate' ) ) {
+			return true;
+		}
 	}
 
 	// Define local variable(s)
@@ -784,20 +850,23 @@ function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $t
 
 	/** Max Links *************************************************************/
 
-	$max_links = get_option( 'comment_max_links' );
-	if ( ! empty( $max_links ) ) {
+	// Only check max_links when not being strict
+	if ( false === $strict ) {
+		$max_links = get_option( 'comment_max_links' );
+		if ( ! empty( $max_links ) ) {
 
-		// How many links?
-		$num_links = preg_match_all( '/(http|ftp|https):\/\//i', $content, $match_out );
+			// How many links?
+			$num_links = preg_match_all( '/(http|ftp|https):\/\//i', $content, $match_out );
 
-		// Allow for bumping the max to include the user's URL
-		if ( ! empty( $_post['url'] ) ) {
-			$num_links = apply_filters( 'comment_max_links_url', $num_links, $_post['url'], $content );
-		}
+			// Allow for bumping the max to include the user's URL
+			if ( ! empty( $_post['url'] ) ) {
+				$num_links = apply_filters( 'comment_max_links_url', $num_links, $_post['url'], $content );
+			}
 
-		// Das ist zu viele links!
-		if ( $num_links >= $max_links ) {
-			return false;
+			// Das ist zu viele links!
+			if ( $num_links >= $max_links ) {
+				return false;
+			}
 		}
 	}
 
@@ -810,9 +879,9 @@ function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $t
 	 *
 	 * @param string $moderation List of moderation keys. One per new line.
 	 */
-	$moderation = apply_filters( 'bbp_moderation_keys', trim( get_option( 'moderation_keys' ) ) );
+	$moderation = apply_filters( "bbp_{$hook_name}_keys", trim( get_option( $option_name ) ) );
 
-	// Bail if blacklist is empty
+	// Bail if no words to look for
 	if ( empty( $moderation ) ) {
 		return true;
 	}
@@ -869,7 +938,7 @@ function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $t
 		// Do some escaping magic so that '#' chars in the
 		// spam words don't break things:
 		$word    = preg_quote( $word, '#' );
-		$pattern = "#$word#i";
+		$pattern = "#{$word}#i";
 
 		// Loop through post data
 		foreach ( $_post as $post_data ) {
@@ -888,115 +957,14 @@ function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $t
 }
 
 /**
- * Checks topics and replies against the discussion blacklist of blocked keys
+ * Deprecated. Use bbp_check_for_moderation() with strict flag set.
  *
  * @since 2.0.0 bbPress (r3446)
- *
- * @param array $anonymous_data Optional - if it's an anonymous post. Do not
- *                              supply if supplying $author_id. Should be
- *                              sanitized (see {@link bbp_filter_anonymous_post_data()}
- * @param int $author_id Topic or reply author ID
- * @param string $title The title of the content
- * @param string $content The content being posted
- * @return bool True if test is passed, false if fail
+ * @since 2.6.0 bbPress (r6854)
+ * @deprecated 2.6.0 Use bbp_check_for_moderation() with strict flag set
  */
 function bbp_check_for_blacklist( $anonymous_data = array(), $author_id = 0, $title = '', $content = '' ) {
-
-	// Allow for blacklist check to be skipped
-	if ( apply_filters( 'bbp_bypass_check_for_blacklist', false, $anonymous_data, $author_id, $title, $content ) ) {
-		return true;
-	}
-
-	// Bail if keymaster is author
-	if ( ! empty( $author_id ) && bbp_is_user_keymaster( $author_id ) ) {
-		return true;
-	}
-
-	/** Blacklist *************************************************************/
-
-	/**
-	 * Filters the bbPress blacklist keys.
-	 *
-	 * @since 2.6.0 bbPress (r6050)
-	 *
-	 * @param string $blacklist List of blacklist keys. One per new line.
-	 */
-	$blacklist = apply_filters( 'bbp_blacklist_keys', trim( get_option( 'blacklist_keys' ) ) );
-
-	// Bail if blacklist is empty
-	if ( empty( $blacklist ) ) {
-		return true;
-	}
-
-	/** User Data *************************************************************/
-
-	// Define local variable
-	$_post = array();
-
-	// Map anonymous user data
-	if ( ! empty( $anonymous_data ) ) {
-		$_post['author'] = $anonymous_data['bbp_anonymous_name'];
-		$_post['email']  = $anonymous_data['bbp_anonymous_email'];
-		$_post['url']    = $anonymous_data['bbp_anonymous_website'];
-
-	// Map current user data
-	} elseif ( ! empty( $author_id ) ) {
-
-		// Get author data
-		$user = get_userdata( $author_id );
-
-		// If data exists, map it
-		if ( ! empty( $user ) ) {
-			$_post['author'] = $user->display_name;
-			$_post['email']  = $user->user_email;
-			$_post['url']    = $user->user_url;
-		}
-	}
-
-	// Current user IP and user agent
-	$_post['user_ip'] = bbp_current_author_ip();
-	$_post['user_ua'] = bbp_current_author_ua();
-
-	// Post title and content
-	$_post['title']   = $title;
-	$_post['content'] = $content;
-
-	// Ensure HTML tags are not being used to bypass the blacklist.
-	$_post['comment_without_html'] = wp_strip_all_tags( $content );
-
-	/** Words *****************************************************************/
-
-	// Get words separated by new lines
-	$words = explode( "\n", $blacklist );
-
-	// Loop through words
-	foreach ( (array) $words as $word ) {
-
-		// Trim the whitespace from the word
-		$word = trim( $word );
-
-		// Skip empty lines
-		if ( empty( $word ) ) { continue; }
-
-		// Do some escaping magic so that '#' chars in the
-		// spam words don't break things:
-		$word    = preg_quote( $word, '#' );
-		$pattern = "#$word#i";
-
-		// Loop through post data
-		foreach ( $_post as $post_data ) {
-
-			// Check each user data for current word
-			if ( preg_match( $pattern, $post_data ) ) {
-
-				// Post does not pass
-				return false;
-			}
-		}
-	}
-
-	// Check passed successfully
-	return true;
+	return bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, false );
 }
 
 /** Subscriptions *************************************************************/
@@ -1060,6 +1028,11 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 		return false;
 	}
 
+	// Bail if importing
+	if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+		return false;
+	}
+
 	/** Validation ************************************************************/
 
 	$reply_id = bbp_get_reply_id( $reply_id );
@@ -1117,10 +1090,11 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 	bbp_remove_all_filters( 'the_title'             );
 
 	// Strip tags from text and setup mail data
-	$blog_name     = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
-	$topic_title   = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
-	$reply_content = wp_specialchars_decode( strip_tags( bbp_get_reply_content( $reply_id ) ), ENT_QUOTES );
-	$reply_url     = bbp_get_reply_url( $reply_id );
+	$blog_name         = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$topic_title       = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
+	$reply_author_name = wp_specialchars_decode( strip_tags( $reply_author_name ), ENT_QUOTES );
+	$reply_content     = wp_specialchars_decode( strip_tags( bbp_get_reply_content( $reply_id ) ), ENT_QUOTES );
+	$reply_url         = bbp_get_reply_url( $reply_id );
 
 	// For plugins to filter messages per reply/topic/user
 	$message = sprintf( esc_html__( '%1$s wrote:
@@ -1217,6 +1191,11 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 		return false;
 	}
 
+	// Bail if importing
+	if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+		return false;
+	}
+
 	/** Validation ************************************************************/
 
 	$topic_id = bbp_get_topic_id( $topic_id );
@@ -1273,10 +1252,11 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 	bbp_remove_all_filters( 'the_title'             );
 
 	// Strip tags from text and setup mail data
-	$blog_name     = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
-	$topic_title   = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
-	$topic_content = wp_specialchars_decode( strip_tags( bbp_get_topic_content( $topic_id ) ), ENT_QUOTES );
-	$topic_url     = get_permalink( $topic_id );
+	$blog_name         = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$topic_title       = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
+	$topic_author_name = wp_specialchars_decode( strip_tags( $topic_author_name ), ENT_QUOTES );
+	$topic_content     = wp_specialchars_decode( strip_tags( bbp_get_topic_content( $topic_id ) ), ENT_QUOTES );
+	$topic_url         = get_permalink( $topic_id );
 
 	// For plugins to filter messages per reply/topic/user
 	$message = sprintf( esc_html__( '%1$s wrote:
@@ -1438,28 +1418,48 @@ function bbp_get_email_addresses_from_user_ids( $user_ids = array() ) {
 /**
  * Return a clean and reliable logout URL
  *
- * @param string $url URL
+ * This function is used to filter `logout_url`. If no $redirect_to value is
+ * passed, it will default to the request uri, then the forum root.
+ *
+ * See: `wp_logout_url()`
+ *
+ * @since 2.1.0 bbPress (2815)
+ *
+ * @param string $url URL used to log out
  * @param string $redirect_to Where to redirect to?
+ *
  * @return string The url
  */
 function bbp_logout_url( $url = '', $redirect_to = '' ) {
 
-	// Make sure we are directing somewhere
-	if ( empty( $redirect_to ) && ! strstr( $url, 'redirect_to' ) ) {
+	// If there is no redirect in the URL, let's add one...
+	if ( ! strstr( $url, 'redirect_to' ) ) {
 
-		// Rejig the $redirect_to
-		if ( ! isset( $_SERVER['REDIRECT_URL'] ) || ( $redirect_to !== home_url( $_SERVER['REDIRECT_URL'] ) ) ) {
-			$redirect_to = isset( $_SERVER['HTTP_REFERER'] )
-				? $_SERVER['HTTP_REFERER']
-				: '';
+		// Get the forum root, to maybe use as a default
+		$forum_root = bbp_get_root_url();
+
+		// No redirect passed, so check referer and fallback to request uri
+		if ( empty( $redirect_to ) ) {
+
+			// Check for a valid referer
+			$redirect_to = wp_get_referer();
+
+			// Fallback to request uri if invalid referer
+			if ( false === $redirect_to ) {
+				$redirect_to = bbp_get_url_scheme() . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			}
 		}
 
-		// Rebuild a basic redirect URL
-		$redirect_to = bbp_get_url_scheme() . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		// Filter the $redirect_to destination
+		$filtered  = apply_filters( 'bbp_logout_url_redirect_to', $redirect_to );
 
-		// Sanitize $redirect_to and add it to full $url
-		$redirect_to = add_query_arg( array( 'loggedout'   => 'true'                    ), $redirect_to );
-		$url         = add_query_arg( array( 'redirect_to' => urlencode( $redirect_to ) ), $url         );
+		// Validate $redirect_to, default to root
+		$validated = wp_validate_redirect( $filtered, $forum_root );
+
+		// Assemble $redirect_to and add it (encoded) to full $url
+		$appended  = add_query_arg( array( 'loggedout'   => 'true'   ), $validated );
+		$encoded   = urlencode( $appended );
+		$url       = add_query_arg( array( 'redirect_to' => $encoded ), $url       );
 	}
 
 	// Filter & return
@@ -1728,7 +1728,7 @@ function bbp_filter_child_counts_list( $parent_id = 0, $types = array( 'post' ),
 function bbp_get_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 
 	// Bail if nothing passed
-	if ( empty( $parent_id ) || empty( $post_type ) ) {
+	if ( empty( $post_type ) ) {
 		return false;
 	}
 
@@ -2492,6 +2492,9 @@ function bbp_get_url_scheme() {
 
 /**
  * Is a title longer that the maximum title length?
+ *
+ * Uses mb_strlen() in `8bit` mode to treat strings as raw. This matches the
+ * behavior present in Comments, PHPMailer, RandomCompat, and others.
  *
  * @since 2.6.0 bbPress (r6783)
  *

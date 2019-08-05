@@ -169,6 +169,10 @@ class BBP_Admin {
 		add_action( 'bbp_admin_init',    array( $this, 'hide_notices'   ) );
 		add_action( 'bbp_admin_notices', array( $this, 'output_notices' ) );
 
+		/** Upgrades **********************************************************/
+
+		add_action( 'bbp_admin_init', array( $this, 'add_upgrade_count' ) );
+
 		/** Ajax **************************************************************/
 
 		// No _nopriv_ equivalent - users must be logged in
@@ -209,20 +213,22 @@ class BBP_Admin {
 			$this->notices = array();
 		}
 
-		// Database upgrade skipped?
-		$skipped = get_option( '_bbp_db_upgrade_skipped', 0 );
+		// Get page
+		$page = ! empty( $_GET['page'] )
+			? sanitize_key( $_GET['page'] )
+			: false;
 
-		// Database upgrade skipped!
-		if ( ! empty( $skipped ) && ( $skipped < 260 ) && current_user_can( 'bbp_tools_upgrade_page' ) ) {
+		// Pending database upgrades!
+		if ( ( 'bbp-upgrade' !== $page ) && bbp_get_pending_upgrades() && current_user_can( 'bbp_tools_upgrade_page' ) ) {
 
 			// Link to upgrade page
 			$upgrade_url  = add_query_arg( array( 'page' => 'bbp-upgrade' ), admin_url( 'tools.php' ) );
-			$dismiss_url  = wp_nonce_url( add_query_arg( array( 'bbp-hide-notice' => 'bbp-skip-upgrade' ) ), 'bbp-hide-notice' );
-			$upgrade_link = '<a href="' . esc_url( $upgrade_url ) . '">' . esc_html__( 'Go Upgrade',   'bbpress' ) . '</a>';
-			$dismiss_link = '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Hide Forever', 'bbpress' ) . '</a>';
+			$dismiss_url  = wp_nonce_url( add_query_arg( array( 'bbp-hide-notice' => 'bbp-skip-upgrades' ) ), 'bbp-hide-notice' );
+			$upgrade_link = '<a href="' . esc_url( $upgrade_url ) . '">' . esc_html__( 'Learn More',   'bbpress' ) . '</a>';
+			$dismiss_link = '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Hide For Now', 'bbpress' ) . '</a>';
 			$bbp_dashicon = '<span class="bbpress-logo-icon"></span>';
 			$message      = $bbp_dashicon . sprintf(
-				esc_html__( 'bbPress requires a manual database upgrade. %s or %s', 'bbpress' ),
+				esc_html__( 'bbPress requires a manual database upgrade. %s or %s.', 'bbpress' ),
 				$upgrade_link,
 				$dismiss_link
 			);
@@ -239,8 +245,13 @@ class BBP_Admin {
 	 */
 	public function hide_notices() {
 
+		// Hiding a notice?
+		$hiding_notice = ! empty( $_GET['bbp-hide-notice'] )
+			? sanitize_key( $_GET['bbp-hide-notice'] )
+			: false;
+
 		// Bail if not hiding a notice
-		if ( empty( $_GET['bbp-hide-notice'] ) ) {
+		if ( empty( $hiding_notice ) ) {
 			return;
 		}
 
@@ -253,11 +264,11 @@ class BBP_Admin {
 		check_admin_referer( 'bbp-hide-notice' );
 
 		// Maybe delete notices
-		switch ( $_GET['bbp-hide-notice'] ) {
+		switch ( $hiding_notice ) {
 
 			// Skipped upgrade notice
-			case 'bbp-skip-upgrade' :
-				delete_option( '_bbp_db_upgrade_skipped' );
+			case 'bbp-skip-upgrades' :
+				bbp_clear_pending_upgrades();
 				break;
 		}
 	}
@@ -362,10 +373,46 @@ class BBP_Admin {
 	 * @return string
 	 */
 	private function esc_notice( $message = '' ) {
+
+		// Get allowed HTML
 		$tags = wp_kses_allowed_html();
+
+		// Allow spans with classes in notices
+		$tags['span'] = array(
+			'class' => 1
+		);
+
+		// Parse the message and remove unsafe tags
 		$text = wp_kses( $message, $tags );
 
+		// Return the message text
 		return $text;
+	}
+
+	/**
+	 * Maybe append the pending upgrade count to the "Tools" menu.
+	 *
+	 * @since 2.6.0 bbPress (r6896)
+	 *
+	 * @global menu $menu
+	 */
+	public function add_upgrade_count() {
+		global $menu;
+
+		// Skip if no menu (AJAX, shortinit, etc...)
+		if ( empty( $menu ) ) {
+			return;
+		}
+
+		// Loop through menus, and maybe add the upgrade count
+		foreach ( $menu as $menu_index => $menu_item ) {
+			$found = array_search( 'tools.php', $menu_item, true );
+
+			if ( false !== $found ) {
+				$menu[ $menu_index ][ 0 ] = bbp_maybe_append_pending_upgrade_count( $menu[ $menu_index ][ 0 ] );
+				continue;
+			}
+		}
 	}
 
 	/**
@@ -375,38 +422,43 @@ class BBP_Admin {
 	 */
 	public function admin_menus() {
 
+		// Default hooks array
 		$hooks = array();
 
 		// Get the tools pages
 		$tools = bbp_get_tools_admin_pages();
 
 		// Loop through tools and check
-		foreach ( $tools as $tool ) {
+		if ( ! empty( $tools ) ) {
+			foreach ( $tools as $tool ) {
 
-			// Try to add the admin page
-			$page = add_management_page(
-				$tool['name'],
-				$tool['name'],
-				$tool['cap'],
-				$tool['page'],
-				$tool['func']
-			);
+				// Try to add the admin page
+				$page = add_management_page(
+					$tool['name'],
+					$tool['name'],
+					$tool['cap'],
+					$tool['page'],
+					$tool['func']
+				);
 
-			// Add page to hook if user can view it
-			if ( false !== $page ) {
-				$hooks[] = $page;
+				// Add page to hook if user can view it
+				if ( false !== $page ) {
+					$hooks[] = $page;
+				}
 			}
-		}
 
-		// Fudge the highlighted subnav item when on a bbPress admin page
-		foreach ( $hooks as $hook ) {
-			add_action( "admin_head-{$hook}", 'bbp_tools_modify_menu_highlight' );
+			// Fudge the highlighted subnav item when on a bbPress admin page
+			if ( ! empty( $hooks ) ) {
+				foreach ( $hooks as $hook ) {
+					add_action( "admin_head-{$hook}", 'bbp_tools_modify_menu_highlight' );
+				}
+			}
 		}
 
 		// Forums Tools Root
 		add_management_page(
 			esc_html__( 'Forums', 'bbpress' ),
-			esc_html__( 'Forums', 'bbpress' ),
+			bbp_maybe_append_pending_upgrade_count( esc_html__( 'Forums', 'bbpress' ) ),
 			'bbp_tools_page',
 			'bbp-repair',
 			'bbp_admin_repair_page'
@@ -898,7 +950,8 @@ class BBP_Admin {
 	private function screen_header() {
 		list( $display_version ) = explode( '-', bbp_get_version() ); ?>
 
-		<h1><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
+		<h1 class="wp-heading-inline"><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
+		<hr class="wp-header-end">
 		<div class="about-text"><?php printf( esc_html__( 'bbPress is fun to use, contains no artificial colors or preservatives, and is absolutely wonderful in every environment. Your community is going to love using it.', 'bbpress' ), $display_version ); ?></div>
 
 		<span class="bbp-hive" id="bbp-hive"></span>
@@ -1136,7 +1189,8 @@ class BBP_Admin {
 		$action = isset( $_GET['action'] ) ? $_GET['action'] : ''; ?>
 
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Update Forum', 'bbpress' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Update Forum', 'bbpress' ); ?></h1>
+			<hr class="wp-header-end">
 
 		<?php
 
@@ -1179,7 +1233,8 @@ class BBP_Admin {
 		$action = isset( $_GET['action'] ) ? $_GET['action'] : ''; ?>
 
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Update Forums', 'bbpress' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Update Forums', 'bbpress' ); ?></h1>
+			<hr class="wp-header-end">
 
 		<?php
 

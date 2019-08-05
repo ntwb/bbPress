@@ -25,8 +25,9 @@ function bbp_admin_repair_page() {
 	$tools = bbp_admin_repair_list(); ?>
 
 	<div class="wrap">
-		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Repair Forums', 'bbpress' ) ); ?></h2>
+		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
+		<hr class="wp-header-end">
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( 'bbp-repair' ); ?></h2>
 
 		<p><?php esc_html_e( 'bbPress keeps track of relationships between forums, topics, replies, topic-tags, favorites, subscriptions, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 repair at a time.', 'bbpress' ); ?></p>
@@ -53,6 +54,7 @@ function bbp_admin_repair_page() {
 
 					<?php bbp_admin_repair_list_components_filter(); ?>
 
+					<input type="submit" name="filter_action" id="components-submit" class="button" value="<?php esc_html_e( 'Filter', 'bbpress' ); ?>">
 				</div>
 				<br class="clear">
 			</div>
@@ -546,7 +548,7 @@ function bbp_admin_repair_user_favorites() {
 		}
 
 		$favorites_joined = implode( ',', $favorites );
-		$values[]         = "('{$user->user_id}', '{$key}, '{$favorites_joined}')";
+		$values[]         = "('{$user->user_id}', '{$key}', '{$favorites_joined}')";
 
 		// Cleanup
 		unset( $favorites, $favorites_joined );
@@ -1217,8 +1219,6 @@ function bbp_admin_repair_reply_menu_order() {
 	// Cleanup
 	unset( $replies, $reply );
 
-	// Flush the cache; things are about to get ugly.
-	wp_cache_flush();
-
+	// Complete results
 	return array( 0, sprintf( $statement, esc_html__( 'Complete!', 'bbpress' ) ) );
 }

@@ -17,7 +17,7 @@
  * Description: bbPress is forum software with a twist from the creators of WordPress.
  * Author:      The bbPress Contributors
  * Author URI:  https://bbpress.org
- * Version:     2.6-rc-6
+ * Version:     2.6-rc-7
  * Text Domain: bbpress
  * Domain Path: /languages/
  * License:     GPLv2 or later (license.txt)
@@ -203,7 +203,7 @@ final class bbPress {
 
 		/** Versions **********************************************************/
 
-		$this->version    = '2.6-rc-6838';
+		$this->version    = '2.6-rc-6878';
 		$this->db_version = '262';
 
 		/** Paths *************************************************************/
@@ -297,10 +297,6 @@ final class bbPress {
 		$this->domain         = 'bbpress';      // Unique identifier for retrieving translated strings
 		$this->extend         = new stdClass(); // Plugins add data here
 		$this->errors         = new WP_Error(); // Feedback
-
-		/** Engagements *******************************************************/
-
-		$this->engagements    = new BBP_User_Engagements_Meta(); // Meta strategy interface
 
 		/** Deprecated ********************************************************/
 
@@ -406,6 +402,7 @@ final class bbPress {
 		$actions = array(
 			'setup_theme',              // Setup the default theme compat
 			'setup_current_user',       // Setup currently logged in user
+			'setup_engagements',        // Setup user engagements strategy
 			'roles_init',               // User roles init
 			'register_meta',            // Register meta (forum|topic|reply|user)
 			'register_post_types',      // Register post types (forum|topic|reply)
@@ -788,6 +785,21 @@ final class bbPress {
 	 */
 	public function setup_current_user() {
 		$this->current_user = wp_get_current_user();
+	}
+
+	/**
+	 * Setup the user engagements strategy
+	 *
+	 * @since 2.6.0 bbPress (r6875)
+	 */
+	public function setup_engagements() {
+
+		// Setup the class name
+		$strategy   = ucwords( bbp_engagements_strategy() );
+		$class_name = "BBP_User_Engagements_{$strategy}";
+
+		// Setup the engagements interface
+		$this->engagements = new $class_name;
 	}
 
 	/**

@@ -98,7 +98,7 @@ function bbp_insert_reply_update_counts( $reply_id = 0, $topic_id = 0, $forum_id
 	// If the reply is public, update the forum/topic reply counts.
 	if ( bbp_is_reply_published( $reply_id ) ) {
 		bbp_increase_topic_reply_count( $topic_id );
-		bbp_increase_forum_reply_count( $reply_id );
+		bbp_increase_forum_reply_count( $forum_id );
 
 	// If the reply isn't public only update the topic reply hidden count.
 	} else {
@@ -305,10 +305,10 @@ function bbp_new_reply_handler( $action = '' ) {
 		bbp_add_error( 'bbp_reply_duplicate', __( '<strong>ERROR</strong>: Duplicate reply detected; it looks as though you&#8217;ve already said that.', 'bbpress' ) );
 	}
 
-	/** Reply Blacklist *******************************************************/
+	/** Reply Bad Words *******************************************************/
 
-	if ( ! bbp_check_for_blacklist( $anonymous_data, $reply_author, $reply_title, $reply_content ) ) {
-		bbp_add_error( 'bbp_reply_blacklist', __( '<strong>ERROR</strong>: Your reply cannot be created at this time.', 'bbpress' ) );
+	if ( ! bbp_check_for_moderation( $anonymous_data, $reply_author, $reply_title, $reply_content, true ) ) {
+		bbp_add_error( 'bbp_reply_moderation', __( '<strong>ERROR</strong>: Your reply cannot be created at this time.', 'bbpress' ) );
 	}
 
 	/** Reply Status **********************************************************/
@@ -610,10 +610,10 @@ function bbp_edit_reply_handler( $action = '' ) {
 		bbp_add_error( 'bbp_edit_reply_content', __( '<strong>ERROR</strong>: Your reply cannot be empty.', 'bbpress' ) );
 	}
 
-	/** Reply Blacklist *******************************************************/
+	/** Reply Bad Words *******************************************************/
 
-	if ( ! bbp_check_for_blacklist( $anonymous_data, $reply_author, $reply_title, $reply_content ) ) {
-		bbp_add_error( 'bbp_reply_blacklist', __( '<strong>ERROR</strong>: Your reply cannot be edited at this time.', 'bbpress' ) );
+	if ( ! bbp_check_for_moderation( $anonymous_data, $reply_author, $reply_title, $reply_content, true ) ) {
+		bbp_add_error( 'bbp_reply_moderation', __( '<strong>ERROR</strong>: Your reply cannot be edited at this time.', 'bbpress' ) );
 	}
 
 	/** Reply Status **********************************************************/
@@ -810,7 +810,7 @@ function bbp_update_reply( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymo
 	if ( ! empty( $anonymous_data ) ) {
 
 		// Update anonymous meta data (not cookies)
-		bbp_update_anonymous_post_author( $reply_id, $anonymous_data, 'reply' );
+		bbp_update_anonymous_post_author( $reply_id, $anonymous_data, bbp_get_reply_post_type() );
 
 		// Set transient for throttle check (only on new, not edit)
 		if ( empty( $is_edit ) ) {
@@ -855,6 +855,9 @@ function bbp_update_reply( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymo
 		// Walk up ancestors and do the dirty work
 		bbp_update_reply_walker( $reply_id, $last_active_time, $forum_id, $topic_id, false );
 	}
+
+	// Bump the custom query cache
+	wp_cache_set( 'last_changed', microtime(), 'bbpress_posts' );
 }
 
 /**
@@ -1001,10 +1004,10 @@ function bbp_update_reply_forum_id( $reply_id = 0, $forum_id = 0 ) {
 	}
 
 	// Update the forum ID
-	$forum_id = bbp_update_forum_id( $reply_id, $forum_id );
+	$retval = bbp_update_forum_id( $reply_id, $forum_id );
 
 	// Filter & return
-	return (int) apply_filters( 'bbp_update_reply_forum_id', $forum_id, $reply_id );
+	return (int) apply_filters( 'bbp_update_reply_forum_id', $retval, $reply_id, $forum_id );
 }
 
 /**
@@ -1044,10 +1047,10 @@ function bbp_update_reply_topic_id( $reply_id = 0, $topic_id = 0 ) {
 	}
 
 	// Update the topic ID
-	$topic_id = bbp_update_topic_id( $reply_id, $topic_id );
+	$retval = bbp_update_topic_id( $reply_id, $topic_id );
 
 	// Filter & return
-	return (int) apply_filters( 'bbp_update_reply_topic_id', $topic_id, $reply_id );
+	return (int) apply_filters( 'bbp_update_reply_topic_id', $retval, $reply_id, $topic_id );
 }
 
 /*

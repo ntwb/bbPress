@@ -613,3 +613,28 @@ button.bbp-db-pass-toggle.password:after {
 td.bbp-tool-title strong {
 	display: block;
 }
+
+.manage-column.column-components {
+	width: 20%
+}
+
+.manage-column.column-version,
+.manage-column.column-overhead {
+	width: 10%;
+}
+
+.nav-tab-wrapper a span.awaiting-mod {
+	display: inline-block;
+	vertical-align: top;
+	margin: 3px 0 0 1px;
+	padding: 0 5px;
+	min-width: 7px;
+	height: 17px;
+	border-radius: 11px;
+	background-color: #ca4a1f;
+	color: #fff;
+	font-size: 9px;
+	line-height: 17px;
+	text-align: center;
+	z-index: 26;
+}

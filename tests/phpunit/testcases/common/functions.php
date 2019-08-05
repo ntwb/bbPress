@@ -633,14 +633,81 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 	}
 
 	/**
+	 * @group  locking
 	 * @covers ::bbp_past_edit_lock
-	 * @todo   Implement test_bbp_past_edit_lock().
 	 */
-	public function test_bbp_past_edit_lock() {
-		// Remove the following lines when you implement this test.
-		$this->markTestIncomplete(
-			'This test has not been implemented yet.'
-		);
+	public function test_bbp_past_edit_lock_before_5_minutes() {
+		update_option( '_bbp_edit_lock', 5 );
+		update_option( '_bbp_allow_content_edit', true );
+
+		// Before
+		$result = bbp_past_edit_lock( '4 minutes 59 seconds ago UTC' );
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * @group  locking
+	 * @covers ::bbp_past_edit_lock
+	 */
+	public function test_bbp_past_edit_lock_on_5_minutes() {
+		update_option( '_bbp_edit_lock', 5 );
+		update_option( '_bbp_allow_content_edit', true );
+
+		// On
+		$result = bbp_past_edit_lock( '5 minutes ago UTC' );
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * @group  locking
+	 * @covers ::bbp_past_edit_lock
+	 */
+	public function test_bbp_past_edit_lock_after_5_minutes() {
+		update_option( '_bbp_edit_lock', 5 );
+		update_option( '_bbp_allow_content_edit', true );
+
+		// After
+		$result = bbp_past_edit_lock( '5 minutes 1 second ago UTC' );
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * @group  locking
+	 * @covers ::bbp_past_edit_lock
+	 */
+	public function test_bbp_past_edit_lock_before_0_minutes() {
+		update_option( '_bbp_edit_lock', 0 );
+		update_option( '_bbp_allow_content_edit', true );
+
+		// Before
+		$result = bbp_past_edit_lock( '4 minutes 59 seconds ago UTC' );
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * @group  locking
+	 * @covers ::bbp_past_edit_lock
+	 */
+	public function test_bbp_past_edit_lock_on_0_minutes() {
+		update_option( '_bbp_edit_lock', 0 );
+		update_option( '_bbp_allow_content_edit', true );
+
+		// On
+		$result = bbp_past_edit_lock( '5 minutes ago UTC' );
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * @group  locking
+	 * @covers ::bbp_past_edit_lock
+	 */
+	public function test_bbp_past_edit_lock_after_0_minutes() {
+		update_option( '_bbp_edit_lock', 0 );
+		update_option( '_bbp_allow_content_edit', true );
+
+		// After
+		$result = bbp_past_edit_lock( '5 minutes 1 second ago UTC' );
+		$this->assertFalse( $result );
 	}
 
 	/**
@@ -790,7 +857,6 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 	 */
 	public function test_should_return_true_for_moderators_to_bypass_moderation_check() {
 		// Create a moderator user.
-		$old_current_user = 0;
 		$this->old_current_user = get_current_user_id();
 		$this->set_current_user( $this->factory->user->create( array( 'role' => 'subscriber' ) ) );
 		$this->moderator_id = get_current_user_id();
@@ -886,9 +952,9 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_bbp_check_for_blacklist() {
+	public function test_bbp_check_for_moderation_strict() {
 		$anonymous_data = false;
 		$author_id      = 0;
 		$title          = 'Sting';
@@ -896,21 +962,21 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"hibernating\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 
 		update_option( 'blacklist_keys',"foo\nbar" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertTrue( $result );
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_false_for_user_url_blacklist_check() {
+	public function test_should_return_false_for_user_url_strict_moderation_check() {
 		$u = $this->factory->user->create( array(
 			'user_url'   => 'http://example.net/banned',
 		) );
@@ -928,15 +994,15 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"http://example.net/banned\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_false_for_user_email_blacklist_check() {
+	public function test_should_return_false_for_user_email_strict_moderation_check() {
 		$u = $this->factory->user->create( array(
 			'user_email' => 'banned@example.net',
 		) );
@@ -954,15 +1020,15 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"banned@example.net\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_false_for_user_ip_blacklist_check() {
+	public function test_should_return_false_for_user_ip_strict_moderation_check() {
 		$u = $this->factory->user->create();
 
 		$t = $this->factory->topic->create( array(
@@ -978,17 +1044,16 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"127.0.0.1\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_false_for_moderators_to_bypass_blacklist_check() {
+	public function test_should_return_false_for_moderators_to_bypass_strict_moderation_check() {
 		// Create a moderator user.
-		$old_current_user = 0;
 		$this->old_current_user = get_current_user_id();
 		$this->set_current_user( $this->factory->user->create( array( 'role' => 'subscriber' ) ) );
 		$this->moderator_id = get_current_user_id();
@@ -1007,7 +1072,7 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"hibernating\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 
@@ -1016,11 +1081,10 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_true_for_keymasterss_to_bypass_blacklist_check() {
+	public function test_should_return_true_for_keymasterss_to_bypass_strict_moderation_check() {
 		// Create a keymaster user.
-		$old_current_user = 0;
 		$this->old_current_user = get_current_user_id();
 		$this->set_current_user( $this->factory->user->create( array( 'role' => 'subscriber' ) ) );
 		$this->keymaster_id = get_current_user_id();
@@ -1039,7 +1103,7 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"hibernating\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertTrue( $result );
 
@@ -1048,9 +1112,9 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_false_when_link_matches_blacklist_keys() {
+	public function test_should_return_false_when_link_matches_strict_moderation_keys() {
 		$anonymous_data = false;
 		$author_id      = 0;
 		$title          = 'Sting';
@@ -1058,15 +1122,15 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"hibernating\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 	}
 
 	/**
-	 * @covers ::bbp_check_for_blacklist
+	 * @covers ::bbp_check_for_moderation
 	 */
-	public function test_should_return_false_when_html_wrapped_content_matches_blacklist_keys() {
+	public function test_should_return_false_when_html_wrapped_content_matches_strict_moderation_keys() {
 		$u = $this->factory->user->create();
 
 		$t = $this->factory->topic->create( array(
@@ -1082,7 +1146,7 @@ class BBP_Tests_Common_Functions extends BBP_UnitTestCase {
 
 		update_option( 'blacklist_keys',"hibernating\nfoo" );
 
-		$result = bbp_check_for_blacklist( $anonymous_data, $author_id, $title, $content );
+		$result = bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
 
 		$this->assertFalse( $result );
 	}
