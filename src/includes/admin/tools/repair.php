@@ -22,7 +22,22 @@ defined( 'ABSPATH' ) || exit;
 function bbp_admin_repair_page() {
 
 	// Get the registered repair tools
-	$tools = bbp_admin_repair_list(); ?>
+	$tools = bbp_admin_repair_list();
+
+	// Orderby
+	$orderby = ! empty( $_GET['orderby'] )
+		? sanitize_key( $_GET['orderby'] )
+		: 'priority';
+
+	// Order
+	$order = ! empty( $_GET['order'] ) && in_array( strtolower( $_GET['order'] ), array( 'asc', 'desc' ), true )
+		? strtolower( $_GET['order'] )
+		: 'asc';
+
+	// New order
+	$new_order = ( 'desc' === $order )
+		? 'asc'
+		: 'desc'; ?>
 
 	<div class="wrap">
 		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
@@ -67,9 +82,23 @@ function bbp_admin_repair_page() {
 							</label>
 							<input id="cb-select-all-1" type="checkbox">
 						</td>
-						<th scope="col" id="description" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
-						<th scope="col" id="components" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
-						<th scope="col" id="overhead" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
+						<th scope="col" id="description" class="manage-column column-primary column-description sortable <?php echo ( 'priority' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
+							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
+									'orderby' => 'priority',
+									'order'   => $new_order
+								) ) ); ?>"><span><?php esc_html_e( 'Description', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
+							</a>
+						</th>
+						<th scope="col" id="components" class="manage-column column-components">
+							<span><?php esc_html_e( 'Components', 'bbpress' ); ?></span>
+						</th>
+						<th scope="col" id="overhead" class="manage-column column-overhead sortable <?php echo ( 'overhead' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
+							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
+									'orderby' => 'overhead',
+									'order'   => $new_order
+								) ) ); ?>"><span><?php esc_html_e( 'Overhead', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
+							</a>
+						</th>
 					</tr>
 				</thead>
 
@@ -262,7 +291,7 @@ function bbp_admin_repair_topic_voice_count() {
 }
 
 /**
- * Recount topic hidden replies (spammed/trashed)
+ * Recount non-public replies per topic (pending/spammed/trashed)
  *
  * @since 2.0.0 bbPress (r2747)
  *
@@ -404,6 +433,47 @@ function bbp_admin_repair_forum_reply_count() {
 	if ( ! empty( $forums ) ) {
 		foreach ( $forums as $forum ) {
 			bbp_update_forum_reply_count( $forum->ID );
+		}
+	} else {
+		return array( 2, sprintf( $statement, $result ) );
+	}
+
+	return array( 0, sprintf( $statement, esc_html__( 'Complete!', 'bbpress' ) ) );
+}
+
+/**
+ * Recount non-public forum replies
+ *
+ * @since 2.6.0 bbPress (r6922)
+ *
+ * @return array An array of the status code and the message
+ */
+function bbp_admin_repair_forum_reply_count_hidden() {
+
+	// Define variables
+	$bbp_db    = bbp_db();
+	$statement = esc_html__( 'Counting the number of pending, spammed, and trashed replies in each forum&hellip; %s', 'bbpress' );
+	$result    = esc_html__( 'Failed!', 'bbpress' );
+
+	// Post type
+	$fpt = bbp_get_forum_post_type();
+
+	// Delete the meta keys _bbp_reply_count and _bbp_total_reply_count for each forum
+	$sql_delete = "DELETE `postmeta` FROM `{$bbp_db->postmeta}` AS `postmeta`
+						LEFT JOIN `{$bbp_db->posts}` AS `posts` ON `posts`.`ID` = `postmeta`.`post_id`
+						WHERE `posts`.`post_type` = '{$fpt}'
+						AND `postmeta`.`meta_key` = '_bbp_reply_count_hidden'
+						OR `postmeta`.`meta_key` = '_bbp_total_reply_count_hidden'";
+
+	if ( is_wp_error( $bbp_db->query( $sql_delete ) ) ) {
+ 		return array( 1, sprintf( $statement, $result ) );
+	}
+
+	// Recalculate the metas key _bbp_reply_count and _bbp_total_reply_count for each forum
+	$forums = get_posts( array( 'post_type' => bbp_get_forum_post_type(), 'numberposts' => -1 ) );
+	if ( ! empty( $forums ) ) {
+		foreach ( $forums as $forum ) {
+			bbp_update_forum_reply_count_hidden( $forum->ID );
 		}
 	} else {
 		return array( 2, sprintf( $statement, $result ) );
