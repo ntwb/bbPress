@@ -47,7 +47,7 @@ function bbp_admin_repair_page() {
 		<p><?php esc_html_e( 'bbPress keeps track of relationships between forums, topics, replies, topic-tags, favorites, subscriptions, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 repair at a time.', 'bbpress' ); ?></p>
 
-		<?php bbp_admin_repair_tool_overhead_filters(); ?>
+		<?php bbp_admin_repair_tool_status_filters(); ?>
 
 		<form class="settings" method="get" action="">
 
@@ -118,7 +118,7 @@ function bbp_admin_repair_page() {
 
 										// Optional description
 										if ( ! empty( $item['description'] ) ) :
-											echo esc_html( $item['description'] );
+											echo '<p class="description">' . esc_html( $item['description'] ) . '</p>';
 										endif;
 
 									?><div class="row-actions hide-if-no-js">
@@ -445,10 +445,11 @@ function bbp_admin_repair_forum_reply_count() {
  * Recount non-public forum replies
  *
  * @since 2.6.0 bbPress (r6922)
+ * @since 2.6.0 bbPress (r6932) Rename to match the topic reply recount function
  *
  * @return array An array of the status code and the message
  */
-function bbp_admin_repair_forum_reply_count_hidden() {
+function bbp_admin_repair_forum_hidden_reply_count() {
 
 	// Define variables
 	$bbp_db    = bbp_db();

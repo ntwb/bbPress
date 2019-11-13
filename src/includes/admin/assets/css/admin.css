@@ -452,7 +452,8 @@ body.post-type-reply #the-list .row-actions .approved a {
 }
 
 #bbp-converter-monitor .inside {
-	margin-bottom: 0;
+	margin: 0;
+	padding: 5px;
 	border-bottom: 1px solid #e5e5e5;
 }
 
@@ -614,6 +615,10 @@ td.bbp-tool-title strong {
 	display: block;
 }
 
+td.bbp-tool-title p {
+	margin: 0;
+}
+
 .manage-column.column-components {
 	width: 20%;
 }
@@ -640,4 +645,9 @@ td.bbp-tool-title strong {
 	line-height: 17px;
 	text-align: center;
 	z-index: 26;
+}
+
+/* Retro TV corners for contributor avatars */
+.dashboard_page_bbp-credits .wp-person img {
+	border-radius: 20px;
 }

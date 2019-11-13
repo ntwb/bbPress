@@ -1,9 +1,9 @@
 === bbPress ===
 Contributors: matt, johnjamesjacoby, jmdodd, netweb, sergeybiryukov
 Tags: forums, discussion, support, theme, akismet, multisite
-Requires at least: 4.7
-Tested up to: 4.9
-Stable tag: 2.6.0
+Requires at least: 5.3
+Tested up to: 5.3
+Stable tag: 2.7.0-alpha-1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,8 +54,25 @@ bbPress is intentionally simple yet infinitely powerful forum software, built by
 
 == Changelog ==
 
+= 2.6.1 =
+* Released on November 14, 2019
+
+* Fix bug causing subforums not be listed
+
 = 2.6.0 =
-* Released on September 4, 2018
+* Released on November 12, 2019
+
+* Per-Forum Moderation
+* Engagements API
+* Support for PHP 7.1 and higher
+* Improved Importer (and more platforms!)
+* Improved Voices, Favorites, Subscriptions
+* Improved Topic & Reply moderation UI
+* Improved Item Counts
+* Improved Upgrades
+* Improved Tools
+* Improved Admin-area Experience
+* 420 total improvements
 
 = 2.5.14 =
 * Released on September 9, 2016
