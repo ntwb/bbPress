@@ -118,16 +118,24 @@ class BBP_Default extends BBP_Theme_Compat {
 	 */
 	public function enqueue_styles() {
 
-		// RTL and/or minified
-		$suffix  = is_rtl() ? '-rtl' : '';
-
-		// Get and filter the bbp-default style
-		$styles = apply_filters( 'bbp_default_styles', array(
+		// Setup the default styling
+		$defaults = array(
 			'bbp-default' => array(
-				'file'         => 'css/bbpress' . $suffix . '.css',
+				'file'         => 'css/bbpress.css',
 				'dependencies' => array()
 			)
-		) );
+		);
+
+		// Optionally support an RTL variant
+		if ( is_rtl() ) {
+			$defaults['bbp-default-rtl'] = array(
+				'file'         => 'css/bbpress-rtl.css',
+				'dependencies' => array()
+			);
+		}
+
+		// Get and filter the bbp-default style
+		$styles = apply_filters( 'bbp_default_styles', $defaults );
 
 		// Enqueue the styles
 		foreach ( $styles as $handle => $attributes ) {
@@ -310,7 +318,7 @@ class BBP_Default extends BBP_Theme_Compat {
 
 		// Bail if topic cannot be found
 		if ( empty( $object ) ) {
-			bbp_ajax_response( false, esc_html__( 'Subcription failed.', 'bbpress' ), 303 );
+			bbp_ajax_response( false, esc_html__( 'Subscription failed.', 'bbpress' ), 303 );
 		}
 
 		// Bail if user did not take this action
