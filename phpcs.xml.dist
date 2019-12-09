@@ -208,10 +208,6 @@
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
 
-	<rule ref="Generic.CodeAnalysis.ForLoopWithTestFunctionCall.NotAllowed">
-		<exclude-pattern>/src/*</exclude-pattern>
-	</rule>
-
 	<rule ref="Generic.CodeAnalysis.UselessOverridingMethod.Found">
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
