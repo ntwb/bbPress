@@ -267,14 +267,6 @@
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
 
-	<rule ref="PSR2.Classes.PropertyDeclaration.ScopeMissing">
-		<exclude-pattern>/src/*</exclude-pattern>
-	</rule>
-
-	<rule ref="PSR2.Classes.PropertyDeclaration.VarUsed">
-		<exclude-pattern>/src/*</exclude-pattern>
-	</rule>
-
 	<rule ref="PSR2.ControlStructures.ElseIfDeclaration.NotAllowed">
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>

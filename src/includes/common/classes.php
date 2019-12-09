@@ -30,27 +30,27 @@ class BBP_Component {
 	 * @var string Unique name (for internal identification)
 	 * @internal
 	 */
-	var $name;
+	public $name;
 
 	/**
 	 * @var Unique ID (normally for custom post type)
 	 */
-	var $id;
+	public $id;
 
 	/**
 	 * @var string Unique slug (used in query string and permalinks)
 	 */
-	var $slug;
+	public $slug;
 
 	/**
 	 * @var WP_Query The loop for this component
 	 */
-	var $query;
+	public $query;
 
 	/**
 	 * @var string The current ID of the queried object
 	 */
-	var $current_id;
+	public $current_id;
 
 
 	/** Methods ***************************************************************/
