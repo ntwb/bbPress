@@ -423,10 +423,6 @@
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
 
-	<rule ref="WordPress.Classes.ClassInstantiation.MissingParenthesis">
-		<exclude-pattern>/src/*</exclude-pattern>
-	</rule>
-
 	<rule ref="WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition">
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
