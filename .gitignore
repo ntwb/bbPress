@@ -11,7 +11,8 @@
 /composer.lock
 /npm-debug.log
 /phpcs.xml
-/phpunit.xml
+.phpcs.xml
+phpcs.xml
 
 # Output directory.
 /build/
