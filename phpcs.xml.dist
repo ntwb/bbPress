@@ -164,10 +164,6 @@
 
 	<!-- Rules that require further review, partially reviewed -->
 
-	<rule ref="Generic.ControlStructures.InlineControlStructure.NotAllowed">
-		<exclude-pattern>/src/*</exclude-pattern>
-	</rule>
-
 	<rule ref="Generic.Formatting.DisallowMultipleStatements.SameLine">
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
