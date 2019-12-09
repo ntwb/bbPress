@@ -105,6 +105,12 @@
 		</properties>
 	</rule>
 
+	<rule ref="WordPress.PHP.NoSilencedErrors">
+		<properties>
+			<property name="use_default_whitelist" value="true"/>
+		</properties>
+	</rule>
+
 
 	<!--
 	#############################################################################
@@ -492,10 +498,6 @@
 	</rule>
 
 	<rule ref="WordPress.PHP.IniSet.Risky">
-		<exclude-pattern>/src/*</exclude-pattern>
-	</rule>
-
-	<rule ref="WordPress.PHP.NoSilencedErrors.Discouraged">
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
 
