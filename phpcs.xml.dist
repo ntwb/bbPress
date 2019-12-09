@@ -567,6 +567,7 @@
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
 
+<!-- FIXED, but may not get committed. -->
 	<rule ref="WordPress.WhiteSpace.PrecisionAlignment.Found">
 		<exclude-pattern>/src/*</exclude-pattern>
 	</rule>
