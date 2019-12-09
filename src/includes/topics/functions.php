@@ -713,7 +713,7 @@ function bbp_edit_topic_handler( $action = '' ) {
 
 	} else {
 		$append_error = ( is_wp_error( $topic_id ) && $topic_id->get_error_message() ) ? $topic_id->get_error_message() . ' ' : '';
-		bbp_add_error( 'bbp_topic_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your topic:' . $append_error . 'Please try again.', 'bbpress' ) );
+		bbp_add_error( 'bbp_topic_error', sprintf( __( '<strong>ERROR</strong>: The following problem(s) have been found with your topic: %s Please try again.', 'bbpress' ), trim( $append_error ) ) );
 	}
 }
 
