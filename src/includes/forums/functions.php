@@ -590,7 +590,7 @@ function bbp_edit_forum_handler( $action = '' ) {
 
 	} else {
 		$append_error = ( is_wp_error( $forum_id ) && $forum_id->get_error_message() ) ? $forum_id->get_error_message() . ' ' : '';
-		bbp_add_error( 'bbp_forum_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your forum:' . $append_error . 'Please try again.', 'bbpress' ) );
+		bbp_add_error( 'bbp_forum_error', sprintf( __( '<strong>ERROR</strong>: The following problem(s) have been found with your forum: %s Please try again.', 'bbpress' ), trim( $append_error ) ) );
 	}
 }
 

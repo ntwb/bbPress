@@ -87,11 +87,12 @@ function bbp_new_converter( $platform = '' ) {
 	if ( ! empty( $converter_file ) ) {
 
 		// Try to include the converter
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		@include_once $converter_file;
 
 		// Try to instantiate the converter object
 		if ( class_exists( $platform ) ) {
-			$converter = new $platform;
+			$converter = new $platform();
 		}
 	}
 

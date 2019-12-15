@@ -1867,7 +1867,7 @@ function bbp_admin_settings_help() {
 		'id'      => 'overview',
 		'title'   => esc_html__( 'Overview', 'bbpress' ),
 		'content' => '<p>' . esc_html__( 'This screen provides access to all of the Forums settings.',                          'bbpress' ) . '</p>' .
-					 '<p>' . esc_html__( 'Please see the additional help tabs for more information on each individual section.', 'bbpress' ) . '</p>'
+					'<p>' . esc_html__( 'Please see the additional help tabs for more information on each individual section.', 'bbpress' ) . '</p>'
 	) );
 
 	// Main Settings
@@ -1875,7 +1875,7 @@ function bbp_admin_settings_help() {
 		'id'      => 'main_settings',
 		'title'   => esc_html__( 'Main Settings', 'bbpress' ),
 		'content' => '<p>' . esc_html__( 'The "Main Settings" section includes a number of options:', 'bbpress' ) . '</p>' .
-					 '<p>' .
+					'<p>' .
 						'<ul>' .
 							'<li>' . esc_html__( 'You can choose to lock a post after a certain number of minutes. "Locking post editing" will prevent the author from editing some amount of time after saving a post.',              'bbpress' ) . '</li>' .
 							'<li>' . esc_html__( '"Throttle time" is the amount of time required between posts from a single author. The higher the throttle time, the longer a user will need to wait between posting to the forum.', 'bbpress' ) . '</li>' .
@@ -1895,7 +1895,7 @@ function bbp_admin_settings_help() {
 		'id'      => 'theme_packages',
 		'title'   => esc_html__( 'Theme Packages', 'bbpress' ),
 		'content' => '<p>' . esc_html__( 'The "Theme Packages" section allows you to choose which theme package should be used.', 'bbpress' ) . '</p>' .
-					 '<p>' .
+					'<p>' .
 						'<ul>' .
 							'<li>' . esc_html__( 'The "bbPress Default" package is installed by default.',      'bbpress' ) . '</li>' .
 							'<li>' . esc_html__( 'Some themes may choose to ignore this setting entirely.',     'bbpress' ) . '</li>' .
@@ -1913,7 +1913,7 @@ function bbp_admin_settings_help() {
 							'<li>' . esc_html__( 'This is comparable to the WordPress "Reading Settings" page, where you can set the number of posts that should show on blog pages and in feeds.', 'bbpress' ) . '</li>' .
 							'<li>' . esc_html__( 'These are broken up into two separate groups: one for what appears in your theme, another for RSS feeds.',                                        'bbpress' ) . '</li>' .
 						'</ul>' .
-					 '<p>'
+					'<p>'
 	) );
 
 	// Slugs
@@ -1926,7 +1926,7 @@ function bbp_admin_settings_help() {
 							'<li>' . esc_html__( '"Single Slugs" are used as a prefix when viewing an individual forum, topic, reply, user, or view.',                                                                                          'bbpress' ) . '</li>' .
 							'<li>' . esc_html__( 'In the event of a slug collision with WordPress or BuddyPress, a warning will appear next to the problem slug(s).', 'bbpress' ) . '</li>' .
 						'</ul>' .
-					 '<p>'
+					'<p>'
 	) );
 
 	// Help Sidebar

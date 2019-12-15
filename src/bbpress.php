@@ -113,7 +113,7 @@ final class bbPress {
 
 		// Only run these methods if they haven't been ran previously
 		if ( null === $instance ) {
-			$instance = new bbPress;
+			$instance = new bbPress();
 			$instance->setup_environment();
 			$instance->includes();
 			$instance->setup_variables();
@@ -615,7 +615,7 @@ final class bbPress {
 				'show_in_admin_all_list'    => false,
 				'source'                    => 'bbpress'
 			) )
-		 );
+		);
 
 		// Orphan
 		register_post_status(
@@ -767,7 +767,7 @@ final class bbPress {
 			// Never allow counts to go negative
 			'sanitize_callback' => 'bbp_number_not_negative',
 
-			 // All users may update count meta data
+			// All users may update count meta data
 			'auth_callback'     => '__return_true'
 		);
 
@@ -822,7 +822,7 @@ final class bbPress {
 		$class_name = "BBP_User_Engagements_{$strategy}";
 
 		// Setup the engagements interface
-		$this->engagements = new $class_name;
+		$this->engagements = new $class_name();
 	}
 
 	/**

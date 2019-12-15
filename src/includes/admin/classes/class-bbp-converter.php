@@ -258,17 +258,17 @@ class BBP_Converter {
 		) );
 
 		// Get disabled PHP functions (to avoid using them)
-		$disabled = explode( ',', @ini_get( 'disable_functions' ) );
+		$disabled = explode( ',', ini_get( 'disable_functions' ) );
 
 		// Maybe avoid terminating when the client goes away (if function is not disabled)
 		if ( ! in_array( 'ignore_user_abort', $disabled, true ) ) {
-			@ignore_user_abort( true );
+			ignore_user_abort( true );
 		}
 
 		// Maybe set memory & time limits, and flush style (if function is not disabled)
 		if ( ! in_array( 'ini_set', $disabled, true ) ) {
 			foreach ( $r as $key => $value ) {
-				@ini_set( $key, $value );
+				ini_set( $key, $value );
 			}
 		}
 	}

@@ -766,7 +766,7 @@ function bbp_edit_reply_handler( $action = '' ) {
 
 	} else {
 		$append_error = ( is_wp_error( $reply_id ) && $reply_id->get_error_message() ) ? $reply_id->get_error_message() . ' ' : '';
-		bbp_add_error( 'bbp_reply_error', __( '<strong>ERROR</strong>: The following problem(s) have been found with your reply:' . $append_error . 'Please try again.', 'bbpress' ) );
+		bbp_add_error( 'bbp_reply_error', sprintf( __( '<strong>ERROR</strong>: The following problem(s) have been found with your reply: %s Please try again.', 'bbpress' ), trim( $append_error ) ) );
 	}
 }
 
@@ -2387,7 +2387,7 @@ function bbp_list_replies( $args = array() ) {
 
 	// Parse arguments
 	$r = bbp_parse_args( $args, array(
-		'walker'       => new BBP_Walker_Reply,
+		'walker'       => new BBP_Walker_Reply(),
 		'max_depth'    => bbp_thread_replies_depth(),
 		'style'        => 'ul',
 		'callback'     => null,
