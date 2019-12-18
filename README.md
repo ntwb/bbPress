@@ -27,7 +27,7 @@ The `/tests` directory is where our PHPUnit tests are stored and makes testing a
 
 ### The root directory
 
-The `/` direcory includes configuration files for our *build* tools, Travis CI and PHPUnit tests.
+The `/` directory includes configuration files for our *build* tools, Travis CI and PHPUnit tests.
 
 ## Installing the tools
 
@@ -38,8 +38,8 @@ Node.js is a platform built on Chrome's JavaScript runtime for easily building f
 Any of the following options will get Node.js installed for you:
 
 * Visit [Node.js](http://nodejs.org/) and click on the *install* link to download Node.js
-* If your a Mac user and have [Homebrew](http://brew.sh) installed `brew install node`
-* If your a Windows user and have [Scoop](http://scoop.sh) installed `scoop install nodejs`
+* If you're a Mac user and have [Homebrew](http://brew.sh) installed `brew install node`
+* If you're a Windows user and have [Scoop](http://scoop.sh) installed `scoop install nodejs`
 
 ### Grunt
 
@@ -67,9 +67,9 @@ Once you've made that choice checkout of clone our repo If you’re fixing a bug
 
 Note: Our GitHub mirror repo is *not* setup at this stage, soon, just not yet. See [Meta #637](https://meta.trac.wordpress.org/ticket/637)
 
-## Installing Node.js dependancies with Node Package Manager (NPM)
+## Installing Node.js dependencies with Node Package Manager (NPM)
 
-NPM is included with Node.js and to install the dependancies we need
+NPM is included with Node.js and to install the dependencies we need
 
 * Open up your terminal/command shell, you no longer need use sudu/admin
 * Change to the directory where you checked out the source eg. `cd ~/dev/bbpress`
@@ -127,7 +127,7 @@ The build release task `grunt build-release` tasks prepares everything we need t
 
 ### Watch task
 
-* `grunt watch` or `grunt watch:all` Watches for file changes in the `/src` directory and automatically copy the updated file to the `/build` directory with any minification or RTL tasks included if nessecsary
+* `grunt watch` or `grunt watch:all` Watches for file changes in the `/src` directory and automatically copy the updated file to the `/build` directory with any minification or RTL tasks included if necessary
 
 ## Patch All the Things! Creating and Submitting Patches
 
