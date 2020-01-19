@@ -5,7 +5,7 @@
 	"require-dev": {
 		"phpcompatibility/phpcompatibility-wp": "^2.1",
 		"wp-coding-standards/wpcs": "^2.2",
-		"dealerdirect/phpcodesniffer-composer-installer": "^0.5"
+		"dealerdirect/phpcodesniffer-composer-installer": "^0.6"
 	},
 	"minimum-stability": "dev",
 	"prefer-stable": true,
